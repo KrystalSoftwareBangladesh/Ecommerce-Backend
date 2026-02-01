@@ -1,7 +1,0 @@
-# dependencies
-dictionary_react/node_modules
-dictionary_react/.pnp
-dictionary_react/.pnp.js
-
-# production
-dictionary_react/build
