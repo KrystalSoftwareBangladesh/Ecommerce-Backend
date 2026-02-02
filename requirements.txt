@@ -1,0 +1,10 @@
+Django==5.2.5
+psycopg2-binary
+flake8
+djangorestframework==3.16.1
+djangorestframework-simplejwt
+django-cors-headers
+drf-spectacular
+drf-spectacular-sidecar
+django-cors-headers
+django-filter
