@@ -48,6 +48,9 @@ jobs:
             echo "🗄️ Running migrations"
             python manage.py migrate
 
+            echo "🧹 Collecting static files"
+            python manage.py collectstatic --noinput
+
             echo "♻️ Restarting services"
             sudo systemctl restart gunicorn-zayrah-life.service
 

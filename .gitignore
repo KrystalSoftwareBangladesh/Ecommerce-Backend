@@ -2,3 +2,5 @@
 /venv
 __pycache__
 /ZayrahLifeBackend/env.py
+staticfiles/
+/media
