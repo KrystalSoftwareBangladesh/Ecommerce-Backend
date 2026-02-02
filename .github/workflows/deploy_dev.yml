@@ -49,6 +49,6 @@ jobs:
             python manage.py migrate
 
             echo "♻️ Restarting services"
-            sudo systemctl restart gunicorn-cms-rtl.service
+            sudo systemctl restart gunicorn-zayrah-life.service
 
             echo "✅ Deployment completed successfully"
