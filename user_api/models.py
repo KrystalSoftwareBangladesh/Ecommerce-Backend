@@ -28,11 +28,30 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    ROLE_CHOICES = [
+        ("OWNER", "Owner"),
+        ("STAFF", "Staff"),
+        ("CUSTOMER", "Customer"),
+    ]
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default="CUSTOMER",
+    )
     first_name = models.CharField(max_length=255, blank=True, null=True)
     middle_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
-    email = models.EmailField(unique=True)
-    username = models.CharField(max_length=50, unique=True, blank=True, null=True)  # noqa
+    email = models.EmailField(
+        _("email address"),
+        blank=True,
+        null=True,
+        unique=True,
+    )
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        error_messages={"unique": "A user with that username already exists."},
+    )
     is_deleted = models.BooleanField(default=False)
     added_at = models.DateTimeField(_('Added Date Time'), auto_now_add=True,)
     updated_at = models.DateTimeField(_('Updated Date Time'), auto_now=True,)
@@ -40,15 +59,14 @@ class User(AbstractUser):
     objects = UserManager()
 
     # USERNAME_FIELD = 'username'
-    USERNAME_FIELD = 'email'
+    # USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
     # REQUIRED_FIELDS = ['email']
-    REQUIRED_FIELDS = []
+    # REQUIRED_FIELDS = []
 
     @property
     def full_name(self) -> str:
-        """
-            Returns full name combining first, middle, and last name.
-        """
         return " ".join(filter(None, [
             self.first_name, self.middle_name, self.last_name
         ]))
