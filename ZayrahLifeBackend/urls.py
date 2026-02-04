@@ -38,5 +38,7 @@ urlpatterns = [
         name="redoc"
     ),
     # apis
-    path('user/', include('user_api.urls')),
+    # path('user/', include('user_api.urls')),
+    # path('customer/', include('customer_api.urls')),
+    path('api/', include('ZayrahLifeBackend.all_urls')),
 ]
