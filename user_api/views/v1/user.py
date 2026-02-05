@@ -12,6 +12,7 @@ from user_api.serializers import AssignGroupSerializer
 from user_api.serializers import UserExistenceCheckSerializer
 
 
+@extend_schema(tags=["Users"])
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -26,6 +27,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
+@extend_schema(tags=["Users"])
 class UserListView(generics.ListAPIView):
     queryset = User.objects.filter(is_deleted=False)
     serializer_class = UserProfileSerializer
@@ -41,6 +43,7 @@ class AssignGroupView(generics.UpdateAPIView):
     ]
 
 
+@extend_schema(tags=["Users"])
 class UserExistenceCheckView(APIView):
     """
     POST /user/v1/verify/

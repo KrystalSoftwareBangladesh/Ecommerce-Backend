@@ -7,6 +7,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from drf_spectacular.utils import extend_schema
+
 import logging
 
 from user_api.models import User
@@ -18,6 +20,7 @@ from user_api.serializers import ChangePasswordSerializer
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(tags=["Authentication"])
 class LoginView(TokenObtainPairView):
     serializer_class = TokenSerializer
 
@@ -36,6 +39,7 @@ class LoginView(TokenObtainPairView):
     #     return response
 
 
+@extend_schema(tags=["Authentication"])
 class TokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -46,6 +50,11 @@ class TokenRefreshView(TokenRefreshView):
         return response
 
 
+@extend_schema(
+    tags=["Authentication"],
+    request=None,
+    responses={200: None},
+)
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -70,6 +79,7 @@ class LogoutView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(tags=["Authentication"])
 class ChangePasswordView(generics.UpdateAPIView):
     queryset = User.objects.filter(is_deleted=False)
     serializer_class = ChangePasswordSerializer
