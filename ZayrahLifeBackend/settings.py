@@ -53,6 +53,7 @@ THIRD_PARTY_APPS = [
 ]
 LOCAL_APPS = [
     'user_api',
+    'customer_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -113,6 +114,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+AUTHENTICATION_BACKENDS = [
+    'user_api.backends.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
