@@ -17,6 +17,7 @@ from .env import (
     DATABASES_SETTINGS,
     ALLOWED_HOSTS_SETTINGS,
     CORS_ALLOWED_ORIGINS_SETTINGS,
+    CSRF_TRUSTED_ORIGINS_SETTINGS,
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -59,6 +60,7 @@ LOCAL_APPS = [
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -188,3 +190,4 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
+CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
