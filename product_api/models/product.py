@@ -1,0 +1,67 @@
+# product_api/models/product.py
+from django.db import models
+from django.contrib.auth import get_user_model
+
+from ZayrahLifeBackend.core.models import (
+    TimeStampedModel, UserStampedModel, SoftDeleteModel
+)
+from category_api.models import Category
+
+User = get_user_model()
+
+
+class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
+    name = models.CharField(max_length=200)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name='products',
+        null=True,
+        blank=True
+    )
+    current_selling_price = models.DecimalField(
+        max_digits=12, decimal_places=2)
+
+    class Meta:
+        ordering = ['name']
+        indexes = [models.Index(fields=['name'])]
+
+    def __str__(self):
+        return self.name
+
+
+class ProductPriceHistory(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='price_histories'
+    )
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ['-changed_at']
+
+
+class ProductVariant(TimeStampedModel, SoftDeleteModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='variants'
+    )
+    sku = models.CharField(max_length=100)
+    color = models.CharField(max_length=50, blank=True, null=True)
+    size = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        ordering = ['sku']
+        indexes = [models.Index(fields=['sku'])]
+
+    def __str__(self):
+        return f"{self.sku} ({self.product.name})"
