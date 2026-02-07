@@ -2,10 +2,12 @@
 from django.db import models
 from django.utils.text import slugify
 
-from ZayrahLifeBackend.core.models import TimeStampedModel, SoftDeleteModel
+from ZayrahLifeBackend.core.models import (
+    TimeStampedModel, UserStampedModel, SoftDeleteModel
+)
 
 
-class Category(TimeStampedModel, SoftDeleteModel):
+class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
