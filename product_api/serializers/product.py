@@ -105,18 +105,3 @@ class ProductVariantCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "A variant with this SKU already exists.")
         return value
-
-
-# class InventoryMovementSerializer(serializers.ModelSerializer):
-#     created_by = serializers.StringRelatedField(read_only=True)
-#     product_variant = serializers.StringRelatedField(read_only=True)
-#     product_variant_id = serializers.PrimaryKeyRelatedField(
-#         queryset=ProductVariant.objects.all(),
-#         source='product_variant',
-#         write_only=True
-#     )
-
-#     class Meta:
-#         model = InventoryMovement
-#         fields = '__all__'
-#         read_only_fields = ['created_at', 'created_by']

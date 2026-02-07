@@ -6,14 +6,12 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-# from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin    # noqa
 
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
 from product_api.models import (
     Product, ProductVariant,
-    # InventoryMovement,
 )
 from product_api.serializers import (
     ProductListSerializer,
@@ -22,7 +20,6 @@ from product_api.serializers import (
     ProductVariantListSerializer,
     ProductVariantDetailSerializer,
     ProductVariantCreateUpdateSerializer,
-    # InventoryMovementSerializer
 )
 
 
@@ -97,30 +94,3 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
         instance.is_active = False
         instance.save(update_fields=['is_active', 'updated_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# class InventoryMovementFilter(django_filters.FilterSet):
-#     product = django_filters.NumberFilter(
-#         field_name='product_variant__product__id')
-#     variant = django_filters.NumberFilter(field_name='product_variant__id')
-
-#     class Meta:
-#         model = InventoryMovement
-#         fields = ['movement_type', 'product', 'variant']
-
-
-# class InventoryMovementViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, viewsets.GenericViewSet):    # noqa
-#     serializer_class = InventoryMovementSerializer
-#     permission_classes = [IsAuthenticated]
-#     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-#     filterset_class = InventoryMovementFilter
-#     ordering_fields = ['created_at']
-#     ordering = ['-created_at']
-
-#     def get_queryset(self):
-#         return InventoryMovement.objects.all().select_related(
-#             'product_variant__product', 'created_by'
-#         )
-
-#     def perform_create(self, serializer):
-#         serializer.save(created_by=self.request.user)
