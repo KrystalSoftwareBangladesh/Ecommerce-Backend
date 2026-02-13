@@ -10,6 +10,33 @@ from product_api.models import (
 )
 
 
+class ProductVariantSerializer(serializers.ModelSerializer):
+    """Serializer for ProductVariant - used for nested creation"""
+    class Meta:
+        model = ProductVariant
+        fields = ['id', 'sku', 'color', 'size']
+        extra_kwargs = {
+            'id': {'read_only': True}
+        }
+
+    def validate_sku(self, value):
+        """Validate SKU uniqueness"""
+        qs = ProductVariant.objects.filter(sku__iexact=value, is_active=True)
+
+        # If we're updating, exclude the current instance
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if hasattr(self, 'parent') and hasattr(self.parent, 'instance'):
+            qs = qs.exclude(product=self.parent.instance)
+
+        if qs.exists():
+            raise serializers.ValidationError(
+                "A variant with this SKU already exists."
+            )
+        return value
+
+
 class ProductPriceHistorySerializer(serializers.ModelSerializer):
     changed_by = serializers.StringRelatedField()
 
@@ -37,9 +64,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
+    variants = ProductVariantSerializer(many=True, required=False)
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'category', 'current_selling_price']
+        # fields = ['id', 'name', 'category', 'current_selling_price']
+        fields = [
+            'id', 'name', 'category', 'current_selling_price', 'variants'
+        ]
+        extra_kwargs = {
+            'id': {'read_only': True}
+        }
 
     def validate_name(self, value):
         qs = Product.objects.filter(name__iexact=value, is_active=True)
@@ -51,13 +86,31 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        instance = super().create(validated_data)
+        variants_data = validated_data.pop('variants', [])
+        # instance = super().create(validated_data)
+        product = Product.objects.create(**validated_data)
+
+        # ProductPriceHistory.objects.create(
+        #     product=instance,
+        #     price=instance.current_selling_price,
+        #     changed_by=self.context['request'].user
+        # )
+
         ProductPriceHistory.objects.create(
-            product=instance,
-            price=instance.current_selling_price,
+            product=product,
+            price=product.current_selling_price,
             changed_by=self.context['request'].user
         )
-        return instance
+
+        if variants_data:
+            variants_to_create = []
+            for variant_data in variants_data:
+                variants_to_create.append(
+                    ProductVariant(product=product, **variant_data)
+                )
+            ProductVariant.objects.bulk_create(variants_to_create)
+        # return instance
+        return product
 
     def update(self, instance, validated_data):
         old_price = instance.current_selling_price
@@ -70,6 +123,19 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
                 changed_by=self.context['request'].user
             )
         return instance
+
+    def to_representation(self, instance):
+        """Customize the output representation"""
+        representation = super().to_representation(instance)
+
+        # Include only active variants in the response
+        if instance.pk:
+            active_variants = instance.variants.filter(is_active=True)
+            representation['variants'] = ProductVariantSerializer(
+                active_variants, many=True
+            ).data
+
+        return representation
 
 
 class ProductVariantListSerializer(serializers.ModelSerializer):
