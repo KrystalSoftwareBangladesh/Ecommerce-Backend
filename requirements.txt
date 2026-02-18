@@ -9,3 +9,4 @@ drf-spectacular-sidecar
 django-cors-headers
 django-filter
 gunicorn
+drf-writable-nested

@@ -1,12 +1,8 @@
 # product_api/serializers/product.py
 from rest_framework import serializers
-# from django.db.models import Sum, Value
-# from django.db.models.functions import Coalesce
 
-# from category_api.models import Category
 from product_api.models import (
     Product, ProductPriceHistory, ProductVariant,
-    # InventoryMovement, MovementType
 )
 
 
@@ -68,7 +64,6 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        # fields = ['id', 'name', 'category', 'current_selling_price']
         fields = [
             'id', 'name', 'category', 'current_selling_price', 'variants'
         ]
@@ -87,14 +82,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         variants_data = validated_data.pop('variants', [])
-        # instance = super().create(validated_data)
         product = Product.objects.create(**validated_data)
-
-        # ProductPriceHistory.objects.create(
-        #     product=instance,
-        #     price=instance.current_selling_price,
-        #     changed_by=self.context['request'].user
-        # )
 
         ProductPriceHistory.objects.create(
             product=product,
@@ -109,7 +97,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
                     ProductVariant(product=product, **variant_data)
                 )
             ProductVariant.objects.bulk_create(variants_to_create)
-        # return instance
+
         return product
 
     def update(self, instance, validated_data):
