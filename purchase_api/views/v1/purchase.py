@@ -31,7 +31,7 @@ class PurchaseFilter(django_filters.FilterSet):
         fields = ['supplier', 'status']
 
 
-@extend_schema(tags=["Purchase"])
+@extend_schema(tags=["Purchases"])
 class PurchaseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
