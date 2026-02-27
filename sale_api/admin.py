@@ -6,7 +6,7 @@ from .models import Sale, SaleItem
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
     list_display = ['id', 'customer', 'sale_date',
-                    'invoice_number', 'status', 'total_amount', 'company_id']
+                    'invoice_number', 'status', 'total_amount',]
     list_filter = ['status', 'sale_date']
     search_fields = ['invoice_number']
 

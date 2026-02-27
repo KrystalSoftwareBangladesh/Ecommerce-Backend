@@ -44,10 +44,9 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     total_amount = models.DecimalField(
         max_digits=15, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
-    company_id = models.IntegerField(db_index=True)
 
     class Meta:
-        unique_together = ('company_id', 'invoice_number')
+        unique_together = ('invoice_number',)
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['sale_date']),

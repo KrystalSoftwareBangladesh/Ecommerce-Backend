@@ -19,43 +19,62 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Sale',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
                 ('is_active', models.BooleanField(db_index=True, default=True)),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
+                ('deleted_at', models.DateTimeField(
+                    blank=True, db_index=True, null=True)),
                 ('sale_date', models.DateField()),
-                ('invoice_number', models.CharField(blank=True, db_index=True, max_length=50, null=True)),
-                ('status', models.CharField(choices=[('DRAFT', 'Draft'), ('CONFIRMED', 'Confirmed'), ('CANCELLED', 'Cancelled')], default='DRAFT', max_length=20)),
-                ('subtotal_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15)),
-                ('discount_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15)),
-                ('tax_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15)),
-                ('total_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15)),
+                ('invoice_number', models.CharField(
+                    blank=True, db_index=True, max_length=50, null=True)),
+                ('status', models.CharField(choices=[('DRAFT', 'Draft'), ('CONFIRMED', 'Confirmed'), (
+                    'CANCELLED', 'Cancelled')], default='DRAFT', max_length=20)),
+                ('subtotal_amount', models.DecimalField(
+                    decimal_places=2, default=0, max_digits=15)),
+                ('discount_amount', models.DecimalField(
+                    decimal_places=2, default=0, max_digits=15)),
+                ('tax_amount', models.DecimalField(
+                    decimal_places=2, default=0, max_digits=15)),
+                ('total_amount', models.DecimalField(
+                    decimal_places=2, default=0, max_digits=15)),
                 ('notes', models.TextField(blank=True)),
                 ('company_id', models.IntegerField(db_index=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_created', to=settings.AUTH_USER_MODEL)),
-                ('customer', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='customer_api.customerprofile')),
-                ('updated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_updated', to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='%(class)s_created', to=settings.AUTH_USER_MODEL)),
+                ('customer', models.ForeignKey(
+                    on_delete=django.db.models.deletion.PROTECT, to='customer_api.customerprofile')),
+                ('updated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='%(class)s_updated', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
             name='SaleItem',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('quantity', models.PositiveIntegerField()),
-                ('unit_price', models.DecimalField(decimal_places=2, max_digits=15)),
-                ('line_total', models.DecimalField(decimal_places=2, max_digits=15)),
-                ('product_variant', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='product_api.productvariant')),
-                ('sale', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='sale_api.sale')),
+                ('unit_price', models.DecimalField(
+                    decimal_places=2, max_digits=15)),
+                ('line_total', models.DecimalField(
+                    decimal_places=2, max_digits=15)),
+                ('product_variant', models.ForeignKey(
+                    on_delete=django.db.models.deletion.PROTECT, to='product_api.productvariant')),
+                ('sale', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='items', to='sale_api.sale')),
             ],
         ),
         migrations.AddIndex(
             model_name='sale',
-            index=models.Index(fields=['status'], name='sale_api_sa_status_9c2692_idx'),
+            index=models.Index(fields=['status'],
+                               name='sale_api_sa_status_9c2692_idx'),
         ),
         migrations.AddIndex(
             model_name='sale',
-            index=models.Index(fields=['sale_date'], name='sale_api_sa_sale_da_065448_idx'),
+            index=models.Index(fields=['sale_date'],
+                               name='sale_api_sa_sale_da_065448_idx'),
         ),
         migrations.AlterUniqueTogether(
             name='sale',
