@@ -7,24 +7,21 @@ from .models import Sale, SaleItem
 from inventory_api.models import InventoryMovement
 
 
-def validate_stock(product_variant, quantity, company_id):
+def validate_stock(product_variant, quantity,):
     available = InventoryMovement.objects.filter(
-        product_variant=product_variant, company_id=company_id
+        product_variant=product_variant,
     ).aggregate(stock=Sum('quantity'))['stock'] or 0
     if available < quantity:
         raise ValidationError(f'Insufficient stock for {product_variant}.')
 
 
-def create_sale(user, company_id, data):
+def create_sale(user, data):
     with transaction.atomic():
         items_data = data.pop('items')
         if not items_data:
             raise ValidationError('At least one item required.')
-        if data['customer'].company_id != company_id:
-            raise ValidationError('Customer not in company.')
         sale = Sale(
             **data,
-            company_id=company_id,
             created_by=user,
             updated_by=user,
             status='DRAFT',
@@ -36,8 +33,6 @@ def create_sale(user, company_id, data):
         variants = set()
         for item_data in items_data:
             var = item_data['product_variant']
-            if var.company_id != company_id:
-                raise ValidationError('Product variant not in company.')
             if var in variants:
                 raise ValidationError('Duplicate variant.')
             variants.add(var)
@@ -70,8 +65,6 @@ def update_sale(user, sale, data):
             variants = set()
             for item_data in data['items']:
                 var = item_data['product_variant']
-                if var.company_id != sale.company_id:
-                    raise ValidationError('Product variant not in company.')
                 if var in variants:
                     raise ValidationError('Duplicate variant.')
                 variants.add(var)
@@ -92,15 +85,16 @@ def confirm_sale(user, sale):
         raise ValidationError('Only draft can be confirmed.')
     with transaction.atomic():
         for item in sale.items.all():
-            validate_stock(item.product_variant,
-                           item.quantity, sale.company_id)
+            validate_stock(
+                item.product_variant,
+                item.quantity,
+            )
             InventoryMovement.objects.create(
                 product_variant=item.product_variant,
                 quantity=-item.quantity,
                 movement_type='SALE',
                 reference_type='SALE',
                 reference_id=sale.id,
-                company_id=sale.company_id,
                 created_by=user
             )
         sale.status = 'CONFIRMED'
@@ -120,7 +114,6 @@ def cancel_sale(user, sale):
                 movement_type='SALE_REVERSAL',
                 reference_type='SALE',
                 reference_id=sale.id,
-                company_id=sale.company_id,
                 created_by=user
             )
         sale.status = 'CANCELLED'

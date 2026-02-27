@@ -37,8 +37,7 @@ class SaleViewSet(viewsets.ModelViewSet):
     ordering = ['-sale_date']
 
     def get_queryset(self):
-        company_id = self.request.user.company_id  # Assume user has company_id
-        qs = Sale.objects.filter(company_id=company_id, is_active=True)
+        qs = Sale.objects.filter(is_active=True)
         return qs.select_related('customer').prefetch_related('items')
 
     def get_serializer_class(self):
@@ -58,7 +57,6 @@ class SaleViewSet(viewsets.ModelViewSet):
         try:
             sale = create_sale(
                 request.user,
-                request.user.company_id,
                 serializer.validated_data
             )
         except Exception as e:
