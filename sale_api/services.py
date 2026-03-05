@@ -40,7 +40,9 @@ def create_sale(user, data):
             up = item_data['unit_price']
             lt = qty * up
             subtotal += lt
-            SaleItem.objects.create(sale=sale, line_total=lt, **item_data)
+            item_payload = dict(item_data)
+            item_payload.pop('line_total', None)
+            SaleItem.objects.create(sale=sale, line_total=lt, **item_payload)
         sale.subtotal_amount = subtotal
         sale.total_amount = subtotal - sale.discount_amount + sale.tax_amount
         sale.save()
@@ -72,7 +74,9 @@ def update_sale(user, sale, data):
                 up = item_data['unit_price']
                 lt = qty * up
                 subtotal += lt
-                SaleItem.objects.create(sale=sale, line_total=lt, **item_data)
+                item_payload = dict(item_data)
+                item_payload.pop('line_total', None)
+                SaleItem.objects.create(sale=sale, line_total=lt, **item_payload)
             sale.subtotal_amount = subtotal
         sale.total_amount = sale.subtotal_amount - \
             sale.discount_amount + sale.tax_amount

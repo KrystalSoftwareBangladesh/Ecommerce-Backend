@@ -43,7 +43,7 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
     total_amount = models.DecimalField(
         max_digits=15, decimal_places=2, default=0)
-    notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = ('invoice_number',)
