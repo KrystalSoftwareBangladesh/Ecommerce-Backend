@@ -19,6 +19,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
         model = SaleItem
         fields = ['id', 'product_variant', 'product_variant_id',
                   'quantity', 'unit_price', 'line_total']
+        read_only_fields = ['line_total']
 
     def validate(self, data):
         if data['quantity'] <= 0:
