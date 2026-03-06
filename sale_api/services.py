@@ -7,6 +7,14 @@ from .models import Sale, SaleItem
 from inventory_api.models import InventoryMovement
 
 
+def _is_blank_invoice_number(value):
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def _generate_sale_invoice_number(sale):
+    return f"SALE-{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
+
+
 def validate_stock(product_variant, quantity,):
     available = InventoryMovement.objects.filter(
         product_variant=product_variant,
@@ -20,6 +28,8 @@ def create_sale(user, data):
         items_data = data.pop('items')
         if not items_data:
             raise ValidationError('At least one item required.')
+        if _is_blank_invoice_number(data.get('invoice_number')):
+            data['invoice_number'] = None
         sale = Sale(
             **data,
             created_by=user,
@@ -29,6 +39,9 @@ def create_sale(user, data):
             total_amount=0,
         )
         sale.save()
+        if not sale.invoice_number:
+            sale.invoice_number = _generate_sale_invoice_number(sale)
+            sale.save(update_fields=['invoice_number'])
         subtotal = 0
         variants = set()
         for item_data in items_data:
