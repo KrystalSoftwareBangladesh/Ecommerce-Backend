@@ -90,7 +90,9 @@ def update_sale(user, sale, data):
                 subtotal += lt
                 item_payload = dict(item_data)
                 item_payload.pop('line_total', None)
-                SaleItem.objects.create(sale=sale, line_total=lt, **item_payload)
+                SaleItem.objects.create(  # noqa: E501
+                    sale=sale, line_total=lt, **item_payload
+                )
             sale.subtotal_amount = subtotal
         sale.total_amount = sale.subtotal_amount - \
             sale.discount_amount + sale.tax_amount

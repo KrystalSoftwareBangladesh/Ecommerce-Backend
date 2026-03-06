@@ -5,6 +5,8 @@ from .sale import (
     SaleUpdateSerializer,
     SaleListSerializer,
     SaleDetailSerializer,
+    SaleChannelOptionSerializer,
+    SaleChannelListSerializer,
 )
 
 
@@ -14,4 +16,6 @@ __all__ = [
     SaleUpdateSerializer,
     SaleListSerializer,
     SaleDetailSerializer,
+    SaleChannelOptionSerializer,
+    SaleChannelListSerializer,
 ]

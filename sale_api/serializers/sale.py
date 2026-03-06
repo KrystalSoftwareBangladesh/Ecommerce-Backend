@@ -70,3 +70,13 @@ class SaleDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+
+
+class SaleChannelOptionSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
+class SaleChannelListSerializer(serializers.Serializer):
+    default = serializers.ChoiceField(choices=Sale.SaleChannel.choices)
+    channels = SaleChannelOptionSerializer(many=True)

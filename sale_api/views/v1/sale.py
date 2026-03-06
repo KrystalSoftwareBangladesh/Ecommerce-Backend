@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 import django_filters
 from sale_api.models import Sale
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
-    SaleDetailSerializer,
+    SaleDetailSerializer, SaleChannelListSerializer
 )
 from sale_api.services import (
     create_sale, update_sale, confirm_sale, cancel_sale
@@ -27,6 +27,15 @@ class SaleFilter(django_filters.FilterSet):
         fields = ['customer', 'channel', 'status', 'start_date', 'end_date']
 
 
+@extend_schema_view(
+    create=extend_schema(responses={201: SaleDetailSerializer}),
+    partial_update=extend_schema(responses={200: SaleDetailSerializer}),
+    channels=extend_schema(
+        summary="List available sale channels",
+        description="Returns the canonical channel values and labels for sales.",  # noqa: E501
+        responses={200: SaleChannelListSerializer}
+    )
+)
 @extend_schema(tags=["Sales"])
 class SaleViewSet(viewsets.ModelViewSet):
     queryset = Sale.objects.none()
@@ -112,10 +121,6 @@ class SaleViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
 
-    @extend_schema(
-        summary="List available sale channels",
-        description="Returns the canonical channel values and labels for sales."
-    )
     @action(detail=False, methods=['get'], url_path='channels')
     def channels(self, request):
         channels = [
