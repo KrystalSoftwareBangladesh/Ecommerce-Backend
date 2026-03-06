@@ -8,6 +8,14 @@ from product_api.models import ProductVariant
 
 
 class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
+    class SaleChannel(models.TextChoices):
+        WALK_IN = 'Walk-in', 'Walk-in'
+        FACEBOOK = 'Facebook', 'Facebook'
+        PHONE = 'Phone', 'Phone'
+        WEBSITE = 'Website', 'Website'
+        INSTAGRAM = 'Instagram', 'Instagram'
+        WHATSAPP = 'WhatsApp', 'WhatsApp'
+
     STATUS_CHOICES = (
         ('DRAFT', 'Draft'),
         ('CONFIRMED', 'Confirmed'),
@@ -19,6 +27,12 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         max_length=50,
         blank=True,
         null=True,
+        db_index=True,
+    )
+    channel = models.CharField(
+        max_length=20,
+        choices=SaleChannel.choices,
+        default=SaleChannel.WALK_IN,
         db_index=True,
     )
     status = models.CharField(

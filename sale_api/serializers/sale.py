@@ -36,7 +36,7 @@ class SaleCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sale
-        fields = ['customer', 'sale_date', 'invoice_number',
+        fields = ['customer', 'sale_date', 'invoice_number', 'channel',
                   'discount_amount', 'tax_amount', 'notes', 'items']
 
     def validate(self, data):
@@ -60,7 +60,7 @@ class SaleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = ['id', 'customer', 'sale_date',
-                  'invoice_number', 'status', 'total_amount']
+                  'invoice_number', 'channel', 'status', 'total_amount']
 
 
 class SaleDetailSerializer(serializers.ModelSerializer):

@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from customer_api.models import CustomerProfile
 from product_api.models import Product, ProductVariant
+from sale_api.models import Sale
 from sale_api.services import create_sale
 from user_api.models import User
 
@@ -56,6 +57,7 @@ class SaleInvoiceGenerationTests(TestCase):
 
         self.assertIsNotNone(sale.invoice_number)
         self.assertTrue(sale.invoice_number.startswith('SALE-20260306-'))
+        self.assertEqual(sale.channel, Sale.SaleChannel.WALK_IN)
 
     def test_create_sale_generates_invoice_number_when_blank(self):
         sale = create_sale(self.staff_user, self._payload(invoice_number='  '))
@@ -70,3 +72,17 @@ class SaleInvoiceGenerationTests(TestCase):
         )
 
         self.assertEqual(sale.invoice_number, 'MANUAL-INV-1001')
+
+    def test_create_sale_keeps_provided_channel(self):
+        payload = self._payload(invoice_number=None)
+        payload['channel'] = Sale.SaleChannel.FACEBOOK
+
+        sale = create_sale(self.staff_user, payload)
+
+        self.assertEqual(sale.channel, Sale.SaleChannel.FACEBOOK)
+
+    def test_sale_channel_choices_contract(self):
+        self.assertEqual(
+            [value for value, _ in Sale.SaleChannel.choices],
+            ['Walk-in', 'Facebook', 'Phone', 'Website', 'Instagram', 'WhatsApp']
+        )
