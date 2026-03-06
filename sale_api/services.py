@@ -67,7 +67,8 @@ def update_sale(user, sale, data):
         raise ValidationError('Cannot edit non-draft sale.')
     with transaction.atomic():
         updatable_fields = [
-            'customer', 'sale_date', 'invoice_number', 'discount_amount',
+            'customer', 'sale_date', 'invoice_number', 'channel',
+            'discount_amount',
             'tax_amount', 'notes',
         ]
         for field in updatable_fields:

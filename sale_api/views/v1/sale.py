@@ -24,7 +24,7 @@ class SaleFilter(django_filters.FilterSet):
 
     class Meta:
         model = Sale
-        fields = ['customer', 'status', 'start_date', 'end_date']
+        fields = ['customer', 'channel', 'status', 'start_date', 'end_date']
 
 
 @extend_schema(tags=["Sales"])
@@ -111,3 +111,18 @@ class SaleViewSet(viewsets.ModelViewSet):
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
+
+    @extend_schema(
+        summary="List available sale channels",
+        description="Returns the canonical channel values and labels for sales."
+    )
+    @action(detail=False, methods=['get'], url_path='channels')
+    def channels(self, request):
+        channels = [
+            {'value': value, 'label': label}
+            for value, label in Sale.SaleChannel.choices
+        ]
+        return Response({
+            'default': Sale.SaleChannel.WALK_IN,
+            'channels': channels
+        })
