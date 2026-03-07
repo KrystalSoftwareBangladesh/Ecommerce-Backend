@@ -51,7 +51,15 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         return data
 
 
-class SaleUpdateSerializer(SaleCreateSerializer):
+class SaleUpdateSerializer(serializers.ModelSerializer):
+    items = SaleItemSerializer(many=True, required=False)
+    status = serializers.ChoiceField(choices=SaleStatus.choices, required=False)
+
+    class Meta:
+        model = Sale
+        fields = ['customer', 'sale_date', 'channel', 'discount_amount',
+                  'tax_amount', 'notes', 'items', 'status']
+
     def validate(self, data):
         items = data.get('items')
         if items is None:

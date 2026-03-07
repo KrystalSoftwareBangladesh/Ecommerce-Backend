@@ -265,3 +265,26 @@ class SaleStatusApiTests(APITestCase):
             response.data['allowed_next_statuses'],
             [{'value': SaleStatus.PROCESSING, 'label': 'Processing'}]
         )
+
+    def test_patch_sale_can_update_status_without_invoice_number(self):
+        response = self.client.patch(
+            f'/api/v1/sales/{self.sale.id}/',
+            {'status': SaleStatus.CONFIRMED},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], SaleStatus.CONFIRMED)
+
+    def test_patch_sale_rejects_invoice_number_updates(self):
+        response = self.client.patch(
+            f'/api/v1/sales/{self.sale.id}/',
+            {'invoice_number': 'NEW-INV-001'},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data['invoice_number'],
+            ['This field is not allowed.']
+        )

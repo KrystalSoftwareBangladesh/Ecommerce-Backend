@@ -94,8 +94,13 @@ class SaleViewSet(viewsets.ModelViewSet):
         sale = self.get_object()
         serializer = self.get_serializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        validated_data = dict(serializer.validated_data)
+        next_status = validated_data.pop('status', None)
         try:
-            sale = update_sale(request.user, sale, serializer.validated_data)
+            if validated_data:
+                sale = update_sale(request.user, sale, validated_data)
+            if next_status is not None:
+                sale = update_sale_status(request.user, sale, next_status)
         except Exception as e:
             return Response({
                 'detail': str(e)
