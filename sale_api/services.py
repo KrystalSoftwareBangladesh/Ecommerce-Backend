@@ -67,7 +67,7 @@ def update_sale(user, sale, data):
         raise ValidationError('Cannot edit sale unless status is pending.')
     with transaction.atomic():
         updatable_fields = [
-            'customer', 'sale_date', 'invoice_number', 'channel',
+            'customer', 'sale_date', 'channel',
             'discount_amount',
             'tax_amount', 'notes',
         ]
