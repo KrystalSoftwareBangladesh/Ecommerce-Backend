@@ -108,7 +108,7 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
         "SaleStatusEnum": "sale_api.models.sale.SaleStatus.choices",
-        "PurchaseStatusEnum": "purchase_api.models.purchase.PurchaseStatus.choices",
+        "PurchaseStatusEnum": "purchase_api.models.purchase.PurchaseStatus.choices",    # noqa
     },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
