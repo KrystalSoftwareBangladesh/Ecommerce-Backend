@@ -3,8 +3,8 @@ from django.db import transaction
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
-from .models import Sale, SaleItem
-from inventory_api.models import InventoryMovement
+from .models import Sale, SaleItem, SaleStatus, get_next_sale_statuses
+from inventory_api.models import InventoryMovement, MovementType, ReferenceType
 
 
 def _is_blank_invoice_number(value):
@@ -34,7 +34,7 @@ def create_sale(user, data):
             **data,
             created_by=user,
             updated_by=user,
-            status='DRAFT',
+            status=SaleStatus.PENDING,
             subtotal_amount=0,
             total_amount=0,
         )
@@ -63,8 +63,8 @@ def create_sale(user, data):
 
 
 def update_sale(user, sale, data):
-    if sale.status != 'DRAFT':
-        raise ValidationError('Cannot edit non-draft sale.')
+    if sale.status != SaleStatus.PENDING:
+        raise ValidationError('Cannot edit sale unless status is pending.')
     with transaction.atomic():
         updatable_fields = [
             'customer', 'sale_date', 'invoice_number', 'channel',
@@ -100,43 +100,51 @@ def update_sale(user, sale, data):
         return sale
 
 
-def confirm_sale(user, sale):
-    if sale.status != 'DRAFT':
-        raise ValidationError('Only draft can be confirmed.')
-    with transaction.atomic():
-        for item in sale.items.all():
-            validate_stock(
-                item.product_variant,
-                item.quantity,
-            )
-            InventoryMovement.objects.create(
-                product_variant=item.product_variant,
-                quantity=-item.quantity,
-                movement_type='SALE',
-                reference_type='SALE',
-                reference_id=sale.id,
-                created_by=user
-            )
-        sale.status = 'CONFIRMED'
-        sale.updated_by = user
-        sale.save()
+def _deduct_sale_stock(user, sale):
+    for item in sale.items.all():
+        validate_stock(
+            item.product_variant,
+            item.quantity,
+        )
+        InventoryMovement.objects.create(
+            product_variant=item.product_variant,
+            quantity=-item.quantity,
+            movement_type=MovementType.SALE,
+            reference_type=ReferenceType.ORDER,
+            reference_id=sale.id,
+            created_by=user
+        )
+
+
+def _restock_returned_sale(user, sale):
+    for item in sale.items.all():
+        InventoryMovement.objects.create(
+            product_variant=item.product_variant,
+            quantity=item.quantity,
+            movement_type=MovementType.REFUND,
+            reference_type=ReferenceType.RETURN,
+            reference_id=sale.id,
+            created_by=user
+        )
+
+
+def update_sale_status(user, sale, next_status):
+    if sale.status == next_status:
         return sale
 
+    allowed_statuses = get_next_sale_statuses(sale.status)
+    if next_status not in allowed_statuses:
+        raise ValidationError(
+            f'Cannot change sale status from {sale.status} to {next_status}.'
+        )
 
-def cancel_sale(user, sale):
-    if sale.status != 'CONFIRMED':
-        raise ValidationError('Only confirmed can be cancelled.')
     with transaction.atomic():
-        for item in sale.items.all():
-            InventoryMovement.objects.create(
-                product_variant=item.product_variant,
-                quantity=item.quantity,
-                movement_type='SALE_REVERSAL',
-                reference_type='SALE',
-                reference_id=sale.id,
-                created_by=user
-            )
-        sale.status = 'CANCELLED'
+        if next_status == SaleStatus.CONFIRMED:
+            _deduct_sale_stock(user, sale)
+        elif next_status == SaleStatus.RETURNED:
+            _restock_returned_sale(user, sale)
+
+        sale.status = next_status
         sale.updated_by = user
-        sale.save()
+        sale.save(update_fields=['status', 'updated_by', 'updated_at'])
         return sale
