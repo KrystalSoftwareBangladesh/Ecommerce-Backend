@@ -6,13 +6,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 import django_filters
-from sale_api.models import Sale
+from sale_api.models import Sale, SaleStatus, get_next_sale_statuses
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
-    SaleDetailSerializer, SaleChannelListSerializer
+    SaleDetailSerializer, SaleChannelListSerializer, SaleStatusListSerializer,
+    SaleStatusUpdateSerializer
 )
 from sale_api.services import (
-    create_sale, update_sale, confirm_sale, cancel_sale
+    create_sale, update_sale, update_sale_status
 )
 
 
@@ -30,10 +31,20 @@ class SaleFilter(django_filters.FilterSet):
 @extend_schema_view(
     create=extend_schema(responses={201: SaleDetailSerializer}),
     partial_update=extend_schema(responses={200: SaleDetailSerializer}),
+    update_status=extend_schema(
+        summary="Update sale status",
+        request=SaleStatusUpdateSerializer,
+        responses={200: SaleDetailSerializer},
+    ),
     channels=extend_schema(
         summary="List available sale channels",
         description="Returns the canonical channel values and labels for sales.",  # noqa: E501
         responses={200: SaleChannelListSerializer}
+    ),
+    statuses=extend_schema(
+        summary="List available sale statuses",
+        description="Returns the canonical sale statuses and allowed next-step transitions.",  # noqa: E501
+        responses={200: SaleStatusListSerializer}
     )
 )
 @extend_schema(tags=["Sales"])
@@ -58,6 +69,8 @@ class SaleViewSet(viewsets.ModelViewSet):
             return SaleCreateSerializer
         if self.action in ['update', 'partial_update']:
             return SaleUpdateSerializer
+        if self.action == 'update_status':
+            return SaleStatusUpdateSerializer
         return SaleDetailSerializer
 
     def create(self, request, *args, **kwargs):
@@ -91,30 +104,25 @@ class SaleViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         sale = self.get_object()
-        if sale.status != 'DRAFT':
+        if sale.status != SaleStatus.PENDING:
             return Response({
-                'detail': 'Cannot delete non-draft sale.'
+                'detail': 'Cannot delete sale unless status is pending.'
             }, status=status.HTTP_400_BAD_REQUEST)
         sale.is_active = False
         sale.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'])
-    def confirm(self, request, pk=None):
+    @action(detail=True, methods=['post'], url_path='update-status')
+    def update_status(self, request, pk=None):
         sale = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         try:
-            sale = confirm_sale(request.user, sale)
-        except Exception as e:
-            return Response({
-                'detail': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-        return Response(SaleDetailSerializer(sale).data)
-
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        sale = self.get_object()
-        try:
-            sale = cancel_sale(request.user, sale)
+            sale = update_sale_status(
+                request.user,
+                sale,
+                serializer.validated_data['status']
+            )
         except Exception as e:
             return Response({
                 'detail': str(e)
@@ -130,4 +138,20 @@ class SaleViewSet(viewsets.ModelViewSet):
         return Response({
             'default': Sale.SaleChannel.WALK_IN,
             'channels': channels
+        })
+
+    @action(detail=False, methods=['get'], url_path='statuses')
+    def statuses(self, request):
+        statuses = [
+            {'value': value, 'label': label}
+            for value, label in SaleStatus.choices
+        ]
+        transitions = {
+            status_value: get_next_sale_statuses(status_value)
+            for status_value, _ in SaleStatus.choices
+        }
+        return Response({
+            'default': SaleStatus.PENDING,
+            'statuses': statuses,
+            'transitions': transitions,
         })

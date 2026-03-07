@@ -1,8 +1,9 @@
 # sale_api/serializers/sale.py
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from product_api.models import ProductVariant
-from sale_api.models import Sale, SaleItem
+from sale_api.models import Sale, SaleItem, SaleStatus, get_next_sale_statuses
 from customer_api.serializers import CustomerProfileDetailSerializer
 from product_api.serializers import ProductVariantDetailSerializer
 
@@ -51,7 +52,17 @@ class SaleCreateSerializer(serializers.ModelSerializer):
 
 
 class SaleUpdateSerializer(SaleCreateSerializer):
-    pass  # Same as create for simplicity
+    def validate(self, data):
+        items = data.get('items')
+        if items is None:
+            return data
+
+        variants = set()
+        for item in items:
+            if item['product_variant'] in variants:
+                raise serializers.ValidationError('Duplicate product variant.')
+            variants.add(item['product_variant'])
+        return data
 
 
 class SaleListSerializer(serializers.ModelSerializer):
@@ -63,13 +74,26 @@ class SaleListSerializer(serializers.ModelSerializer):
                   'invoice_number', 'channel', 'status', 'total_amount']
 
 
+class SaleStatusOptionSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
 class SaleDetailSerializer(serializers.ModelSerializer):
     customer = CustomerProfileDetailSerializer()
     items = SaleItemSerializer(many=True)
+    allowed_next_statuses = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
         fields = '__all__'
+
+    @extend_schema_field(SaleStatusOptionSerializer(many=True))
+    def get_allowed_next_statuses(self, obj):
+        return [
+            {'value': value, 'label': SaleStatus(value).label}
+            for value in get_next_sale_statuses(obj.status)
+        ]
 
 
 class SaleChannelOptionSerializer(serializers.Serializer):
@@ -78,5 +102,19 @@ class SaleChannelOptionSerializer(serializers.Serializer):
 
 
 class SaleChannelListSerializer(serializers.Serializer):
-    default = serializers.ChoiceField(choices=Sale.SaleChannel.choices)
+    default = serializers.CharField()
     channels = SaleChannelOptionSerializer(many=True)
+
+
+class SaleStatusListSerializer(serializers.Serializer):
+    default = serializers.CharField()
+    statuses = SaleStatusOptionSerializer(many=True)
+    transitions = serializers.DictField(
+        child=serializers.ListField(
+            child=serializers.ChoiceField(choices=SaleStatus.choices)
+        )
+    )
+
+
+class SaleStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=SaleStatus.choices)

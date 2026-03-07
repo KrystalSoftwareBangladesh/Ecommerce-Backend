@@ -7,6 +7,33 @@ from customer_api.models import CustomerProfile
 from product_api.models import ProductVariant
 
 
+class SaleStatus(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    CONFIRMED = 'CONFIRMED', 'Confirmed'
+    PROCESSING = 'PROCESSING', 'Processing'
+    PACKAGED = 'PACKAGED', 'Packaged'
+    SHIPPED = 'SHIPPED', 'Shipped'
+    OUT_OF_DELIVERY = 'OUT_OF_DELIVERY', 'Out of Delivery'
+    DELIVERED = 'DELIVERED', 'Delivered'
+    RETURNED = 'RETURNED', 'Returned'
+
+
+SALE_STATUS_TRANSITIONS = {
+    SaleStatus.PENDING: [SaleStatus.CONFIRMED],
+    SaleStatus.CONFIRMED: [SaleStatus.PROCESSING],
+    SaleStatus.PROCESSING: [SaleStatus.PACKAGED],
+    SaleStatus.PACKAGED: [SaleStatus.SHIPPED],
+    SaleStatus.SHIPPED: [SaleStatus.OUT_OF_DELIVERY],
+    SaleStatus.OUT_OF_DELIVERY: [SaleStatus.DELIVERED],
+    SaleStatus.DELIVERED: [SaleStatus.RETURNED],
+    SaleStatus.RETURNED: [],
+}
+
+
+def get_next_sale_statuses(current_status):
+    return SALE_STATUS_TRANSITIONS.get(current_status, [])
+
+
 class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     class SaleChannel(models.TextChoices):
         WALK_IN = 'Walk-in', 'Walk-in'
@@ -16,11 +43,6 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         INSTAGRAM = 'Instagram', 'Instagram'
         WHATSAPP = 'WhatsApp', 'WhatsApp'
 
-    STATUS_CHOICES = (
-        ('DRAFT', 'Draft'),
-        ('CONFIRMED', 'Confirmed'),
-        ('CANCELLED', 'Cancelled'),
-    )
     customer = models.ForeignKey(CustomerProfile, on_delete=models.PROTECT)
     sale_date = models.DateField()
     invoice_number = models.CharField(
@@ -37,8 +59,8 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
-        default='DRAFT',
+        choices=SaleStatus.choices,
+        default=SaleStatus.PENDING,
     )
     subtotal_amount = models.DecimalField(
         max_digits=15,
