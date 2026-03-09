@@ -53,8 +53,8 @@ class SaleViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = SaleFilter
     search_fields = ['invoice_number']
-    ordering_fields = ['sale_date', 'total_amount']
-    ordering = ['-sale_date']
+    ordering_fields = ['sale_date', 'total_amount', 'id']
+    ordering = ['-sale_date', '-id']
 
     def get_queryset(self):
         qs = Sale.objects.filter(is_active=True)

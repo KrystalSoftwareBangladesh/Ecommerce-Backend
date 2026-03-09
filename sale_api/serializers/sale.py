@@ -53,7 +53,10 @@ class SaleCreateSerializer(serializers.ModelSerializer):
 
 class SaleUpdateSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, required=False)
-    status = serializers.ChoiceField(choices=SaleStatus.choices, required=False)
+    status = serializers.ChoiceField(
+        choices=SaleStatus.choices,
+        required=False,
+    )
 
     class Meta:
         model = Sale

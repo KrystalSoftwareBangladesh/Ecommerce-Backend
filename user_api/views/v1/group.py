@@ -8,7 +8,7 @@ from user_api.serializers import GroupSerializer
 
 
 class GroupViewSet(viewsets.ModelViewSet):
-    queryset = Group.objects.all()
+    queryset = Group.objects.all().order_by('name', 'id')
     serializer_class = GroupSerializer
     permission_classes = [
         permissions.IsAuthenticated,

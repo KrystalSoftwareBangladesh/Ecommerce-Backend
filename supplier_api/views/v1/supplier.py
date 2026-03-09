@@ -40,8 +40,8 @@ class SupplierViewSet(viewsets.ModelViewSet):
     ]
     filterset_class = SupplierFilter
     search_fields = ['name', 'phone', 'email']
-    ordering_fields = ['name', 'created_at', 'payment_type']
-    ordering = ['name']
+    ordering_fields = ['name', 'created_at', 'payment_type', 'id']
+    ordering = ['name', 'id']
 
     def get_queryset(self):
         return Supplier.objects.filter(
