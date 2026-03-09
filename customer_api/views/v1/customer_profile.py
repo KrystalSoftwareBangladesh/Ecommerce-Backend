@@ -44,8 +44,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         "user__first_name", "user__middle_name", "user__last_name",
         "user__email", "phone", "facebook_profile_url",
     ]
-    ordering_fields = ["created_at", "user__first_name"]
-    ordering = ["-created_at"]
+    ordering_fields = ["created_at", "user__first_name", "id"]
+    ordering = ["-created_at", "-id"]
 
     def get_queryset(self):
         qs = super().get_queryset()

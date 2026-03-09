@@ -29,7 +29,9 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 @extend_schema(tags=["Users"])
 class UserListView(generics.ListAPIView):
-    queryset = User.objects.filter(is_deleted=False)
+    queryset = User.objects.filter(
+        is_deleted=False
+    ).order_by('-added_at', '-id')
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 

@@ -40,7 +40,8 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Product.objects.filter(
-            is_active=True).select_related('category')
+            is_active=True
+        ).select_related('category').order_by('name', 'id')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -80,7 +81,7 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
                 Value(0),
                 output_field=IntegerField()
             )
-        )
+        ).order_by('sku', 'id')
 
     def get_serializer_class(self):
         if self.action == 'list':

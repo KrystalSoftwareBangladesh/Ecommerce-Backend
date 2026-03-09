@@ -8,7 +8,7 @@ from user_api.serializers import PermissionSerializer
 
 
 class PermissionListView(generics.ListAPIView):
-    queryset = Permission.objects.all()
+    queryset = Permission.objects.all().order_by('content_type_id', 'id')
     serializer_class = PermissionSerializer
     permission_classes = [
         permissions.IsAuthenticated,

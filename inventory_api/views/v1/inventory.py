@@ -31,8 +31,8 @@ class InventoryMovementViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMi
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = InventoryMovementFilter
-    ordering_fields = ['created_at']
-    ordering = ['-created_at']
+    ordering_fields = ['created_at', 'id']
+    ordering = ['-created_at', '-id']
 
     def get_queryset(self):
         return InventoryMovement.objects.all().select_related(
