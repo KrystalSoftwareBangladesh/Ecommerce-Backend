@@ -56,6 +56,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'user_api',
     'customer_api',
+    'account_api',
     'category_api',
     'supplier_api',
     'product_api',
