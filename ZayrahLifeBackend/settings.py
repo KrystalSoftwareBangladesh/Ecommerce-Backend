@@ -57,6 +57,7 @@ LOCAL_APPS = [
     'user_api',
     'customer_api',
     'account_api',
+    'transaction_api',
     'category_api',
     'supplier_api',
     'product_api',
@@ -110,6 +111,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "SaleStatusEnum": "sale_api.models.sale.SaleStatus.choices",
         "PurchaseStatusEnum": "purchase_api.models.purchase.PurchaseStatus.choices",    # noqa
+        "TransactionStatusEnum": "transaction_api.models.transaction.TransactionStatus.choices",  # noqa
     },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
