@@ -212,7 +212,11 @@ class ChartOfAccount(TimeStampedModel, UserStampedModel, SoftDeleteModel):
                     or previous_state['account_type'] != self.account_type
                 )
             )
-            code_missing = is_new or not previous_state or not previous_state['code']
+            code_missing = (
+                is_new
+                or not previous_state
+                or not previous_state['code']
+            )
             code_tampered = (
                 bool(previous_state)
                 and previous_state['code'] != self.code

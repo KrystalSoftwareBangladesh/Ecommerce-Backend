@@ -32,7 +32,10 @@ def assign_child_codes(chart_of_account_model, parent):
     next_child_sequence = CHILD_SEGMENT_START
     for child in children:
         child.account_type = parent.account_type
-        child.code = f'{parent.code}-{format_child_segment(next_child_sequence)}'
+        child.code = (
+            f'{parent.code}-'
+            f'{format_child_segment(next_child_sequence)}'
+        )
         child.save(update_fields=['account_type', 'code'])
         assign_child_codes(chart_of_account_model, child)
         next_child_sequence += 1
