@@ -13,6 +13,17 @@ class TransactionStatus(models.TextChoices):
     POSTED = 'POSTED', 'Posted'
 
 
+class TransactionType(models.TextChoices):
+    JOURNAL = 'JOURNAL', 'Journal'
+    PAYMENT = 'PAYMENT', 'Payment'
+    RECEIPT = 'RECEIPT', 'Receipt'
+    PURCHASE = 'PURCHASE', 'Purchase'
+    SALE = 'SALE', 'Sale'
+    ADJUSTMENT = 'ADJUSTMENT', 'Adjustment'
+    OPENING_BALANCE = 'OPENING_BALANCE', 'Opening Balance'
+    TRANSFER = 'TRANSFER', 'Transfer'
+
+
 class AccountingTransaction(
     TimeStampedModel,
     UserStampedModel,
@@ -25,6 +36,11 @@ class AccountingTransaction(
         null=True,
     )
     transaction_date = models.DateField()
+    transaction_type = models.CharField(
+        max_length=30,
+        choices=TransactionType.choices,
+        default=TransactionType.JOURNAL,
+    )
     reference = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     status = models.CharField(
@@ -48,6 +64,7 @@ class AccountingTransaction(
         indexes = [
             models.Index(fields=['transaction_no']),
             models.Index(fields=['transaction_date']),
+            models.Index(fields=['transaction_type']),
             models.Index(fields=['status']),
             models.Index(fields=['reference']),
         ]

@@ -112,6 +112,7 @@ SPECTACULAR_SETTINGS = {
         "SaleStatusEnum": "sale_api.models.sale.SaleStatus.choices",
         "PurchaseStatusEnum": "purchase_api.models.purchase.PurchaseStatus.choices",    # noqa
         "TransactionStatusEnum": "transaction_api.models.transaction.TransactionStatus.choices",  # noqa
+        "TransactionTypeEnum": "transaction_api.models.transaction.TransactionType.choices",  # noqa
     },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,

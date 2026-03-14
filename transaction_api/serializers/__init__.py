@@ -4,6 +4,7 @@ from .transaction import (
     AccountingTransactionLineSerializer,
     AccountingTransactionListSerializer,
     TransactionStatusListSerializer,
+    TransactionTypeListSerializer,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     'AccountingTransactionLineSerializer',
     'AccountingTransactionListSerializer',
     'TransactionStatusListSerializer',
+    'TransactionTypeListSerializer',
 ]
