@@ -132,6 +132,24 @@ class ChartOfAccountApiTests(APITestCase):
             role='STAFF',
         )
         self.client.force_authenticate(user=self.user)
+        self.asset_root = ChartOfAccount.objects.create(
+            name='Current Assets',
+            account_type=AccountType.ASSET,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.expense_root = ChartOfAccount.objects.create(
+            name='Operating Expense',
+            account_type=AccountType.EXPENSE,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.liability_root = ChartOfAccount.objects.create(
+            name='Current Liabilities',
+            account_type=AccountType.LIABILITY,
+            created_by=self.user,
+            updated_by=self.user,
+        )
 
     def test_create_generates_account_code_at_backend(self):
         response = self.client.post(
@@ -146,25 +164,18 @@ class ChartOfAccountApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 201)
         account = ChartOfAccount.objects.get(pk=response.data['id'])
-        self.assertEqual(response.data['code'], '1-10')
+        self.assertEqual(response.data['code'], '1-20')
         self.assertEqual(response.data['code'], account.code)
         self.assertEqual(account.created_by, self.user)
         self.assertEqual(account.updated_by, self.user)
 
     def test_create_child_generates_code_from_parent(self):
-        parent = ChartOfAccount.objects.create(
-            name='Current Assets',
-            account_type=AccountType.ASSET,
-            created_by=self.user,
-            updated_by=self.user,
-        )
-
         response = self.client.post(
             '/api/v1/chart-of-accounts/',
             {
                 'name': 'Cash Drawer',
                 'account_type': AccountType.ASSET,
-                'parent': parent.id,
+                'parent': self.asset_root.id,
             },
             format='json',
         )
@@ -173,16 +184,10 @@ class ChartOfAccountApiTests(APITestCase):
         self.assertEqual(response.data['code'], '1-10-01')
 
     def test_create_sub_child_generates_code_from_parent(self):
-        root = ChartOfAccount.objects.create(
-            name='Current Assets',
-            account_type=AccountType.ASSET,
-            created_by=self.user,
-            updated_by=self.user,
-        )
         child = ChartOfAccount.objects.create(
             name='Bank',
             account_type=AccountType.ASSET,
-            parent=root,
+            parent=self.asset_root,
             created_by=self.user,
             updated_by=self.user,
         )
@@ -239,19 +244,12 @@ class ChartOfAccountApiTests(APITestCase):
         self.assertEqual(account.name, 'Office Expense')
 
     def test_create_preserves_parent_account_type_validation(self):
-        parent = ChartOfAccount.objects.create(
-            name='Current Assets',
-            account_type=AccountType.ASSET,
-            created_by=self.user,
-            updated_by=self.user,
-        )
-
         response = self.client.post(
             '/api/v1/chart-of-accounts/',
             {
                 'name': 'Office Rent',
                 'account_type': AccountType.EXPENSE,
-                'parent': parent.id,
+                'parent': self.asset_root.id,
             },
             format='json',
         )
@@ -260,4 +258,39 @@ class ChartOfAccountApiTests(APITestCase):
         self.assertEqual(
             response.data['parent'][0],
             'Parent account must have the same account type.',
+        )
+
+    def test_list_filters_by_single_account_type(self):
+        response = self.client.get(
+            '/api/v1/chart-of-accounts/',
+            {'account_type': AccountType.ASSET},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_ids = {item['id'] for item in response.data['results']}
+        self.assertEqual(returned_ids, {self.asset_root.id})
+
+    def test_list_filters_by_multiple_account_types_with_repeated_params(self):
+        response = self.client.get(
+            '/api/v1/chart-of-accounts/?account_type=ASSET&account_type=EXPENSE'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_ids = {item['id'] for item in response.data['results']}
+        self.assertEqual(
+            returned_ids,
+            {self.asset_root.id, self.expense_root.id},
+        )
+
+    def test_list_filters_by_multiple_account_types_with_comma_separated_values(self):
+        response = self.client.get(
+            '/api/v1/chart-of-accounts/',
+            {'account_type': 'ASSET,LIABILITY'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_ids = {item['id'] for item in response.data['results']}
+        self.assertEqual(
+            returned_ids,
+            {self.asset_root.id, self.liability_root.id},
         )
