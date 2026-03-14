@@ -57,20 +57,7 @@ class ChartOfAccountCreateUpdateSerializer(serializers.ModelSerializer):
             'parent',
             'is_active',
         ]
-        read_only_fields = ['id']
-
-    def validate_code(self, value):
-        queryset = ChartOfAccount.objects.filter(
-            code__iexact=value,
-            deleted_at__isnull=True,
-        )
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise serializers.ValidationError(
-                'An account with this code already exists.'
-            )
-        return value
+        read_only_fields = ['id', 'code']
 
     def validate_parent(self, value):
         if value and not value.is_active:
@@ -80,6 +67,11 @@ class ChartOfAccountCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        if 'code' in self.initial_data:
+            raise serializers.ValidationError({
+                'code': 'Account code is generated automatically.'
+            })
+
         parent = attrs.get('parent', getattr(self.instance, 'parent', None))
         account_type = attrs.get(
             'account_type',

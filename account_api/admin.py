@@ -5,6 +5,7 @@ from account_api.models import ChartOfAccount
 
 @admin.register(ChartOfAccount)
 class ChartOfAccountAdmin(admin.ModelAdmin):
+    readonly_fields = ('code',)
     list_display = (
         'code',
         'name',
