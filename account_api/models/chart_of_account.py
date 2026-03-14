@@ -16,11 +16,11 @@ class AccountType(models.TextChoices):
 
 
 ACCOUNT_TYPE_CODE_PREFIXES = {
-    AccountType.ASSET: '1',
-    AccountType.LIABILITY: '2',
-    AccountType.EQUITY: '3',
-    AccountType.REVENUE: '4',
-    AccountType.EXPENSE: '5',
+    AccountType.ASSET: 'AST-1',
+    AccountType.LIABILITY: 'LIA-2',
+    AccountType.EQUITY: 'EQT-3',
+    AccountType.REVENUE: 'REV-4',
+    AccountType.EXPENSE: 'EXP-5',
 }
 
 TOP_LEVEL_GROUP_START = 10
@@ -73,9 +73,9 @@ class ChartOfAccount(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     @classmethod
     def get_top_level_group_number(cls, code):
         code_segments = cls.split_code(code)
-        if len(code_segments) != 2 or not code_segments[1].isdigit():
+        if len(code_segments) < 2 or not code_segments[-1].isdigit():
             return None
-        return int(code_segments[1])
+        return int(code_segments[-1])
 
     @classmethod
     def get_last_segment_number(cls, code):

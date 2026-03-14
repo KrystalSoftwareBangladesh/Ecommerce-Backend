@@ -12,7 +12,7 @@ class ChartOfAccountModelTests(TestCase):
             account_type=AccountType.ASSET,
         )
 
-        self.assertEqual(account.code, '1-10')
+        self.assertEqual(account.code, 'AST-1-10')
 
     def test_create_next_top_level_account_increments_by_ten(self):
         first_account = ChartOfAccount.objects.create(
@@ -24,8 +24,8 @@ class ChartOfAccountModelTests(TestCase):
             account_type=AccountType.ASSET,
         )
 
-        self.assertEqual(first_account.code, '1-10')
-        self.assertEqual(second_account.code, '1-20')
+        self.assertEqual(first_account.code, 'AST-1-10')
+        self.assertEqual(second_account.code, 'AST-1-20')
 
     def test_top_level_sequences_are_independent_per_account_type(self):
         asset_account = ChartOfAccount.objects.create(
@@ -41,9 +41,9 @@ class ChartOfAccountModelTests(TestCase):
             account_type=AccountType.REVENUE,
         )
 
-        self.assertEqual(asset_account.code, '1-10')
-        self.assertEqual(liability_account.code, '2-10')
-        self.assertEqual(revenue_account.code, '4-10')
+        self.assertEqual(asset_account.code, 'AST-1-10')
+        self.assertEqual(liability_account.code, 'LIA-2-10')
+        self.assertEqual(revenue_account.code, 'REV-4-10')
 
     def test_create_child_accounts_increment_by_two_digits(self):
         parent = ChartOfAccount.objects.create(
@@ -61,8 +61,8 @@ class ChartOfAccountModelTests(TestCase):
             parent=parent,
         )
 
-        self.assertEqual(child.code, '1-10-01')
-        self.assertEqual(second_child.code, '1-10-02')
+        self.assertEqual(child.code, 'AST-1-10-01')
+        self.assertEqual(second_child.code, 'AST-1-10-02')
 
     def test_create_sub_child_accounts_increment_by_two_digits(self):
         root = ChartOfAccount.objects.create(
@@ -85,9 +85,9 @@ class ChartOfAccountModelTests(TestCase):
             parent=child,
         )
 
-        self.assertEqual(child.code, '1-10-01')
-        self.assertEqual(first_sub_child.code, '1-10-01-01')
-        self.assertEqual(second_sub_child.code, '1-10-01-02')
+        self.assertEqual(child.code, 'AST-1-10-01')
+        self.assertEqual(first_sub_child.code, 'AST-1-10-01-01')
+        self.assertEqual(second_sub_child.code, 'AST-1-10-01-02')
 
     def test_updating_root_type_rebuilds_subtree_codes(self):
         ChartOfAccount.objects.create(
@@ -116,11 +116,11 @@ class ChartOfAccountModelTests(TestCase):
         child.refresh_from_db()
         sub_child.refresh_from_db()
 
-        self.assertEqual(root.code, '5-20')
+        self.assertEqual(root.code, 'EXP-5-20')
         self.assertEqual(child.account_type, AccountType.EXPENSE)
         self.assertEqual(sub_child.account_type, AccountType.EXPENSE)
-        self.assertEqual(child.code, '5-20-01')
-        self.assertEqual(sub_child.code, '5-20-01-01')
+        self.assertEqual(child.code, 'EXP-5-20-01')
+        self.assertEqual(sub_child.code, 'EXP-5-20-01-01')
 
 
 class ChartOfAccountApiTests(APITestCase):
@@ -146,7 +146,7 @@ class ChartOfAccountApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 201)
         account = ChartOfAccount.objects.get(pk=response.data['id'])
-        self.assertEqual(response.data['code'], '1-10')
+        self.assertEqual(response.data['code'], 'AST-1-10')
         self.assertEqual(response.data['code'], account.code)
         self.assertEqual(account.created_by, self.user)
         self.assertEqual(account.updated_by, self.user)
@@ -170,7 +170,7 @@ class ChartOfAccountApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['code'], '1-10-01')
+        self.assertEqual(response.data['code'], 'AST-1-10-01')
 
     def test_create_sub_child_generates_code_from_parent(self):
         root = ChartOfAccount.objects.create(
@@ -198,7 +198,7 @@ class ChartOfAccountApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['code'], '1-10-01-01')
+        self.assertEqual(response.data['code'], 'AST-1-10-01-01')
 
     def test_create_rejects_client_supplied_code(self):
         response = self.client.post(
