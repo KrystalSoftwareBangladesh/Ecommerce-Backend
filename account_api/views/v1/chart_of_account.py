@@ -6,6 +6,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from account_api.filters import ChartOfAccountFilter
 from account_api.models import ChartOfAccount
 from account_api.serializers import (
     ChartOfAccountCreateUpdateSerializer,
@@ -22,7 +23,7 @@ class ChartOfAccountViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    filterset_fields = ['account_type', 'parent', 'is_active']
+    filterset_class = ChartOfAccountFilter
     search_fields = ['code', 'name', 'description']
     ordering_fields = ['code', 'name', 'created_at', 'id']
     ordering = ['code', 'id']
