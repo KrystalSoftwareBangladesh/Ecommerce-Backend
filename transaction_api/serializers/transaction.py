@@ -68,6 +68,7 @@ class AccountingTransactionCreateSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'transaction_date',
+            'transaction_datetime',
             'transaction_type',
             'reference',
             'description',
@@ -91,6 +92,7 @@ class AccountingTransactionListSerializer(serializers.ModelSerializer):
             'id',
             'transaction_no',
             'transaction_date',
+            'transaction_datetime',
             'transaction_type',
             'reference',
             'description',

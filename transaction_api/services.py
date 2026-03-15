@@ -111,6 +111,7 @@ def update_transaction(user, instance, data):
 
         for field in [
             'transaction_date',
+            'transaction_datetime',
             'transaction_type',
             'reference',
             'description',
