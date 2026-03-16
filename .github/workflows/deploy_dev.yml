@@ -7,7 +7,10 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Development
     runs-on: ubuntu-latest
+    environment:
+      name: development
 
     steps:
       # 1. Checkout code
