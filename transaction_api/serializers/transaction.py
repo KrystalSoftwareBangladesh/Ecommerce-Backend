@@ -6,6 +6,7 @@ from account_api.models import ChartOfAccount
 from transaction_api.models import (
     AccountingTransaction,
     AccountingTransactionLine,
+    TransactionType,
 )
 
 
@@ -67,6 +68,8 @@ class AccountingTransactionCreateSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'transaction_date',
+            'transaction_datetime',
+            'transaction_type',
             'reference',
             'description',
             'lines',
@@ -89,6 +92,8 @@ class AccountingTransactionListSerializer(serializers.ModelSerializer):
             'id',
             'transaction_no',
             'transaction_date',
+            'transaction_datetime',
+            'transaction_type',
             'reference',
             'description',
             'status',
@@ -127,3 +132,8 @@ class TransactionStatusOptionSerializer(serializers.Serializer):
 class TransactionStatusListSerializer(serializers.Serializer):
     default = serializers.CharField()
     statuses = TransactionStatusOptionSerializer(many=True)
+
+
+class TransactionTypeListSerializer(serializers.Serializer):
+    default = serializers.CharField(default=TransactionType.JOURNAL)
+    types = TransactionStatusOptionSerializer(many=True)

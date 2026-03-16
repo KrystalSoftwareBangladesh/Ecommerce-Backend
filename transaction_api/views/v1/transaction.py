@@ -8,12 +8,17 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from transaction_api.models import AccountingTransaction, TransactionStatus
+from transaction_api.models import (
+    AccountingTransaction,
+    TransactionStatus,
+    TransactionType,
+)
 from transaction_api.serializers import (
     AccountingTransactionCreateSerializer,
     AccountingTransactionDetailSerializer,
     AccountingTransactionListSerializer,
     TransactionStatusListSerializer,
+    TransactionTypeListSerializer,
 )
 from transaction_api.services import (
     create_transaction,
@@ -32,11 +37,14 @@ class AccountingTransactionFilter(django_filters.FilterSet):
         field_name='transaction_date',
         lookup_expr='lte',
     )
+    transaction_type = django_filters.ChoiceFilter(
+        choices=TransactionType.choices
+    )
     status = django_filters.ChoiceFilter(choices=TransactionStatus.choices)
 
     class Meta:
         model = AccountingTransaction
-        fields = ['account', 'status']
+        fields = ['account', 'transaction_type', 'status']
 
 
 @extend_schema_view(
@@ -53,6 +61,10 @@ class AccountingTransactionFilter(django_filters.FilterSet):
     statuses=extend_schema(
         summary='List available transaction statuses',
         responses={200: TransactionStatusListSerializer},
+    ),
+    types=extend_schema(
+        summary='List available transaction types',
+        responses={200: TransactionTypeListSerializer},
     ),
 )
 @extend_schema(tags=["Transactions"])
@@ -75,6 +87,7 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = [
         'transaction_no',
         'transaction_date',
+        'transaction_type',
         'status',
         'total_debit',
         'id',
@@ -183,4 +196,15 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
         return Response({
             'default': TransactionStatus.DRAFT,
             'statuses': statuses,
+        })
+
+    @action(detail=False, methods=['get'], url_path='types')
+    def types(self, request):
+        types = [
+            {'value': value, 'label': label}
+            for value, label in TransactionType.choices
+        ]
+        return Response({
+            'default': TransactionType.JOURNAL,
+            'types': types,
         })

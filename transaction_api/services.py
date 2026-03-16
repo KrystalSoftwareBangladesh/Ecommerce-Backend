@@ -109,7 +109,13 @@ def update_transaction(user, instance, data):
     with transaction.atomic():
         lines_data = data.pop('lines', None)
 
-        for field in ['transaction_date', 'reference', 'description']:
+        for field in [
+            'transaction_date',
+            'transaction_datetime',
+            'transaction_type',
+            'reference',
+            'description',
+        ]:
             if field in data:
                 setattr(instance, field, data[field])
 
