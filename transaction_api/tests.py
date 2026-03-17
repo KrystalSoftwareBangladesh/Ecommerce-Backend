@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
+from django.utils.dateparse import parse_datetime
 from rest_framework.test import APITestCase
 
 from account_api.models import AccountType, ChartOfAccount
@@ -129,6 +130,29 @@ class AccountingTransactionApiTests(APITestCase):
             TransactionType.OWNER_WITHDRAWAL,
         )
 
+    def test_create_generates_transaction_datetime_when_not_provided(self):
+        response = self.client.post(
+            '/api/v1/transactions/',
+            {
+                'transaction_date': '2026-03-15',
+                'reference': 'TXN-AUTO-DATETIME',
+                'description': 'Transaction with generated datetime',
+                'lines': self._lines(self.cash_account, self.sales_account),
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNotNone(response.data['transaction_datetime'])
+        transaction_datetime = parse_datetime(
+            response.data['transaction_datetime'],
+        )
+        self.assertIsNotNone(transaction_datetime)
+        self.assertEqual(
+            transaction_datetime.date(),
+            date(2026, 3, 15),
+        )
+
     def test_create_accepts_transaction_datetime(self):
         response = self.client.post(
             '/api/v1/transactions/',
@@ -216,6 +240,44 @@ class AccountingTransactionApiTests(APITestCase):
             response.data['transaction_datetime'],
             '2026-03-15T16:45:00Z',
         )
+
+    def test_partial_update_regenerates_datetime_when_date_changes(self):
+        transaction = create_transaction(
+            self.user,
+            {
+                'transaction_date': date(2026, 3, 15),
+                'reference': 'TXN-DATE-UPDATE',
+                'description': 'Editable transaction date',
+                'lines': [
+                    {
+                        'account': self.cash_account,
+                        'debit_amount': Decimal('100.00'),
+                        'credit_amount': Decimal('0.00'),
+                    },
+                    {
+                        'account': self.sales_account,
+                        'debit_amount': Decimal('0.00'),
+                        'credit_amount': Decimal('100.00'),
+                    },
+                ],
+            },
+        )
+
+        previous_datetime = transaction.transaction_datetime
+
+        response = self.client.patch(
+            f'/api/v1/transactions/{transaction.id}/',
+            {'transaction_date': '2026-03-18'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        updated_datetime = parse_datetime(
+            response.data['transaction_datetime'],
+        )
+        self.assertIsNotNone(updated_datetime)
+        self.assertEqual(updated_datetime.date(), date(2026, 3, 18))
+        self.assertNotEqual(updated_datetime, previous_datetime)
 
     def test_list_filters_by_transaction_type(self):
         payment = create_transaction(
