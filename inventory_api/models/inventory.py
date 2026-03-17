@@ -43,6 +43,8 @@ class InventoryMovement(TimeStampedModel, UserStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        verbose_name = 'Inventory Movement'
+        verbose_name_plural = 'Inventory Movements'
         indexes = [
             models.Index(fields=['product_variant']),
             models.Index(fields=['movement_type']),

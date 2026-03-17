@@ -71,5 +71,9 @@ class User(AbstractUser):
             self.first_name, self.middle_name, self.last_name
         ]))
 
+    class Meta:
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
     def __str__(self):
         return self.full_name
