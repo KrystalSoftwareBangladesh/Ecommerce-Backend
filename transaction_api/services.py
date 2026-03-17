@@ -1,7 +1,9 @@
+from datetime import datetime
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from transaction_api.models import (
     AccountingTransaction,
@@ -13,6 +15,15 @@ from transaction_api.models import (
 def _generate_transaction_no(instance):
     date_part = instance.transaction_date.strftime('%Y%m%d')
     return f'TRX-{date_part}-{instance.id:06d}'
+
+
+def _build_transaction_datetime(transaction_date):
+    current_time = timezone.localtime().timetz()
+    return datetime.combine(
+        transaction_date,
+        current_time,
+        tzinfo=current_time.tzinfo,
+    )
 
 
 def _validate_lines(lines_data):
@@ -81,6 +92,11 @@ def create_transaction(user, data):
     with transaction.atomic():
         lines_data = data.pop('lines')
         total_debit, total_credit = _validate_lines(lines_data)
+        transaction_datetime = data.get('transaction_datetime')
+        if transaction_datetime is None:
+            data['transaction_datetime'] = _build_transaction_datetime(
+                data['transaction_date'],
+            )
 
         accounting_transaction = AccountingTransaction.objects.create(
             **data,
@@ -108,6 +124,8 @@ def update_transaction(user, instance, data):
 
     with transaction.atomic():
         lines_data = data.pop('lines', None)
+        transaction_date_updated = 'transaction_date' in data
+        transaction_datetime_provided = 'transaction_datetime' in data
 
         for field in [
             'transaction_date',
@@ -118,6 +136,11 @@ def update_transaction(user, instance, data):
         ]:
             if field in data:
                 setattr(instance, field, data[field])
+
+        if transaction_date_updated and not transaction_datetime_provided:
+            instance.transaction_datetime = _build_transaction_datetime(
+                instance.transaction_date,
+            )
 
         if lines_data is not None:
             total_debit, total_credit = _validate_lines(lines_data)
