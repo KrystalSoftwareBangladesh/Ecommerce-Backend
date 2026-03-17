@@ -131,10 +131,8 @@ def set_opening_balance(
       replaced so the account keeps a single active opening reference.
     """
     with transaction.atomic():
-        locked_account = (
-            ChartOfAccount.objects.select_for_update()
-            .select_related('opening_transaction')
-            .get(pk=account.pk)
+        locked_account = ChartOfAccount.objects.select_for_update().get(
+            pk=account.pk,
         )
 
         contra_account = (
