@@ -49,6 +49,8 @@ class Purchase(TimeStampedModel, UserStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['-purchase_date', '-id']
+        verbose_name = 'Purchase'
+        verbose_name_plural = 'Purchases'
         indexes = [
             models.Index(fields=['invoice_number']),
             models.Index(fields=['status']),
@@ -86,6 +88,8 @@ class PurchaseItem(TimeStampedModel):
 
     class Meta:
         ordering = ['id']
+        verbose_name = 'Purchase Item'
+        verbose_name_plural = 'Purchase Items'
 
     def save(self, *args, **kwargs):
         self.line_total = self.quantity * self.unit_cost

@@ -29,6 +29,8 @@ class Supplier(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
+        verbose_name = 'Supplier'
+        verbose_name_plural = 'Suppliers'
         indexes = [
             models.Index(fields=['name'])
         ]

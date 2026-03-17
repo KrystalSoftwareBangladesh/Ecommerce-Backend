@@ -83,6 +83,8 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
 
     class Meta:
         unique_together = ('invoice_number',)
+        verbose_name = 'Sale'
+        verbose_name_plural = 'Sales'
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['sale_date']),
@@ -103,3 +105,5 @@ class SaleItem(models.Model):
 
     class Meta:
         unique_together = ('sale', 'product_variant')
+        verbose_name = 'Sale Item'
+        verbose_name_plural = 'Sale Items'

@@ -24,6 +24,8 @@ class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['name']
+        verbose_name = 'Product'
+        verbose_name_plural = 'Products'
         indexes = [models.Index(fields=['name'])]
 
     def __str__(self):
@@ -47,6 +49,8 @@ class ProductPriceHistory(models.Model):
 
     class Meta:
         ordering = ['-changed_at']
+        verbose_name = 'Product Price History'
+        verbose_name_plural = 'Product Price Histories'
 
 
 class ProductVariant(TimeStampedModel, SoftDeleteModel):
@@ -61,6 +65,8 @@ class ProductVariant(TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         ordering = ['sku']
+        verbose_name = 'Product Variant'
+        verbose_name_plural = 'Product Variants'
         indexes = [models.Index(fields=['sku'])]
 
     def __str__(self):

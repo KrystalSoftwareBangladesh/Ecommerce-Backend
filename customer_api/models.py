@@ -32,6 +32,8 @@ class CustomerProfile(models.Model):
         indexes = [models.Index(fields=["phone"]),
                    models.Index(fields=["created_at"])]
         ordering = ["-created_at"]
+        verbose_name = 'Customer Profile'
+        verbose_name_plural = 'Customer Profiles'
 
     def __str__(self):
         return f"{self.user.full_name or 'No name'} ({self.customer_type})"

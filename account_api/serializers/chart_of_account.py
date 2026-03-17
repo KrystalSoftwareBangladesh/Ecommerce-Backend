@@ -14,6 +14,8 @@ class ChartOfAccountListSerializer(serializers.ModelSerializer):
             'name',
             'account_type',
             'parent',
+            'opening_balance',
+            'opening_date',
             'is_active',
         ]
 
@@ -45,6 +47,26 @@ class ChartOfAccountCreateUpdateSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    opening_balance = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        write_only=True,
+    )
+    opening_date = serializers.DateField(
+        required=False,
+        write_only=True,
+    )
+    opening_contra_account_id = serializers.PrimaryKeyRelatedField(
+        queryset=ChartOfAccount.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='opening_contra_account',
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
 
     class Meta:
         model = ChartOfAccount
@@ -56,6 +78,9 @@ class ChartOfAccountCreateUpdateSerializer(serializers.ModelSerializer):
             'description',
             'parent',
             'is_active',
+            'opening_balance',
+            'opening_date',
+            'opening_contra_account_id',
         ]
         read_only_fields = ['id', 'code']
 
@@ -70,6 +95,39 @@ class ChartOfAccountCreateUpdateSerializer(serializers.ModelSerializer):
         if 'code' in self.initial_data:
             raise serializers.ValidationError({
                 'code': 'Account code is generated automatically.'
+            })
+
+        opening_balance = attrs.get('opening_balance')
+        opening_date = attrs.get('opening_date')
+        opening_fields_present = (
+            'opening_balance' in attrs
+            or 'opening_date' in attrs
+            or 'opening_contra_account' in attrs
+        )
+
+        if self.instance and opening_fields_present:
+            raise serializers.ValidationError({
+                'detail': (
+                    'Use the set-opening-balance action to manage '
+                    'opening balances after the account has been '
+                    'created.'
+                )
+            })
+
+        if opening_balance is not None and opening_date is None:
+            raise serializers.ValidationError({
+                'opening_date': (
+                    'Opening date is required when an opening '
+                    'balance is provided.'
+                )
+            })
+
+        if opening_date is not None and opening_balance is None:
+            raise serializers.ValidationError({
+                'opening_balance': (
+                    'Opening balance amount is required when an '
+                    'opening date is provided.'
+                )
             })
 
         parent = attrs.get('parent', getattr(self.instance, 'parent', None))
@@ -100,3 +158,17 @@ class ChartOfAccountCreateUpdateSerializer(serializers.ModelSerializer):
                 current_parent = current_parent.parent
 
         return attrs
+
+
+class ChartOfAccountOpeningBalanceSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    date = serializers.DateField()
+    contra_account_id = serializers.PrimaryKeyRelatedField(
+        queryset=ChartOfAccount.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='contra_account',
+        required=False,
+        allow_null=True,
+    )

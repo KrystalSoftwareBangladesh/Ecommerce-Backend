@@ -67,6 +67,8 @@ class AccountingTransaction(
 
     class Meta:
         ordering = ['-transaction_date', '-id']
+        verbose_name = 'Accounting Transaction'
+        verbose_name_plural = 'Accounting Transactions'
         indexes = [
             models.Index(fields=['transaction_no']),
             models.Index(fields=['transaction_date']),
@@ -105,6 +107,8 @@ class AccountingTransactionLine(TimeStampedModel):
 
     class Meta:
         ordering = ['id']
+        verbose_name = 'Accounting Transaction Line'
+        verbose_name_plural = 'Accounting Transaction Lines'
 
     def __str__(self):
         return f'{self.account} ({self.transaction})'

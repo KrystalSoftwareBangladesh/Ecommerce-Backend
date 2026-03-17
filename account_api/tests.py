@@ -1,7 +1,12 @@
+from datetime import date
+from decimal import Decimal
+
 from django.test import TestCase
 from rest_framework.test import APITestCase
 
 from account_api.models import AccountType, ChartOfAccount
+from transaction_api.models import TransactionType
+from transaction_api.services import create_transaction, post_transaction
 from user_api.models import User
 
 
@@ -293,4 +298,122 @@ class ChartOfAccountApiTests(APITestCase):
         self.assertEqual(
             returned_ids,
             {self.asset_root.id, self.liability_root.id},
+        )
+
+    def test_create_account_with_opening_balance_creates_posted_transaction(self):
+        response = self.client.post(
+            '/api/v1/chart-of-accounts/',
+            {
+                'name': 'Cash in Hand',
+                'account_type': AccountType.ASSET,
+                'opening_balance': '1500.00',
+                'opening_date': '2026-03-01',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        account = ChartOfAccount.objects.get(pk=response.data['id'])
+        opening_transaction = account.opening_transaction
+
+        self.assertIsNotNone(opening_transaction)
+        self.assertEqual(account.opening_balance, Decimal('1500.00'))
+        self.assertEqual(account.opening_date, date(2026, 3, 1))
+        self.assertEqual(
+            opening_transaction.transaction_type,
+            TransactionType.OPENING_BALANCE,
+        )
+        self.assertEqual(opening_transaction.status, 'POSTED')
+
+        contra_account = ChartOfAccount.objects.get(
+            name='Opening Balance Equity',
+            account_type=AccountType.EQUITY,
+        )
+        self.assertTrue(
+            opening_transaction.lines.filter(
+                account=contra_account,
+                credit_amount=Decimal('1500.00'),
+            ).exists()
+        )
+
+    def test_set_opening_balance_action_updates_account_metadata(self):
+        account = ChartOfAccount.objects.create(
+            name='Bank Account',
+            account_type=AccountType.ASSET,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+
+        response = self.client.post(
+            f'/api/v1/chart-of-accounts/{account.id}/set-opening-balance/',
+            {
+                'amount': '2200.00',
+                'date': '2026-03-05',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        account.refresh_from_db()
+        self.assertEqual(account.opening_balance, Decimal('2200.00'))
+        self.assertEqual(account.opening_date, date(2026, 3, 5))
+        self.assertIsNotNone(account.opening_transaction)
+        self.assertEqual(
+            account.opening_transaction.transaction_type,
+            TransactionType.OPENING_BALANCE,
+        )
+
+    def test_set_opening_balance_action_blocks_accounts_with_posted_business_transactions(self):
+        account = ChartOfAccount.objects.create(
+            name='Accounts Payable',
+            account_type=AccountType.LIABILITY,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        expense_account = ChartOfAccount.objects.create(
+            name='Rent Expense',
+            account_type=AccountType.EXPENSE,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+
+        transaction = create_transaction(
+            self.user,
+            {
+                'transaction_date': date(2026, 3, 10),
+                'transaction_type': TransactionType.JOURNAL,
+                'reference': 'BILL-1001',
+                'description': 'Supplier bill posted before opening balance',
+                'lines': [
+                    {
+                        'account': expense_account,
+                        'debit_amount': Decimal('500.00'),
+                        'credit_amount': Decimal('0'),
+                    },
+                    {
+                        'account': account,
+                        'debit_amount': Decimal('0'),
+                        'credit_amount': Decimal('500.00'),
+                    },
+                ],
+            },
+        )
+        post_transaction(self.user, transaction)
+
+        response = self.client.post(
+            f'/api/v1/chart-of-accounts/{account.id}/set-opening-balance/',
+            {
+                'amount': '1200.00',
+                'date': '2026-03-01',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data['detail'],
+            (
+                'Opening balance cannot be changed because this account already has '
+                'posted business transactions.'
+            ),
         )

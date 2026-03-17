@@ -44,15 +44,42 @@ class ChartOfAccount(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         null=True,
         blank=True,
     )
+    opening_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+    opening_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+    opening_transaction = models.ForeignKey(
+        'transaction_api.AccountingTransaction',
+        on_delete=models.SET_NULL,
+        related_name='opened_accounts',
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = 'chart_of_accounts'
         ordering = ['code', 'id']
+        verbose_name = 'Chart of Account'
+        verbose_name_plural = 'Chart of Accounts'
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['name']),
             models.Index(fields=['account_type']),
+            models.Index(fields=['opening_date']),
         ]
+
+    def has_posted_non_opening_transactions(self):
+        return self.transaction_lines.filter(
+            transaction__deleted_at__isnull=True,
+            transaction__status='POSTED',
+        ).exclude(
+            transaction__transaction_type='OPENING_BALANCE',
+        ).exists()
 
     @classmethod
     def get_account_type_code_prefix(cls, account_type):
