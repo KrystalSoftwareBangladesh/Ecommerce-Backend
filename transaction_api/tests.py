@@ -279,6 +279,37 @@ class AccountingTransactionApiTests(APITestCase):
         self.assertEqual(updated_datetime.date(), date(2026, 3, 18))
         self.assertNotEqual(updated_datetime, previous_datetime)
 
+    def test_list_defaults_to_transaction_datetime_descending(self):
+        earlier_transaction = create_transaction(
+            self.user,
+            {
+                'transaction_date': date(2026, 3, 15),
+                'transaction_datetime': parse_datetime('2026-03-15T08:00:00Z'),
+                'reference': 'TXN-EARLIER',
+                'description': 'Earlier transaction',
+                'lines': self._lines(self.cash_account, self.sales_account),
+            },
+        )
+        later_transaction = create_transaction(
+            self.user,
+            {
+                'transaction_date': date(2026, 3, 15),
+                'transaction_datetime': parse_datetime('2026-03-15T18:00:00Z'),
+                'reference': 'TXN-LATER',
+                'description': 'Later transaction',
+                'lines': self._lines(self.cash_account, self.sales_account),
+            },
+        )
+
+        response = self.client.get('/api/v1/transactions/')
+
+        self.assertEqual(response.status_code, 200)
+        returned_ids = [item['id'] for item in response.data['results'][:2]]
+        self.assertEqual(
+            returned_ids,
+            [later_transaction.id, earlier_transaction.id],
+        )
+
     def test_list_filters_by_transaction_type(self):
         payment = create_transaction(
             self.user,

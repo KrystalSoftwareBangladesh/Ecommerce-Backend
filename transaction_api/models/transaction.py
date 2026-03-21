@@ -66,7 +66,7 @@ class AccountingTransaction(
     )
 
     class Meta:
-        ordering = ['-transaction_date', '-id']
+        ordering = ['-transaction_datetime', '-id']
         verbose_name = 'Accounting Transaction'
         verbose_name_plural = 'Accounting Transactions'
         indexes = [
