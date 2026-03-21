@@ -214,7 +214,10 @@ def confirm_purchase(instance, user):
     _validate_purchase_totals(instance)
     if instance.accounting_transaction_id is not None:
         raise ValidationError({
-            'detail': 'This purchase is already linked to an accounting transaction.'
+            'detail': (
+                'This purchase is already linked to an '
+                'accounting transaction.'
+            )
         })
 
     accounting_transaction = _create_purchase_transaction(user, instance)
@@ -247,7 +250,8 @@ def cancel_purchase(instance, user):
     if instance.accounting_transaction_id is None:
         raise ValidationError({
             'detail': (
-                'Confirmed purchase is missing its accounting transaction link.'
+                'Confirmed purchase is missing its accounting '
+                'transaction link.'
             )
         })
     if instance.cancellation_transaction_id is not None:

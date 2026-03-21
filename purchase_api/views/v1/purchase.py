@@ -103,7 +103,11 @@ class PurchaseViewSet(viewsets.ModelViewSet):
             if account is not None and instance.account_id != account.id:
                 instance.account = account
                 instance.updated_by = request.user
-                instance.save(update_fields=['account', 'updated_by', 'updated_at'])
+                instance.save(update_fields=[
+                    'account',
+                    'updated_by',
+                    'updated_at',
+                ])
             purchase = confirm_purchase(instance, request.user)
             return Response(PurchaseDetailSerializer(purchase).data)
         except DRFValidationError as e:
