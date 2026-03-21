@@ -87,12 +87,13 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = [
         'transaction_no',
         'transaction_date',
+        'transaction_datetime',
         'transaction_type',
         'status',
         'total_debit',
         'id',
     ]
-    ordering = ['-transaction_date', '-id']
+    ordering = ['-transaction_datetime', '-id']
 
     def get_queryset(self):
         return AccountingTransaction.objects.filter(

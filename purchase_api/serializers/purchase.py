@@ -3,10 +3,25 @@ from rest_framework import serializers
 # from django.db.models import Sum, F
 from drf_writable_nested import WritableNestedModelSerializer
 
+from account_api.models import AccountType, ChartOfAccount
 from product_api.models import ProductVariant
 from purchase_api.models import Purchase, PurchaseItem, PurchaseStatus
 from supplier_api.serializers import SupplierListSerializer
 from product_api.serializers import ProductVariantDetailSerializer as VariantSerializer   # noqa
+
+
+class PurchaseAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChartOfAccount
+        fields = ['id', 'code', 'name', 'account_type']
+
+
+class PurchaseTransactionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    transaction_no = serializers.CharField()
+    transaction_type = serializers.CharField()
+    status = serializers.CharField()
+    reference = serializers.CharField(allow_null=True)
 
 
 class PurchaseItemSerializer(serializers.ModelSerializer):
@@ -36,16 +51,24 @@ class PurchaseItemSerializer(serializers.ModelSerializer):
 
 class PurchaseListSerializer(serializers.ModelSerializer):
     supplier = SupplierListSerializer()
+    account = PurchaseAccountSerializer(read_only=True)
+    accounting_transaction = PurchaseTransactionSerializer(read_only=True)
 
     class Meta:
         model = Purchase
-        fields = ['id', 'supplier', 'purchase_date',
-                  'invoice_number', 'status', 'total_amount']
+        fields = [
+            'id', 'supplier', 'account', 'purchase_date',
+            'invoice_number', 'status', 'total_amount',
+            'accounting_transaction',
+        ]
 
 
 class PurchaseDetailSerializer(serializers.ModelSerializer):
     supplier = SupplierListSerializer()
     items = PurchaseItemSerializer(many=True)
+    account = PurchaseAccountSerializer(read_only=True)
+    accounting_transaction = PurchaseTransactionSerializer(read_only=True)
+    cancellation_transaction = PurchaseTransactionSerializer(read_only=True)
 
     class Meta:
         model = Purchase
@@ -56,11 +79,20 @@ class PurchaseDetailSerializer(serializers.ModelSerializer):
 
 class PurchaseCreateSerializer(WritableNestedModelSerializer):
     items = PurchaseItemSerializer(many=True)
+    account_id = serializers.PrimaryKeyRelatedField(
+        queryset=ChartOfAccount.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='account',
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Purchase
         fields = [
-            'id', 'supplier', 'purchase_date', 'invoice_number',
+            'id', 'supplier', 'account_id', 'purchase_date', 'invoice_number',
             'discount_amount', 'tax_amount', 'notes', 'items',
         ]
 
@@ -68,16 +100,36 @@ class PurchaseCreateSerializer(WritableNestedModelSerializer):
         if not attrs.get('items'):
             raise serializers.ValidationError(
                 {"items": "At least one item is required."})
+        account = attrs.get('account')
+        if account and account.account_type not in {
+            AccountType.ASSET,
+            AccountType.LIABILITY,
+        }:
+            raise serializers.ValidationError({
+                'account_id': (
+                    'Purchase account must be an asset or liability account.'
+                )
+            })
         return attrs
 
 
 class PurchaseUpdateSerializer(serializers.ModelSerializer):
     items = PurchaseItemSerializer(many=True, required=False)
+    account_id = serializers.PrimaryKeyRelatedField(
+        queryset=ChartOfAccount.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='account',
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Purchase
         fields = [
-            'supplier', 'purchase_date', 'invoice_number', 'discount_amount',
+            'supplier', 'account_id', 'purchase_date', 'invoice_number',
+            'discount_amount',
             'tax_amount', 'notes', 'items', 'status'
         ]
         extra_kwargs = {
@@ -95,7 +147,39 @@ class PurchaseUpdateSerializer(serializers.ModelSerializer):
             if 'items' in attrs:
                 raise serializers.ValidationError(
                     "Cannot edit items for non-draft purchase.")
+        account = attrs.get('account', getattr(instance, 'account', None))
+        if account and account.account_type not in {
+            AccountType.ASSET,
+            AccountType.LIABILITY,
+        }:
+            raise serializers.ValidationError({
+                'account_id': (
+                    'Purchase account must be an asset or liability account.'
+                )
+            })
         if 'items' in attrs and not attrs['items']:
             raise serializers.ValidationError(
                 {"items": "At least one item is required."})
         return attrs
+
+
+class PurchaseConfirmSerializer(serializers.Serializer):
+    account_id = serializers.PrimaryKeyRelatedField(
+        queryset=ChartOfAccount.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='account',
+        required=False,
+        allow_null=True,
+    )
+
+    def validate_account(self, value):
+        if value and value.account_type not in {
+            AccountType.ASSET,
+            AccountType.LIABILITY,
+        }:
+            raise serializers.ValidationError(
+                'Purchase account must be an asset or liability account.'
+            )
+        return value

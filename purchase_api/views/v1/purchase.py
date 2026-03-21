@@ -1,6 +1,8 @@
 # purchase_api/views/v1/purchase.py
+from django.core.exceptions import ValidationError
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,11 +13,23 @@ from django_filters import rest_framework as filters
 from purchase_api.models import Purchase, PurchaseStatus
 from purchase_api.serializers import (
     PurchaseListSerializer, PurchaseDetailSerializer,
-    PurchaseCreateSerializer, PurchaseUpdateSerializer
+    PurchaseCreateSerializer, PurchaseUpdateSerializer,
+    PurchaseConfirmSerializer,
 )
 from purchase_api.services import (
     create_purchase, update_purchase, confirm_purchase, cancel_purchase
 )
+
+
+def _normalize_validation_detail(detail):
+    if isinstance(detail, dict):
+        normalized = {}
+        for key, value in detail.items():
+            normalized[key] = _normalize_validation_detail(value)
+        return normalized
+    if isinstance(detail, list) and len(detail) == 1:
+        return _normalize_validation_detail(detail[0])
+    return detail
 
 
 class PurchaseFilter(django_filters.FilterSet):
@@ -41,7 +55,12 @@ class PurchaseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Purchase.objects.filter(
             is_active=True
-        ).select_related('supplier').prefetch_related('items__product_variant')
+        ).select_related(
+            'supplier',
+            'account',
+            'accounting_transaction',
+            'cancellation_transaction',
+        ).prefetch_related('items__product_variant')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -52,6 +71,8 @@ class PurchaseViewSet(viewsets.ModelViewSet):
             return PurchaseCreateSerializer
         if self.action in ['update', 'partial_update']:
             return PurchaseUpdateSerializer
+        if self.action == 'confirm':
+            return PurchaseConfirmSerializer
         return PurchaseDetailSerializer
 
     def create(self, request, *args, **kwargs):
@@ -76,11 +97,28 @@ class PurchaseViewSet(viewsets.ModelViewSet):
     def confirm(self, request, pk=None):
         instance = self.get_object()
         try:
+            serializer = self.get_serializer(data=request.data or {})
+            serializer.is_valid(raise_exception=True)
+            account = serializer.validated_data.get('account')
+            if account is not None and instance.account_id != account.id:
+                instance.account = account
+                instance.updated_by = request.user
+                instance.save(update_fields=[
+                    'account',
+                    'updated_by',
+                    'updated_at',
+                ])
             purchase = confirm_purchase(instance, request.user)
             return Response(PurchaseDetailSerializer(purchase).data)
-        except ValueError as e:
+        except DRFValidationError as e:
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            detail = getattr(e, 'message_dict', None) or getattr(
+                e, 'message',
+                str(e),
+            )
             return Response({
-                    'detail': str(e)
+                    'detail': _normalize_validation_detail(detail)
                 }, status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -90,9 +128,13 @@ class PurchaseViewSet(viewsets.ModelViewSet):
         try:
             purchase = cancel_purchase(instance, request.user)
             return Response(PurchaseDetailSerializer(purchase).data)
-        except ValueError as e:
+        except ValidationError as e:
+            detail = getattr(e, 'message_dict', None) or getattr(
+                e, 'message',
+                str(e),
+            )
             return Response({
-                    'detail': str(e)
+                    'detail': _normalize_validation_detail(detail)
                 }, status=status.HTTP_400_BAD_REQUEST
             )
 

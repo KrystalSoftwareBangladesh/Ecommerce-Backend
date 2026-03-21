@@ -16,6 +16,7 @@ class AccountingTransactionAdmin(admin.ModelAdmin):
     list_display = (
         'transaction_no',
         'transaction_date',
+        'transaction_datetime',
         'transaction_type',
         'status',
         'total_debit',
@@ -23,4 +24,5 @@ class AccountingTransactionAdmin(admin.ModelAdmin):
     )
     search_fields = ('transaction_no', 'reference', 'description')
     list_filter = ('transaction_type', 'status', 'transaction_date')
+    readonly_fields = ('created_at',)
     inlines = [AccountingTransactionLineInline]
