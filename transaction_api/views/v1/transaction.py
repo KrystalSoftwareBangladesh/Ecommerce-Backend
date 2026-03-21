@@ -1,5 +1,6 @@
 import django_filters
 
+from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 
 from transaction_api.models import (
     AccountingTransaction,
+    AccountingTransactionLine,
     TransactionStatus,
     TransactionType,
 )
@@ -102,7 +104,13 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
             'created_by',
             'updated_by',
         ).prefetch_related(
-            'lines__account',
+            Prefetch(
+                'lines',
+                queryset=AccountingTransactionLine.objects.select_related(
+                    'account',
+                ).order_by('id'),
+                to_attr='prefetched_lines',
+            ),
         ).distinct()
 
     def get_serializer_class(self):

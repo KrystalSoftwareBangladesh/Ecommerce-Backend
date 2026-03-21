@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from account_api.models import ChartOfAccount
@@ -14,6 +15,12 @@ class TransactionAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChartOfAccount
         fields = ['id', 'code', 'name', 'account_type']
+
+
+class TransactionAccountSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChartOfAccount
+        fields = ['id', 'code', 'name']
 
 
 class AccountingTransactionLineSerializer(serializers.ModelSerializer):
@@ -86,6 +93,11 @@ class AccountingTransactionCreateSerializer(serializers.ModelSerializer):
 
 
 class AccountingTransactionListSerializer(serializers.ModelSerializer):
+    primary_debit_account = serializers.SerializerMethodField()
+    primary_credit_account = serializers.SerializerMethodField()
+    debit_line_count = serializers.SerializerMethodField()
+    credit_line_count = serializers.SerializerMethodField()
+
     class Meta:
         model = AccountingTransaction
         fields = [
@@ -99,7 +111,62 @@ class AccountingTransactionListSerializer(serializers.ModelSerializer):
             'status',
             'total_debit',
             'total_credit',
+            'primary_debit_account',
+            'primary_credit_account',
+            'debit_line_count',
+            'credit_line_count',
         ]
+
+    def _get_prefetched_lines(self, obj):
+        return getattr(obj, 'prefetched_lines', list(obj.lines.all()))
+
+    def _get_line_summary(self, obj):
+        cached_summary = getattr(obj, '_transaction_line_summary', None)
+        if cached_summary is not None:
+            return cached_summary
+
+        debit_lines = []
+        credit_lines = []
+        for line in self._get_prefetched_lines(obj):
+            if line.debit_amount > 0:
+                debit_lines.append(line)
+            if line.credit_amount > 0:
+                credit_lines.append(line)
+
+        summary = {
+            'primary_debit_account': (
+                debit_lines[0].account if debit_lines else None
+            ),
+            'primary_credit_account': (
+                credit_lines[0].account if credit_lines else None
+            ),
+            'debit_line_count': len(debit_lines),
+            'credit_line_count': len(credit_lines),
+        }
+        obj._transaction_line_summary = summary
+        return summary
+
+    @extend_schema_field(TransactionAccountSummarySerializer(allow_null=True))
+    def get_primary_debit_account(self, obj):
+        account = self._get_line_summary(obj)['primary_debit_account']
+        if account is None:
+            return None
+        return TransactionAccountSummarySerializer(account).data
+
+    @extend_schema_field(TransactionAccountSummarySerializer(allow_null=True))
+    def get_primary_credit_account(self, obj):
+        account = self._get_line_summary(obj)['primary_credit_account']
+        if account is None:
+            return None
+        return TransactionAccountSummarySerializer(account).data
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_debit_line_count(self, obj):
+        return self._get_line_summary(obj)['debit_line_count']
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_credit_line_count(self, obj):
+        return self._get_line_summary(obj)['credit_line_count']
 
 
 class AccountingTransactionDetailSerializer(serializers.ModelSerializer):
