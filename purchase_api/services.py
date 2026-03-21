@@ -21,6 +21,14 @@ ALLOWED_PURCHASE_ACCOUNT_TYPES = {
 }
 
 
+def _is_blank_invoice_number(value):
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def _generate_purchase_invoice_number(purchase):
+    return f"PUR-{purchase.purchase_date.strftime('%Y%m%d')}-{purchase.id:06d}"
+
+
 def get_or_create_inventory_asset_account(user=None):
     with transaction.atomic():
         account = ChartOfAccount.objects.select_for_update().filter(
@@ -163,12 +171,17 @@ def _create_purchase_cancellation_transaction(user, purchase):
 @transaction.atomic
 def create_purchase(validated_data, user):
     items_data = validated_data.pop('items')
+    if _is_blank_invoice_number(validated_data.get('invoice_number')):
+        validated_data['invoice_number'] = None
     purchase = Purchase.objects.create(
         **validated_data,
         created_by=user,
         updated_by=user,
         status=PurchaseStatus.DRAFT
     )
+    if not purchase.invoice_number:
+        purchase.invoice_number = _generate_purchase_invoice_number(purchase)
+        purchase.save(update_fields=['invoice_number'])
     for item_data in items_data:
         PurchaseItem.objects.create(purchase=purchase, **item_data)
     purchase.subtotal_amount, purchase.total_amount = purchase.calculate_totals()   # noqa

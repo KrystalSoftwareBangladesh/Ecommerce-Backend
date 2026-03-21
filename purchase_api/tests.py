@@ -90,6 +90,41 @@ class PurchaseAccountingApiTests(APITestCase):
         self.assertEqual(response.data['account']['id'], self.payable_account.id)
         self.assertIsNone(response.data['accounting_transaction'])
 
+    def test_create_purchase_generates_invoice_number_when_missing(self):
+        response = self.client.post(
+            '/api/v1/purchases/',
+            self._purchase_payload(invoice_number=None),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        purchase = Purchase.objects.get(pk=response.data['id'])
+        self.assertIsNotNone(purchase.invoice_number)
+        self.assertTrue(purchase.invoice_number.startswith('PUR-20260320-'))
+        self.assertEqual(response.data['invoice_number'], purchase.invoice_number)
+
+    def test_create_purchase_generates_invoice_number_when_blank(self):
+        response = self.client.post(
+            '/api/v1/purchases/',
+            self._purchase_payload(invoice_number='   '),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        purchase = Purchase.objects.get(pk=response.data['id'])
+        self.assertTrue(purchase.invoice_number.startswith('PUR-20260320-'))
+
+    def test_create_purchase_keeps_manual_invoice_number(self):
+        response = self.client.post(
+            '/api/v1/purchases/',
+            self._purchase_payload(invoice_number='BILL-1001'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        purchase = Purchase.objects.get(pk=response.data['id'])
+        self.assertEqual(purchase.invoice_number, 'BILL-1001')
+
     def test_confirm_purchase_creates_posted_accounting_transaction(self):
         create_response = self.client.post(
             '/api/v1/purchases/',
