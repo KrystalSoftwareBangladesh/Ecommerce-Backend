@@ -37,6 +37,18 @@ class AccountingTransactionApiTests(APITestCase):
             created_by=self.user,
             updated_by=self.user,
         )
+        self.misc_expense_account = ChartOfAccount.objects.create(
+            name='Utilities Expense',
+            account_type=AccountType.EXPENSE,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.payable_account = ChartOfAccount.objects.create(
+            name='Accounts Payable',
+            account_type=AccountType.LIABILITY,
+            created_by=self.user,
+            updated_by=self.user,
+        )
 
     def _lines(self, debit_account, credit_account):
         return [
@@ -309,6 +321,70 @@ class AccountingTransactionApiTests(APITestCase):
             returned_ids,
             [later_transaction.id, earlier_transaction.id],
         )
+
+    def test_list_includes_account_summaries_without_lines(self):
+        transaction = create_transaction(
+            self.user,
+            {
+                'transaction_date': date(2026, 3, 15),
+                'transaction_datetime': parse_datetime('2026-03-15T11:30:00Z'),
+                'transaction_type': TransactionType.JOURNAL,
+                'reference': 'TXN-SUMMARY',
+                'description': 'Transaction with multiple lines',
+                'lines': [
+                    {
+                        'account': self.expense_account,
+                        'debit_amount': Decimal('80.00'),
+                        'credit_amount': Decimal('0.00'),
+                    },
+                    {
+                        'account': self.misc_expense_account,
+                        'debit_amount': Decimal('20.00'),
+                        'credit_amount': Decimal('0.00'),
+                    },
+                    {
+                        'account': self.cash_account,
+                        'debit_amount': Decimal('0.00'),
+                        'credit_amount': Decimal('70.00'),
+                    },
+                    {
+                        'account': self.payable_account,
+                        'debit_amount': Decimal('0.00'),
+                        'credit_amount': Decimal('30.00'),
+                    },
+                ],
+            },
+        )
+
+        response = self.client.get('/api/v1/transactions/')
+
+        self.assertEqual(response.status_code, 200)
+        result = next(
+            item
+            for item in response.data['results']
+            if item['id'] == transaction.id
+        )
+        self.assertEqual(result['total_debit'], '100.00')
+        self.assertEqual(result['total_credit'], '100.00')
+        self.assertEqual(
+            result['primary_debit_account'],
+            {
+                'id': self.expense_account.id,
+                'code': self.expense_account.code,
+                'name': self.expense_account.name,
+            },
+        )
+        self.assertEqual(
+            result['primary_credit_account'],
+            {
+                'id': self.cash_account.id,
+                'code': self.cash_account.code,
+                'name': self.cash_account.name,
+            },
+        )
+        self.assertEqual(result['debit_line_count'], 2)
+        self.assertEqual(result['credit_line_count'], 2)
+        self.assertNotIn('lines', result)
 
     def test_list_filters_by_transaction_type(self):
         payment = create_transaction(
