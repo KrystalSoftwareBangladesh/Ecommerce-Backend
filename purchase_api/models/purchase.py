@@ -5,6 +5,7 @@ from django.db.models import F, Sum
 from ZayrahLifeBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
+from account_api.models import ChartOfAccount
 from supplier_api.models import Supplier
 from product_api.models import ProductVariant
 
@@ -18,6 +19,27 @@ class PurchaseStatus(models.TextChoices):
 class Purchase(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     supplier = models.ForeignKey(
         Supplier, on_delete=models.PROTECT, related_name='purchases')
+    account = models.ForeignKey(
+        ChartOfAccount,
+        on_delete=models.PROTECT,
+        related_name='purchases',
+        null=True,
+        blank=True,
+    )
+    accounting_transaction = models.ForeignKey(
+        'transaction_api.AccountingTransaction',
+        on_delete=models.SET_NULL,
+        related_name='purchases',
+        null=True,
+        blank=True,
+    )
+    cancellation_transaction = models.ForeignKey(
+        'transaction_api.AccountingTransaction',
+        on_delete=models.SET_NULL,
+        related_name='cancelled_purchases',
+        null=True,
+        blank=True,
+    )
     purchase_date = models.DateField()
     invoice_number = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(
