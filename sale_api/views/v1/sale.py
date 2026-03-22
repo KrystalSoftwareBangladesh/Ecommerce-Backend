@@ -58,7 +58,12 @@ class SaleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Sale.objects.filter(is_active=True)
-        return qs.select_related('customer').prefetch_related('items')
+        return qs.select_related(
+            'customer',
+            'account',
+            'accounting_transaction',
+            'return_transaction',
+        ).prefetch_related('items')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -96,11 +101,17 @@ class SaleViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = dict(serializer.validated_data)
         next_status = validated_data.pop('status', None)
+        account = validated_data.get('account')
         try:
             if validated_data:
                 sale = update_sale(request.user, sale, validated_data)
             if next_status is not None:
-                sale = update_sale_status(request.user, sale, next_status)
+                sale = update_sale_status(
+                    request.user,
+                    sale,
+                    next_status,
+                    account=account,
+                )
         except Exception as e:
             return Response({
                 'detail': str(e)
@@ -126,7 +137,8 @@ class SaleViewSet(viewsets.ModelViewSet):
             sale = update_sale_status(
                 request.user,
                 sale,
-                serializer.validated_data['status']
+                serializer.validated_data['status'],
+                account=serializer.validated_data.get('account'),
             )
         except Exception as e:
             return Response({

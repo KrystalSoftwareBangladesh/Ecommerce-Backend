@@ -4,11 +4,13 @@ from decimal import Decimal
 from django.test import TestCase
 from rest_framework.test import APITestCase
 
+from account_api.models import AccountType, ChartOfAccount
 from customer_api.models import CustomerProfile
 from product_api.models import Product, ProductVariant
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
 from sale_api.models import Sale, SaleStatus
 from sale_api.services import create_sale, update_sale_status
+from transaction_api.models import TransactionStatus, TransactionType
 from user_api.models import User
 
 
@@ -35,10 +37,17 @@ class SaleInvoiceGenerationTests(TestCase):
             product=self.product,
             sku='SKU-001'
         )
+        self.cash_account = ChartOfAccount.objects.create(
+            name='Cash',
+            account_type=AccountType.ASSET,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
 
-    def _payload(self, invoice_number=None):
+    def _payload(self, invoice_number=None, account=None):
         return {
             'customer': self.customer,
+            'account': account or self.cash_account,
             'sale_date': date(2026, 3, 6),
             'invoice_number': invoice_number,
             'discount_amount': Decimal('0.00'),
@@ -129,6 +138,12 @@ class SaleStatusTransitionTests(TestCase):
             product=self.product,
             sku='SKU-STATUS-001'
         )
+        self.cash_account = ChartOfAccount.objects.create(
+            name='Cash Status',
+            account_type=AccountType.ASSET,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
         InventoryMovement.objects.create(
             product_variant=self.variant,
             quantity=10,
@@ -138,6 +153,7 @@ class SaleStatusTransitionTests(TestCase):
         )
         self.sale = create_sale(self.staff_user, {
             'customer': self.customer,
+            'account': self.cash_account,
             'sale_date': date(2026, 3, 6),
             'invoice_number': None,
             'discount_amount': Decimal('0.00'),
@@ -160,6 +176,15 @@ class SaleStatusTransitionTests(TestCase):
             SaleStatus.CONFIRMED
         )
         self.assertEqual(sale.status, SaleStatus.CONFIRMED)
+        self.assertIsNotNone(sale.accounting_transaction)
+        self.assertEqual(
+            sale.accounting_transaction.transaction_type,
+            TransactionType.SALE,
+        )
+        self.assertEqual(
+            sale.accounting_transaction.status,
+            TransactionStatus.POSTED,
+        )
 
         stock_after_confirm = InventoryMovement.objects.filter(
             product_variant=self.variant
@@ -177,10 +202,43 @@ class SaleStatusTransitionTests(TestCase):
             sale = update_sale_status(self.staff_user, sale, next_status)
 
         self.assertEqual(sale.status, SaleStatus.RETURNED)
+        self.assertIsNotNone(sale.return_transaction)
+        self.assertEqual(
+            sale.return_transaction.transaction_type,
+            TransactionType.ADJUSTMENT,
+        )
         final_stock = InventoryMovement.objects.filter(
             product_variant=self.variant
         ).values_list('quantity', flat=True)
         self.assertEqual(sum(final_stock), 10)
+
+    def test_confirm_requires_account(self):
+        sale_without_account = create_sale(self.staff_user, {
+            'customer': self.customer,
+            'sale_date': date(2026, 3, 6),
+            'invoice_number': None,
+            'discount_amount': Decimal('0.00'),
+            'tax_amount': Decimal('0.00'),
+            'notes': None,
+            'items': [
+                {
+                    'product_variant': self.variant,
+                    'quantity': 1,
+                    'unit_price': Decimal('500.00'),
+                    'line_total': Decimal('500.00'),
+                }
+            ]
+        })
+
+        with self.assertRaisesMessage(
+            Exception,
+            'An account must be selected before confirmation.'
+        ):
+            update_sale_status(
+                self.staff_user,
+                sale_without_account,
+                SaleStatus.CONFIRMED
+            )
 
     def test_rejects_skipping_statuses(self):
         with self.assertRaisesMessage(
@@ -217,6 +275,12 @@ class SaleStatusApiTests(APITestCase):
             product=self.product,
             sku='SKU-API-001'
         )
+        self.cash_account = ChartOfAccount.objects.create(
+            name='Cash API',
+            account_type=AccountType.ASSET,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
         InventoryMovement.objects.create(
             product_variant=self.variant,
             quantity=5,
@@ -226,6 +290,7 @@ class SaleStatusApiTests(APITestCase):
         )
         self.sale = create_sale(self.staff_user, {
             'customer': self.customer,
+            'account': self.cash_account,
             'sale_date': date(2026, 3, 6),
             'invoice_number': None,
             'discount_amount': Decimal('0.00'),
@@ -261,6 +326,8 @@ class SaleStatusApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['status'], SaleStatus.CONFIRMED)
+        self.assertEqual(response.data['account']['id'], self.cash_account.id)
+        self.assertIsNotNone(response.data['accounting_transaction'])
         self.assertEqual(
             response.data['allowed_next_statuses'],
             [{'value': SaleStatus.PROCESSING, 'label': 'Processing'}]
@@ -275,6 +342,35 @@ class SaleStatusApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['status'], SaleStatus.CONFIRMED)
+
+    def test_update_status_endpoint_accepts_account_for_confirm(self):
+        sale_without_account = create_sale(self.staff_user, {
+            'customer': self.customer,
+            'sale_date': date(2026, 3, 6),
+            'invoice_number': None,
+            'discount_amount': Decimal('0.00'),
+            'tax_amount': Decimal('0.00'),
+            'notes': None,
+            'items': [
+                {
+                    'product_variant': self.variant,
+                    'quantity': 1,
+                    'unit_price': Decimal('450.00'),
+                    'line_total': Decimal('450.00'),
+                }
+            ]
+        })
+
+        response = self.client.post(
+            f'/api/v1/sales/{sale_without_account.id}/update-status/',
+            {'status': SaleStatus.CONFIRMED, 'account_id': self.cash_account.id},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], SaleStatus.CONFIRMED)
+        self.assertEqual(response.data['account']['id'], self.cash_account.id)
+        self.assertIsNotNone(response.data['accounting_transaction'])
 
     def test_patch_sale_rejects_invoice_number_updates(self):
         response = self.client.patch(

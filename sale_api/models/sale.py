@@ -3,6 +3,7 @@ from django.db import models
 from ZayrahLifeBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
+from account_api.models import ChartOfAccount
 from customer_api.models import CustomerProfile
 from product_api.models import ProductVariant
 
@@ -44,6 +45,27 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         WHATSAPP = 'WhatsApp', 'WhatsApp'
 
     customer = models.ForeignKey(CustomerProfile, on_delete=models.PROTECT)
+    account = models.ForeignKey(
+        ChartOfAccount,
+        on_delete=models.PROTECT,
+        related_name='sales',
+        null=True,
+        blank=True,
+    )
+    accounting_transaction = models.ForeignKey(
+        'transaction_api.AccountingTransaction',
+        on_delete=models.SET_NULL,
+        related_name='sales',
+        null=True,
+        blank=True,
+    )
+    return_transaction = models.ForeignKey(
+        'transaction_api.AccountingTransaction',
+        on_delete=models.SET_NULL,
+        related_name='returned_sales',
+        null=True,
+        blank=True,
+    )
     sale_date = models.DateField()
     invoice_number = models.CharField(
         max_length=50,
