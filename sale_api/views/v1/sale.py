@@ -60,6 +60,7 @@ class SaleViewSet(viewsets.ModelViewSet):
         qs = Sale.objects.filter(is_active=True)
         return qs.select_related(
             'customer',
+            'payment_method',
             'account',
             'accounting_transaction',
             'return_transaction',
@@ -102,6 +103,7 @@ class SaleViewSet(viewsets.ModelViewSet):
         validated_data = dict(serializer.validated_data)
         next_status = validated_data.pop('status', None)
         account = validated_data.get('account')
+        payment_method = validated_data.get('payment_method')
         try:
             if validated_data:
                 sale = update_sale(request.user, sale, validated_data)
@@ -111,6 +113,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                     sale,
                     next_status,
                     account=account,
+                    payment_method=payment_method,
                 )
         except Exception as e:
             return Response({
@@ -139,6 +142,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                 sale,
                 serializer.validated_data['status'],
                 account=serializer.validated_data.get('account'),
+                payment_method=serializer.validated_data.get('payment_method'),
             )
         except Exception as e:
             return Response({

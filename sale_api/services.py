@@ -6,7 +6,13 @@ from django.db import transaction
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
-from .models import Sale, SaleItem, SaleStatus, get_next_sale_statuses
+from .models import (
+    PaymentMethod,
+    Sale,
+    SaleItem,
+    SaleStatus,
+    get_next_sale_statuses,
+)
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
 from transaction_api.models import TransactionType
 from transaction_api.services import create_transaction, post_transaction
@@ -72,6 +78,50 @@ def _validate_assignable_sale_account(account):
 
     if account.account_type != AccountType.ASSET:
         raise ValidationError('Sale account must be an asset account.')
+
+
+def _validate_payment_method(payment_method):
+    if payment_method is None:
+        return
+
+    if payment_method.deleted_at is not None or not payment_method.is_active:
+        raise ValidationError('The selected payment method is inactive.')
+
+
+def _resolve_sale_account(payment_method, account):
+    _validate_payment_method(payment_method)
+    _validate_assignable_sale_account(account)
+
+    if payment_method is None:
+        return account
+
+    default_account = payment_method.default_account
+    if default_account is None:
+        if account is not None:
+            if not payment_method.allow_account_override:
+                raise ValidationError(
+                    'This payment method does not allow account override.'
+                )
+            return account
+        raise ValidationError(
+            'The selected payment method has no default account.'
+        )
+
+    _validate_assignable_sale_account(default_account)
+
+    if account is None:
+        return default_account
+
+    if account.pk == default_account.pk:
+        return account
+
+    if not payment_method.allow_account_override:
+        raise ValidationError(
+            'The provided account is not allowed for the selected '
+            'payment method.'
+        )
+
+    return account
 
 
 def _validate_sale_account(account):
@@ -178,7 +228,10 @@ def create_sale(user, data):
             raise ValidationError('At least one item required.')
         if _is_blank_invoice_number(data.get('invoice_number')):
             data['invoice_number'] = None
-        _validate_assignable_sale_account(data.get('account'))
+        data['account'] = _resolve_sale_account(
+            data.get('payment_method'),
+            data.get('account'),
+        )
         sale = Sale(
             **data,
             created_by=user,
@@ -215,10 +268,12 @@ def update_sale(user, sale, data):
     if sale.status != SaleStatus.PENDING:
         raise ValidationError('Cannot edit sale unless status is pending.')
     with transaction.atomic():
-        if 'account' in data:
-            _validate_assignable_sale_account(data.get('account'))
+        if 'payment_method' in data or 'account' in data:
+            payment_method = data.get('payment_method', sale.payment_method)
+            account = data.get('account', sale.account)
+            data['account'] = _resolve_sale_account(payment_method, account)
         updatable_fields = [
-            'customer', 'account', 'sale_date', 'channel',
+            'customer', 'payment_method', 'account', 'sale_date', 'channel',
             'discount_amount',
             'tax_amount', 'notes',
         ]
@@ -279,7 +334,13 @@ def _restock_returned_sale(user, sale):
         )
 
 
-def update_sale_status(user, sale, next_status, account=None):
+def update_sale_status(
+    user,
+    sale,
+    next_status,
+    account=None,
+    payment_method=None,
+):
     if sale.status == next_status:
         return sale
 
@@ -291,8 +352,13 @@ def update_sale_status(user, sale, next_status, account=None):
 
     with transaction.atomic():
         if next_status == SaleStatus.CONFIRMED:
-            if account is not None and sale.account_id != account.id:
-                sale.account = account
+            if payment_method is not None:
+                sale.payment_method = payment_method
+            resolved_account = _resolve_sale_account(
+                sale.payment_method,
+                account if account is not None else sale.account,
+            )
+            sale.account = resolved_account
             _validate_sale_account(sale.account)
             _validate_sale_totals(sale)
             if sale.accounting_transaction_id is not None:
@@ -321,7 +387,11 @@ def update_sale_status(user, sale, next_status, account=None):
         sale.updated_by = user
         update_fields = ['status', 'updated_by', 'updated_at']
         if next_status == SaleStatus.CONFIRMED:
-            update_fields.extend(['account', 'accounting_transaction'])
+            update_fields.extend([
+                'payment_method',
+                'account',
+                'accounting_transaction',
+            ])
         elif next_status == SaleStatus.RETURNED:
             update_fields.append('return_transaction')
         sale.save(update_fields=update_fields)

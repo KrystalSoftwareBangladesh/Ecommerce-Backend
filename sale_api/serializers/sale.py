@@ -4,7 +4,13 @@ from drf_spectacular.utils import extend_schema_field
 
 from account_api.models import AccountType, ChartOfAccount
 from product_api.models import ProductVariant
-from sale_api.models import Sale, SaleItem, SaleStatus, get_next_sale_statuses
+from sale_api.models import (
+    PaymentMethod,
+    Sale,
+    SaleItem,
+    SaleStatus,
+    get_next_sale_statuses,
+)
 from customer_api.serializers import CustomerProfileDetailSerializer
 from product_api.serializers import ProductVariantDetailSerializer
 
@@ -21,6 +27,21 @@ class SaleTransactionSerializer(serializers.Serializer):
     transaction_type = serializers.CharField()
     status = serializers.CharField()
     reference = serializers.CharField(allow_null=True)
+
+
+class SalePaymentMethodSerializer(serializers.ModelSerializer):
+    default_account = SaleAccountSerializer(read_only=True)
+
+    class Meta:
+        model = PaymentMethod
+        fields = [
+            'id',
+            'code',
+            'name',
+            'allow_account_override',
+            'default_account_id',
+            'default_account',
+        ]
 
 
 class SaleItemSerializer(serializers.ModelSerializer):
@@ -49,6 +70,15 @@ class SaleItemSerializer(serializers.ModelSerializer):
 
 class SaleCreateSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True)
+    payment_method_id = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentMethod.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='payment_method',
+        required=False,
+        allow_null=True,
+    )
     account_id = serializers.PrimaryKeyRelatedField(
         queryset=ChartOfAccount.objects.filter(
             is_active=True,
@@ -62,8 +92,9 @@ class SaleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = [
-            'customer', 'account_id', 'sale_date', 'invoice_number', 'channel',
-            'discount_amount', 'tax_amount', 'notes', 'items',
+            'customer', 'payment_method_id', 'account_id', 'sale_date',
+            'invoice_number', 'channel', 'discount_amount', 'tax_amount',
+            'notes', 'items',
         ]
 
     def validate(self, data):
@@ -90,6 +121,15 @@ class SaleUpdateSerializer(serializers.ModelSerializer):
         choices=SaleStatus.choices,
         required=False,
     )
+    payment_method_id = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentMethod.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='payment_method',
+        required=False,
+        allow_null=True,
+    )
     account_id = serializers.PrimaryKeyRelatedField(
         queryset=ChartOfAccount.objects.filter(
             is_active=True,
@@ -103,8 +143,9 @@ class SaleUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = [
-            'customer', 'account_id', 'sale_date', 'channel',
-            'discount_amount', 'tax_amount', 'notes', 'items', 'status',
+            'customer', 'payment_method_id', 'account_id', 'sale_date',
+            'channel', 'discount_amount', 'tax_amount', 'notes', 'items',
+            'status',
         ]
 
     def validate(self, data):
@@ -127,13 +168,14 @@ class SaleUpdateSerializer(serializers.ModelSerializer):
 
 class SaleListSerializer(serializers.ModelSerializer):
     customer = CustomerProfileDetailSerializer()
+    payment_method = SalePaymentMethodSerializer(read_only=True)
     account = SaleAccountSerializer(read_only=True)
     accounting_transaction = SaleTransactionSerializer(read_only=True)
 
     class Meta:
         model = Sale
         fields = [
-            'id', 'customer', 'account', 'sale_date',
+            'id', 'customer', 'payment_method', 'account', 'sale_date',
             'invoice_number', 'channel', 'status', 'total_amount',
             'accounting_transaction',
         ]
@@ -148,6 +190,7 @@ class SaleDetailSerializer(serializers.ModelSerializer):
     customer = CustomerProfileDetailSerializer()
     items = SaleItemSerializer(many=True)
     allowed_next_statuses = serializers.SerializerMethodField()
+    payment_method = SalePaymentMethodSerializer(read_only=True)
     account = SaleAccountSerializer(read_only=True)
     accounting_transaction = SaleTransactionSerializer(read_only=True)
     return_transaction = SaleTransactionSerializer(read_only=True)
@@ -186,6 +229,15 @@ class SaleStatusListSerializer(serializers.Serializer):
 
 class SaleStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=SaleStatus.choices)
+    payment_method_id = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentMethod.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        ),
+        source='payment_method',
+        required=False,
+        allow_null=True,
+    )
     account_id = serializers.PrimaryKeyRelatedField(
         queryset=ChartOfAccount.objects.filter(
             is_active=True,

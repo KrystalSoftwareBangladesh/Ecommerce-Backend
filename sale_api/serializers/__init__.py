@@ -1,4 +1,9 @@
 # sale_api/serializers/__init__.py
+from .payment_method import (
+    PaymentMethodCreateUpdateSerializer,
+    PaymentMethodDetailSerializer,
+    PaymentMethodListSerializer,
+)
 from .sale import (
     SaleItemSerializer,
     SaleCreateSerializer,
@@ -14,6 +19,9 @@ from .sale import (
 
 
 __all__ = [
+    PaymentMethodCreateUpdateSerializer,
+    PaymentMethodDetailSerializer,
+    PaymentMethodListSerializer,
     SaleItemSerializer,
     SaleCreateSerializer,
     SaleUpdateSerializer,

@@ -6,6 +6,7 @@ from ZayrahLifeBackend.core.models import (
 from account_api.models import ChartOfAccount
 from customer_api.models import CustomerProfile
 from product_api.models import ProductVariant
+from .payment_method import PaymentMethod
 
 
 class SaleStatus(models.TextChoices):
@@ -45,6 +46,13 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         WHATSAPP = 'WhatsApp', 'WhatsApp'
 
     customer = models.ForeignKey(CustomerProfile, on_delete=models.PROTECT)
+    payment_method = models.ForeignKey(
+        PaymentMethod,
+        on_delete=models.PROTECT,
+        related_name='sales',
+        null=True,
+        blank=True,
+    )
     account = models.ForeignKey(
         ChartOfAccount,
         on_delete=models.PROTECT,

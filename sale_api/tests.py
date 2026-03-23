@@ -8,7 +8,7 @@ from account_api.models import AccountType, ChartOfAccount
 from customer_api.models import CustomerProfile
 from product_api.models import Product, ProductVariant
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
-from sale_api.models import Sale, SaleStatus
+from sale_api.models import PaymentMethod, Sale, SaleStatus
 from sale_api.services import create_sale, update_sale_status
 from transaction_api.models import TransactionStatus, TransactionType
 from user_api.models import User
@@ -281,6 +281,19 @@ class SaleStatusApiTests(APITestCase):
             created_by=self.staff_user,
             updated_by=self.staff_user,
         )
+        self.bank_account = ChartOfAccount.objects.create(
+            name='Bank API',
+            account_type=AccountType.ASSET,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
+        self.cash_payment_method = PaymentMethod.objects.create(
+            code='CASH',
+            name='Cash',
+            default_account=self.cash_account,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
         InventoryMovement.objects.create(
             product_variant=self.variant,
             quantity=5,
@@ -328,6 +341,7 @@ class SaleStatusApiTests(APITestCase):
         self.assertEqual(response.data['status'], SaleStatus.CONFIRMED)
         self.assertEqual(response.data['account']['id'], self.cash_account.id)
         self.assertIsNotNone(response.data['accounting_transaction'])
+        self.assertIsNone(response.data['payment_method'])
         self.assertEqual(
             response.data['allowed_next_statuses'],
             [{'value': SaleStatus.PROCESSING, 'label': 'Processing'}]
@@ -372,6 +386,62 @@ class SaleStatusApiTests(APITestCase):
         self.assertEqual(response.data['account']['id'], self.cash_account.id)
         self.assertIsNotNone(response.data['accounting_transaction'])
 
+    def test_create_sale_resolves_account_from_payment_method(self):
+        response = self.client.post(
+            '/api/v1/sales/',
+            {
+                'customer': self.customer.id,
+                'payment_method_id': self.cash_payment_method.id,
+                'sale_date': '2026-03-06',
+                'discount_amount': '0.00',
+                'tax_amount': '0.00',
+                'notes': None,
+                'items': [
+                    {
+                        'product_variant_id': self.variant.id,
+                        'quantity': 1,
+                        'unit_price': '450.00',
+                    }
+                ],
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.data['payment_method']['id'],
+            self.cash_payment_method.id,
+        )
+        self.assertEqual(response.data['account']['id'], self.cash_account.id)
+
+    def test_create_sale_rejects_account_override_when_not_allowed(self):
+        response = self.client.post(
+            '/api/v1/sales/',
+            {
+                'customer': self.customer.id,
+                'payment_method_id': self.cash_payment_method.id,
+                'account_id': self.bank_account.id,
+                'sale_date': '2026-03-06',
+                'discount_amount': '0.00',
+                'tax_amount': '0.00',
+                'notes': None,
+                'items': [
+                    {
+                        'product_variant_id': self.variant.id,
+                        'quantity': 1,
+                        'unit_price': '450.00',
+                    }
+                ],
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            'selected payment method',
+            response.data['detail'],
+        )
+
     def test_patch_sale_rejects_invoice_number_updates(self):
         response = self.client.patch(
             f'/api/v1/sales/{self.sale.id}/',
@@ -384,3 +454,16 @@ class SaleStatusApiTests(APITestCase):
             response.data['invoice_number'],
             ['This field is not allowed.']
         )
+
+    def test_payment_method_list_endpoint_returns_default_account_mapping(self):
+        response = self.client.get('/api/v1/payment-methods/')
+
+        self.assertEqual(response.status_code, 200)
+        result = next(
+            item
+            for item in response.data['results']
+            if item['id'] == self.cash_payment_method.id
+        )
+        self.assertEqual(result['code'], 'CASH')
+        self.assertEqual(result['default_account_id'], self.cash_account.id)
+        self.assertEqual(result['default_account']['id'], self.cash_account.id)
