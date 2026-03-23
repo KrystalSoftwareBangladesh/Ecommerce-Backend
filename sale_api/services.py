@@ -7,7 +7,6 @@ from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
 from .models import (
-    PaymentMethod,
     Sale,
     SaleItem,
     SaleStatus,
@@ -371,7 +370,8 @@ def update_sale_status(
             _validate_sale_account(sale.account)
             if sale.accounting_transaction_id is None:
                 raise ValidationError(
-                    'Confirmed sale is missing its accounting transaction link.'
+                    'Confirmed sale is missing its accounting '
+                    'transaction link.'
                 )
             if sale.return_transaction_id is not None:
                 raise ValidationError(
