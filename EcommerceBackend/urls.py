@@ -1,5 +1,5 @@
 """
-URL configuration for ZayrahLifeBackend project.
+URL configuration for EcommerceBackend project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
@@ -40,5 +40,5 @@ urlpatterns = [
     # apis
     # path('user/', include('user_api.urls')),
     # path('customer/', include('customer_api.urls')),
-    path('api/', include('ZayrahLifeBackend.all_urls')),
+    path('api/', include('EcommerceBackend.all_urls')),
 ]

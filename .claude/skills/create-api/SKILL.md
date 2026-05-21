@@ -17,17 +17,17 @@ Reuse existing shared components:
 
 Search:
 
-- ZayrahLifeBackend/core/filter.py
+- EcommerceBackend/core/filter.py
 - SearchFilter
 
 Pagination:
 
-- ZayrahLifeBackend/core/pagination.py
+- EcommerceBackend/core/pagination.py
 - Pagination
 
 Permissions:
 
-- ZayrahLifeBackend/core/permission.py
+- EcommerceBackend/core/permission.py
 - PublicListPermissionMixin
 
 Do not create duplicate implementations unless explicitly required.

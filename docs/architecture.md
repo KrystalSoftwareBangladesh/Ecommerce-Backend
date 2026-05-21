@@ -70,7 +70,7 @@ Responsible for:
 
 Location:
 
-ZayrahLifeBackend/core/
+EcommerceBackend/core/
 
 These components should be reused throughout the project instead of creating new implementations.
 
@@ -80,7 +80,7 @@ These components should be reused throughout the project instead of creating new
 
 Location:
 
-ZayrahLifeBackend/core/models.py
+EcommerceBackend/core/models.py
 
 ### TimeStampedModel
 
@@ -121,7 +121,7 @@ Avoid hard deletion unless explicitly requested.
 
 Location:
 
-ZayrahLifeBackend/core/filter.py
+EcommerceBackend/core/filter.py
 
 Class:
 
@@ -137,7 +137,7 @@ Do not create duplicate search implementations.
 
 Location:
 
-ZayrahLifeBackend/core/pagination.py
+EcommerceBackend/core/pagination.py
 
 Class:
 
@@ -153,7 +153,7 @@ Do not introduce additional pagination classes unless necessary.
 
 Location:
 
-ZayrahLifeBackend/core/permission.py
+EcommerceBackend/core/permission.py
 
 Class:
 

@@ -1,6 +1,6 @@
 from django.db import models, transaction
 
-from ZayrahLifeBackend.core.models import (
+from EcommerceBackend.core.models import (
     SoftDeleteModel,
     TimeStampedModel,
     UserStampedModel,

@@ -1,6 +1,6 @@
 # sale_api/models/sale.py
 from django.db import models
-from ZayrahLifeBackend.core.models import (
+from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
 from account_api.models import ChartOfAccount

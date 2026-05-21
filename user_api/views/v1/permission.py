@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
 
-from ZayrahLifeBackend.core.filter import SearchFilter
+from EcommerceBackend.core.filter import SearchFilter
 
 from django.contrib.auth.models import Permission
 

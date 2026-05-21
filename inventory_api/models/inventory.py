@@ -1,7 +1,7 @@
 # inventory_api/models/inventory.py
 from django.db import models
 
-from ZayrahLifeBackend.core.models import (
+from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
 from product_api.models import ProductVariant

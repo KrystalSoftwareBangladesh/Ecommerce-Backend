@@ -2,7 +2,7 @@
 from django.db import models
 from django.utils.text import slugify
 
-from ZayrahLifeBackend.core.models import (
+from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
 

@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ### Environment Setup
 ```bash
-cp .env.example ZayrahLifeBackend/env.py
+cp .env.example EcommerceBackend/env.py
 ```
 And then update values based on your environment.
 

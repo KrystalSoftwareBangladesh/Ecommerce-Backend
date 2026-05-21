@@ -2,7 +2,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-from ZayrahLifeBackend.core.models import (
+from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
 from category_api.models import Category

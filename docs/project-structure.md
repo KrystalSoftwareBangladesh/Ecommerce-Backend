@@ -13,7 +13,7 @@ krystalsoftwarebangladesh-ecommerce-backend/
 ├── supplier_api/
 ├── transaction_api/
 ├── user_api/
-├── ZayrahLifeBackend/
+├── EcommerceBackend/
 ├── .github/
 ├── manage.py
 ├── requirements.txt

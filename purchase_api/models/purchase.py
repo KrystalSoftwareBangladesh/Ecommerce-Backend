@@ -2,7 +2,7 @@
 from django.db import models
 from django.db.models import F, Sum
 
-from ZayrahLifeBackend.core.models import (
+from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
 )
 from account_api.models import ChartOfAccount

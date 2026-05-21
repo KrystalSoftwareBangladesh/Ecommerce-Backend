@@ -20,7 +20,7 @@
 
 Prefer existing abstract models from:
 
-ZayrahLifeBackend/core/models.py
+EcommerceBackend/core/models.py
 
 Avoid duplicating:
 

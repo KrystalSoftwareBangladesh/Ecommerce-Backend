@@ -192,9 +192,9 @@ Prefer extending existing code over creating duplicate functionality.
 
 Before implementing models, filters, permissions, or pagination, review:
 
-- ZayrahLifeBackend/core/models.py
-- ZayrahLifeBackend/core/filter.py
-- ZayrahLifeBackend/core/pagination.py
-- ZayrahLifeBackend/core/permission.py
+- EcommerceBackend/core/models.py
+- EcommerceBackend/core/filter.py
+- EcommerceBackend/core/pagination.py
+- EcommerceBackend/core/permission.py
 
 Prefer existing shared components over creating new implementations.
