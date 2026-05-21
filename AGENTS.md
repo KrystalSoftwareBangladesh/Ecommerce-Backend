@@ -198,3 +198,23 @@ Before implementing models, filters, permissions, or pagination, review:
 - EcommerceBackend/core/permission.py
 
 Prefer existing shared components over creating new implementations.
+
+## Code Quality
+
+flake8 is the project's source of truth for linting.
+
+Before completing any code change:
+
+1. Run flake8 on modified files.
+2. Fix all reported issues.
+3. Do not ignore linting errors unless explicitly approved.
+4. Ensure newly added code follows existing project style conventions.
+
+Example:
+```bash
+flake8
+```
+or
+```bash
+flake8 path/to/modified_file.py
+```
