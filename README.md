@@ -1,5 +1,5 @@
-# Zayrah Life Backend
-Complete backend for Zayrah Life's web application with management system.
+# Ecommerce Backend
+Complete backend for Ecommerce Platform's web application with management system.
 
 ---
 
@@ -13,8 +13,8 @@ Complete backend for Zayrah Life's web application with management system.
 
 ### Clone the repository
 ```bash
-git clone git@github.com:KrystalSoftwareBangladesh/ZayrahLife-Backend.git
-cd ZayrahLife-Backend
+git clone git@github.com:KrystalSoftwareBangladesh/Ecommerce-Backend.git
+cd Ecommerce-Backend
 ```
 
 ### Install dependency
