@@ -1,4 +1,4 @@
-name: Deploy at Dev Server Zayrah Life
+name: Deploy at Dev Server Best Computer Hub
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           username: ${{ secrets.DEV_SERVER_USER }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
           source: "."
-          target: ${{ secrets.DEV_ZAYRAH_LIFE_SERVER_PATH }}
+          target: ${{ secrets.DEV_BEST_COMPUTER_HUB_SERVER_PATH }}
           rm: false
 
       # 4. SSH into server & deploy
@@ -38,7 +38,7 @@ jobs:
           script: |
             set -e
 
-            cd ${{ secrets.DEV_ZAYRAH_LIFE_SERVER_PATH }}
+            cd ${{ secrets.DEV_BEST_COMPUTER_HUB_SERVER_PATH }}
 
             echo "🚀 Deploying commit: ${{ github.sha }}"
 
@@ -55,6 +55,6 @@ jobs:
             python manage.py collectstatic --noinput
 
             echo "♻️ Restarting services"
-            sudo systemctl restart gunicorn-zayrah-life.service
+            sudo systemctl restart gunicorn-best-computer-hub.service
 
             echo "✅ Deployment completed successfully"
