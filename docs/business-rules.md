@@ -1,5 +1,17 @@
 # Business Rules
 
+## Authentication
+
+Public registration endpoint (`POST /auth/register/`) allows website customers to sign up.
+
+Registration creates:
+- User account with email and hashed password
+- CustomerProfile with default type "WEBSITE"
+
+Email must be unique.
+
+---
+
 ## Inventory
 
 Inventory changes must be traceable.
