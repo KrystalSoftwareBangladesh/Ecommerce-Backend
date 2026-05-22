@@ -15,6 +15,7 @@ from user_api.models import User
 
 from user_api.serializers import TokenSerializer
 from user_api.serializers import ChangePasswordSerializer
+from user_api.serializers import CustomerSignupSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -102,3 +103,28 @@ class ChangePasswordView(generics.UpdateAPIView):
         return Response({
             "message": "Password changed successfully!"
         }, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["Authentication"])
+class RegisterView(generics.CreateAPIView):
+    """
+    Public customer registration endpoint.
+    Creates User + CustomerProfile atomically.
+    Returns customer data with JWT tokens.
+    """
+    serializer_class = CustomerSignupSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        """Handle customer registration."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        customer_data = serializer.save()
+
+        return Response(
+            {
+                'message': 'Customer registered successfully',
+                'data': customer_data,
+            },
+            status=status.HTTP_201_CREATED
+        )

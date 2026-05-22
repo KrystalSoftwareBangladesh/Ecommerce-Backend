@@ -16,6 +16,22 @@ Request
 
 ---
 
+## Authentication Flow
+
+### Public Registration (POST /auth/register/)
+
+Request
+
+→ RegisterView
+
+→ CustomerSignupSerializer
+
+→ Creates User + CustomerProfile atomically
+
+→ Returns JWT tokens + customer data
+
+---
+
 ## Responsibilities
 
 ### Views

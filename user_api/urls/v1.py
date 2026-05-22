@@ -11,6 +11,7 @@ router = DefaultRouter()
 
 
 urlpatterns = [
+    path('auth/register/', v1.RegisterView.as_view(), name='register'),
     path('auth/login/', v1.LoginView.as_view(), name='login'),
     path('auth/logout/', v1.LogoutView.as_view(), name='logout'),
     path('auth/refresh/', v1.TokenRefreshView.as_view(), name='token-refresh'),
