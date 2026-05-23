@@ -14,6 +14,7 @@ class BrandListSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'slug',
+            'display_order',
             'is_active',
             'created_at',
         ]
@@ -38,6 +39,7 @@ class BrandDetailSerializer(serializers.ModelSerializer):
             'name',
             'slug',
             'description',
+            'display_order',
             'is_active',
             'created_at',
             'updated_at',
@@ -69,6 +71,7 @@ class BrandCreateUpdateSerializer(serializers.ModelSerializer):
             'name',
             'slug',
             'description',
+            'display_order',
             'is_active',
         ]
         read_only_fields = [
