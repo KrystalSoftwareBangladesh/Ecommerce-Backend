@@ -11,7 +11,8 @@ on:
 jobs:
   lint:
     name: Run Flake8 Lint
-    runs-on: ubuntu-latest
+    runs-on:
+      - ubuntu-latest
 
     steps:
     - name: Checkout code
