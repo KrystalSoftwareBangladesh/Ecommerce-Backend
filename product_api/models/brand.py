@@ -26,16 +26,22 @@ class Brand(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         blank=True,
         null=True
     )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        db_index=True,
+        help_text='Display order for brands. Lower values appear first.'
+    )
 
     class Meta:
         db_table = 'brands'
         verbose_name = 'Brand'
         verbose_name_plural = 'Brands'
-        ordering = ['name']
+        ordering = ['display_order', 'name']
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['is_active']),
             models.Index(fields=['created_at']),
+            models.Index(fields=['display_order']),
         ]
 
     def __str__(self):
