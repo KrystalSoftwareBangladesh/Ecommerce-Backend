@@ -23,8 +23,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'full_name', 'first_name', 'middle_name', 'last_name',
             'email', 'username', 'password', 'confirm_password', 'groups',
+            'is_superuser',
         ]
-        read_only_fields = ['id',]
+        read_only_fields = ['id', 'is_superuser']
         write_only = ['password', 'confirm_password']
 
     def __init__(self, *args, **kwargs):
@@ -35,13 +36,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """
             Modify response to always return full_name instead of separate
-            name fields.
+            name fields. Also rename is_superuser to is_superadmin.
         """
         data = super().to_representation(instance)
 
         data.pop('first_name', None)
         data.pop('middle_name', None)
         data.pop('last_name', None)
+
+        # Rename is_superuser to is_superadmin
+        if 'is_superuser' in data:
+            data['is_superadmin'] = data.pop('is_superuser')
 
         return data
 
