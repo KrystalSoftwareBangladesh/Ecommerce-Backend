@@ -1,5 +1,19 @@
 # Business Rules
 
+## Products
+
+### Brand
+
+Brand represents a product manufacturer or brand name.
+
+- Brand name must be unique
+- Slug is auto-generated and cannot be updated (SEO safety)
+- Brand can be soft-deleted (is_active flag)
+- Search available by name and description
+- Publicly readable, authenticated create/update/delete
+
+---
+
 ## Authentication
 
 Public registration endpoint (`POST /auth/register/`) allows website customers to sign up.

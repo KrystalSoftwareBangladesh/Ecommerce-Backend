@@ -1,0 +1,107 @@
+# product_api/serializers/brand.py
+from rest_framework import serializers
+
+from product_api.models import Brand
+
+
+class BrandListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing brands (read-only).
+    """
+    class Meta:
+        model = Brand
+        fields = [
+            'id',
+            'name',
+            'slug',
+            'is_active',
+            'created_at',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+        ]
+
+
+class BrandDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for brand detail view.
+    Includes all fields and metadata.
+    """
+    created_by = serializers.StringRelatedField(read_only=True)
+    updated_by = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Brand
+        fields = [
+            'id',
+            'name',
+            'slug',
+            'description',
+            'is_active',
+            'created_at',
+            'updated_at',
+            'created_by',
+            'updated_by',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'created_by',
+            'updated_by',
+        ]
+
+
+class BrandCreateUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and updating brands.
+    """
+    slug = serializers.CharField(
+        required=False,
+        allow_blank=True
+    )
+
+    class Meta:
+        model = Brand
+        fields = [
+            'id',
+            'name',
+            'slug',
+            'description',
+            'is_active',
+        ]
+        read_only_fields = [
+            'id',
+        ]
+
+    def validate_name(self, value):
+        """
+        Validate that brand name is unique.
+        Allow case-insensitive duplicates only if they differ in case.
+        """
+        qs = Brand.objects.filter(name__iexact=value)
+
+        # Exclude current instance when updating
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError(
+                "A brand with this name already exists."
+            )
+        return value
+
+    def validate(self, attrs):
+        """
+        Validate that slug is not updated after creation.
+        Prevent slug updates for SEO safety.
+        """
+        instance = self.instance
+
+        if instance and 'slug' in attrs and attrs['slug']:
+            raise serializers.ValidationError(
+                {'slug': 'Slug cannot be updated once created.'}
+            )
+
+        return attrs

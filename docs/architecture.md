@@ -32,7 +32,31 @@ Request
 
 ---
 
-## Responsibilities
+## Product Domain
+
+### Brand Management
+
+Location:
+
+`product_api`
+
+Brand provides product categorization by manufacturer/brand name.
+
+Operations:
+- List Brands (public, paginated, searchable)
+- Retrieve Brand detail
+- Create Brand (authenticated)
+- Update Brand (authenticated)
+- Delete Brand (authenticated, soft delete)
+
+Features:
+- Search by name and description
+- Filter by active status
+- Automatic slug generation
+- User audit trail (created_by, updated_by)
+- Soft delete with is_active flag
+
+---
 
 ### Views
 

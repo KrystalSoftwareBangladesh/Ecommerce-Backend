@@ -8,6 +8,11 @@ from .product import (
     ProductVariantDetailSerializer,
     ProductVariantCreateUpdateSerializer,
 )
+from .brand import (
+    BrandListSerializer,
+    BrandDetailSerializer,
+    BrandCreateUpdateSerializer,
+)
 
 
 __all__ = [
@@ -18,4 +23,7 @@ __all__ = [
     "ProductVariantListSerializer",
     "ProductVariantDetailSerializer",
     "ProductVariantCreateUpdateSerializer",
+    "BrandListSerializer",
+    "BrandDetailSerializer",
+    "BrandCreateUpdateSerializer",
 ]
