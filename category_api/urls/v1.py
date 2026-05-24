@@ -6,6 +6,11 @@ from category_api.views import v1
 
 router = DefaultRouter()
 router.register(r'categories', v1.CategoryViewSet, basename='categories')
+router.register(
+    r'categories',
+    v1.CategoryImportViewSet,
+    basename='categories-import'
+)
 
 urlpatterns = []
 urlpatterns += router.urls

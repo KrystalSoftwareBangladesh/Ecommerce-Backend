@@ -58,6 +58,62 @@ Features:
 
 ---
 
+## Category Domain
+
+### Category Management
+
+Location:
+
+`category_api`
+
+Category provides hierarchical product categorization.
+
+Operations:
+- List Categories (public, paginated, searchable)
+- Retrieve Category detail
+- Create Category (authenticated)
+- Update Category (authenticated)
+- Delete Category (authenticated, soft delete)
+
+### Category Import Service
+
+Location:
+
+`category_api/services.py`
+
+Supports bulk import from multiple file formats:
+
+**Supported Formats:**
+- JSON (`import_from_json()`)
+- CSV (`import_from_csv()`)
+- XLSX (`import_from_xlsx()`)
+
+**Features:**
+- Atomic transactions (all-or-nothing)
+- Row-level error tracking
+- Parent category resolution by ID or name
+- Automatic slug generation
+- User audit trail (created_by, updated_by)
+- Soft delete support via is_active flag
+
+**Endpoints:**
+- `POST /categories/import-json/` - JSON file import
+- `POST /categories/import-csv/` - CSV file import
+- `POST /categories/import-xlsx/` - XLSX file import
+
+**Response:**
+```json
+{
+    "success": boolean,
+    "created": integer,
+    "errors": []
+}
+```
+
+See [Category Import API Documentation](category-import-api.md) for detailed usage.
+
+---
+
 ### Views
 
 Responsible for:
@@ -84,6 +140,7 @@ Examples:
 - Purchase processing
 - Inventory movement
 - Accounting posting
+- Category import processing
 
 ---
 
