@@ -1,6 +1,7 @@
 # category_api/views/category.py
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from django.db.models import Prefetch
 
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -43,4 +44,9 @@ class CategoryViewSet(PublicListPermissionMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        # Prefetch subcategories to avoid N+1 queries
+        children_qs = Category.objects.filter(deleted_at__isnull=True)
+        qs = qs.prefetch_related(
+            Prefetch('subcategories', queryset=children_qs)
+        )
         return qs
