@@ -5,10 +5,27 @@ class CategoryJsonImportSerializer(serializers.Serializer):
     """
     Serializer for importing categories from JSON file.
 
-    Expected file format:
+    Supports both flat and nested (hierarchical) formats:
+
+    Flat format:
     [
         {"name": "Electronics", "description": "...", "parent_id": null},
         {"name": "Phones", "description": "...", "parent_id": 1}
+    ]
+
+    Nested format (with children):
+    [
+        {
+            "name": "Electronics",
+            "description": "...",
+            "children": [
+                {
+                    "name": "Phones",
+                    "description": "...",
+                    "children": []
+                }
+            ]
+        }
     ]
     """
     file = serializers.FileField(
@@ -82,4 +99,9 @@ class CategoryImportResultSerializer(serializers.Serializer):
     errors = serializers.ListField(
         child=serializers.CharField(),
         help_text="List of error messages if any"
+    )
+    created_categories = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        help_text="List of created categories with their hierarchy paths"
     )
