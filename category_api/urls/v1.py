@@ -5,12 +5,9 @@ from category_api.views import v1
 
 
 router = DefaultRouter()
-router.register(r'categories', v1.CategoryViewSet, basename='categories')
 router.register(
-    r'categories',
-    v1.CategoryImportViewSet,
-    basename='categories-import'
-)
+    r'categories', v1.CategoryImportViewSet, basename='categories-import')
+router.register(r'categories', v1.CategoryViewSet, basename='categories')
 
 urlpatterns = []
 urlpatterns += router.urls
