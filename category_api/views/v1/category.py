@@ -35,10 +35,11 @@ class CategoryViewSet(PublicListPermissionMixin, viewsets.ModelViewSet):
     ordering_fields = [
         "name",
         "created_at",
+        "order",
         "id",
     ]
 
-    ordering = ["name", "id"]
+    ordering = ["order", "name", "id"]
 
     def get_queryset(self):
         qs = super().get_queryset()

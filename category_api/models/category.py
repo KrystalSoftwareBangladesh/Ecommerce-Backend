@@ -18,11 +18,16 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         blank=True,
         related_name='subcategories'
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text='Display order for this category'
+    )
 
     class Meta:
         db_table = 'categories'
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
+        ordering = ['order', 'name']
 
     def __str__(self):
         return self.name
