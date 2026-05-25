@@ -9,6 +9,7 @@ from EcommerceBackend.core.permission import PublicListPermissionMixin
 
 from category_api.models import Category
 from category_api.serializers import CategorySerializer
+from category_api.filters import CategoryFilter
 
 
 @extend_schema(tags=["Categories"])
@@ -24,10 +25,7 @@ class CategoryViewSet(PublicListPermissionMixin, viewsets.ModelViewSet):
         OrderingFilter,
     ]
 
-    filterset_fields = [
-        "parent",
-        "is_active",
-    ]
+    filterset_class = CategoryFilter
 
     search_fields = [
         "name",
