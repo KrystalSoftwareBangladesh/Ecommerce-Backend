@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Development
+    name: Deploy to Development (Best Computer Hub)
     runs-on: ubuntu-latest
     environment:
       name: development
