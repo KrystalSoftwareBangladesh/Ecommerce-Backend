@@ -17,6 +17,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "order",
             # "content_type",
             "parent",
             # "country_code",
