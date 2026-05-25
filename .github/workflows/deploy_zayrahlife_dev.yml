@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Development
+    name: Deploy to Development (Zayrah Life)
     runs-on: ubuntu-latest
     environment:
       name: development
