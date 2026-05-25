@@ -9,6 +9,7 @@ class CategorySerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True
     )
+    children = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -21,6 +22,7 @@ class CategorySerializer(serializers.ModelSerializer):
             # "content_type",
             "parent",
             # "country_code",
+            "children",
             "created_at",
             "updated_at",
         ]
@@ -70,3 +72,15 @@ class CategorySerializer(serializers.ModelSerializer):
             )
 
         return attrs
+
+    def get_children(self, obj):
+        """
+        Recursively serialize direct children categories.
+        Children are prefetched in viewset to avoid N+1 queries.
+        """
+        children = obj.subcategories.filter(deleted_at__isnull=True)
+        return CategorySerializer(
+            children,
+            many=True,
+            read_only=True
+        ).data
