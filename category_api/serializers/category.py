@@ -62,15 +62,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """
-        Prevent slug updates after creation (SEO safety).
+        Validate category data.
         """
-        instance = self.instance
-
-        if instance and "slug" in attrs:
-            raise serializers.ValidationError(
-                {"slug": "Slug cannot be updated once created."}
-            )
-
         return attrs
 
     def get_children(self, obj):

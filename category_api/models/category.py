@@ -8,8 +8,8 @@ from EcommerceBackend.core.models import (
 
 
 class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
-    name = models.CharField(max_length=255, unique=True)
-    slug = models.SlugField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255)
     description = models.TextField(blank=True, null=True)
     parent = models.ForeignKey(
         'self',
@@ -28,6 +28,16 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         ordering = ['order', 'name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'parent'],
+                name='unique_name_per_parent'
+            ),
+            models.UniqueConstraint(
+                fields=['slug', 'parent'],
+                name='unique_slug_per_parent'
+            ),
+        ]
 
     def __str__(self):
         return self.name
