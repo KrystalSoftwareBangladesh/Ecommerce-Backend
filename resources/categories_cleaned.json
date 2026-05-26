@@ -456,7 +456,7 @@
             ]
           },
           {
-            "name": "Keyboard &amp; Mouse",
+            "name": "Keyboard & Mouse",
             "slug": "keyboard-mouse-desktop-pc-component",
             "children": [
               {
@@ -915,7 +915,7 @@
                 "children": []
               },
               {
-                "name": "F&amp;D",
+                "name": "F&D",
                 "slug": "fd",
                 "children": []
               },
@@ -965,7 +965,7 @@
                 "children": []
               },
               {
-                "name": "Thonet &amp; Vander",
+                "name": "Thonet & Vander",
                 "slug": "thonet-vander-speaker",
                 "children": []
               }
@@ -1041,7 +1041,7 @@
                 "children": []
               },
               {
-                "name": "Thonet &amp; Vander",
+                "name": "Thonet & Vander",
                 "slug": "thonet-vander-headphone-sound-system",
                 "children": []
               }
@@ -1887,7 +1887,7 @@
         ]
       },
       {
-        "name": "Keyboard &amp; Mouse",
+        "name": "Keyboard & Mouse",
         "slug": "keyboard-mouse",
         "children": [
           {
@@ -1913,7 +1913,7 @@
         ]
       },
       {
-        "name": "UPS &amp; IPS",
+        "name": "UPS & IPS",
         "slug": "ups-ips",
         "children": [
           {
@@ -2184,7 +2184,7 @@
                 "children": []
               },
               {
-                "name": "Thonet &amp; Vander",
+                "name": "Thonet & Vander",
                 "slug": "thonet-vander",
                 "children": []
               }
@@ -2230,7 +2230,7 @@
                 "children": []
               },
               {
-                "name": "Thonet &amp; Vander",
+                "name": "Thonet & Vander",
                 "slug": "thonet-vander-headphone",
                 "children": []
               }
@@ -2351,7 +2351,7 @@
         "children": []
       },
       {
-        "name": "Printer &amp; Scanner",
+        "name": "Printer & Scanner",
         "slug": "printer-scanner",
         "children": []
       },
@@ -3339,7 +3339,7 @@
         ]
       },
       {
-        "name": "Portable HDD &amp; SSD",
+        "name": "Portable HDD & SSD",
         "slug": "portable-hdd-ssd",
         "children": [
           {
@@ -3487,7 +3487,7 @@
         "children": []
       },
       {
-        "name": "Mobile &amp; Tablet Accessories",
+        "name": "Mobile & Tablet Accessories",
         "slug": "mobile-tablet-accessories",
         "children": [
           {
@@ -3686,7 +3686,7 @@
             ]
           },
           {
-            "name": "Charger &amp; Adapter",
+            "name": "Charger & Adapter",
             "slug": "charger-adapter",
             "children": [
               {
@@ -3929,7 +3929,7 @@
         "children": []
       },
       {
-        "name": "Charging &amp; Data Cable",
+        "name": "Charging & Data Cable",
         "slug": "charging-data-cable",
         "children": [
           {
@@ -3980,7 +3980,7 @@
         "children": []
       },
       {
-        "name": "Headphone &amp; Earphone",
+        "name": "Headphone & Earphone",
         "slug": "headphone-earphone",
         "children": [
           {
@@ -4222,7 +4222,7 @@
                 "children": []
               },
               {
-                "name": "K&amp;F Concept",
+                "name": "K&F Concept",
                 "slug": "kf-concept",
                 "children": []
               },
@@ -4309,7 +4309,7 @@
         ]
       },
       {
-        "name": "Phone &amp; Tablet",
+        "name": "Phone & Tablet",
         "slug": "phone-tablet",
         "children": [
           {
@@ -4549,7 +4549,7 @@
             "children": []
           },
           {
-            "name": "F&amp;D",
+            "name": "F&D",
             "slug": "fd-portable-wireless-speaker",
             "children": []
           },
@@ -4639,7 +4639,7 @@
         ]
       },
       {
-        "name": "Hubs &amp; Docks",
+        "name": "Hubs & Docks",
         "slug": "hubs-docks",
         "children": [
           {
@@ -4784,7 +4784,7 @@
         ]
       },
       {
-        "name": "Money Counter &amp; Detector",
+        "name": "Money Counter & Detector",
         "slug": "money-counter-detector",
         "children": [
           {
@@ -5057,7 +5057,7 @@
     ]
   },
   {
-    "name": "Brand Laptop &amp; PC",
+    "name": "Brand Laptop & PC",
     "slug": "brand-laptop-pc",
     "children": [
       {
@@ -6336,7 +6336,7 @@
                     "children": []
                   },
                   {
-                    "name": "R&amp;M",
+                    "name": "R&M",
                     "slug": "rm",
                     "children": []
                   },
@@ -6409,7 +6409,7 @@
                 "children": []
               },
               {
-                "name": "R&amp;M",
+                "name": "R&M",
                 "slug": "rm-face-plate",
                 "children": []
               }
@@ -6435,7 +6435,7 @@
                 "children": []
               },
               {
-                "name": "R&amp;M",
+                "name": "R&M",
                 "slug": "rm-modular",
                 "children": []
               }
@@ -6456,7 +6456,7 @@
                 "children": []
               },
               {
-                "name": "R&amp;M",
+                "name": "R&M",
                 "slug": "rm-patch-panel",
                 "children": []
               }
@@ -6472,7 +6472,7 @@
                 "children": []
               },
               {
-                "name": "R &amp; M",
+                "name": "R & M",
                 "slug": "r-m",
                 "children": []
               },
@@ -6519,7 +6519,7 @@
                 "children": []
               },
               {
-                "name": "R&amp;M",
+                "name": "R&M",
                 "slug": "rm-wire-manager",
                 "children": []
               },
@@ -6598,7 +6598,7 @@
     ]
   },
   {
-    "name": "Surveillance &amp; Security",
+    "name": "Surveillance & Security",
     "slug": "surveillance-security",
     "children": [
       {
@@ -6752,7 +6752,7 @@
         ]
       },
       {
-        "name": "DVR ,NVR &amp; XVR",
+        "name": "DVR ,NVR & XVR",
         "slug": "dvr-nvr-xvr",
         "children": [
           {
@@ -6899,7 +6899,7 @@
         ]
       },
       {
-        "name": "Digital Locker &amp; Vault",
+        "name": "Digital Locker & Vault",
         "slug": "digital-locker-vault",
         "children": [
           {
@@ -7015,7 +7015,7 @@
     ]
   },
   {
-    "name": "Server, Storage &amp; Software",
+    "name": "Server, Storage & Software",
     "slug": "server-storage",
     "children": [
       {
@@ -7304,7 +7304,7 @@
         ]
       },
       {
-        "name": "Backup &amp; Recovery Solution",
+        "name": "Backup & Recovery Solution",
         "slug": "backup-recovery-solution",
         "children": [
           {
@@ -7326,7 +7326,7 @@
         ]
       },
       {
-        "name": "Network Detection &amp; Response",
+        "name": "Network Detection & Response",
         "slug": "network-detection-response-ndr",
         "children": [
           {
@@ -7841,7 +7841,7 @@
                     "children": []
                   },
                   {
-                    "name": "Trimmer &amp; Clippers",
+                    "name": "Trimmer & Clippers",
                     "slug": "trimmer-clippers",
                     "children": []
                   },
@@ -7878,7 +7878,7 @@
                 ]
               },
               {
-                "name": "Care &amp; Health",
+                "name": "Care & Health",
                 "slug": "care-health",
                 "children": [
                   {
@@ -7892,7 +7892,7 @@
                     "children": []
                   },
                   {
-                    "name": "Tick &amp; Flea Control",
+                    "name": "Tick & Flea Control",
                     "slug": "tick-flea-control",
                     "children": []
                   },
@@ -7912,7 +7912,7 @@
                     "children": []
                   },
                   {
-                    "name": "vitamins &amp; Supplement",
+                    "name": "vitamins & Supplement",
                     "slug": "vitamins-supplement",
                     "children": []
                   },
@@ -7960,7 +7960,7 @@
                 ]
               },
               {
-                "name": "Dress,Bed &amp; House",
+                "name": "Dress,Bed & House",
                 "slug": "dressbed-house",
                 "children": [
                   {
@@ -8002,7 +8002,7 @@
                 ]
               },
               {
-                "name": "Litter &amp; Accessories",
+                "name": "Litter & Accessories",
                 "slug": "litter-accessories",
                 "children": [
                   {
