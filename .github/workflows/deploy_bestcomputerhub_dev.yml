@@ -54,6 +54,9 @@ jobs:
             echo "🧹 Collecting static files"
             python manage.py collectstatic --noinput
 
+            echo "Seeding data"
+            python manage.py import_categories resources/categories.json
+
             echo "♻️ Restarting services"
             sudo systemctl restart gunicorn-best-computer-hub.service
 

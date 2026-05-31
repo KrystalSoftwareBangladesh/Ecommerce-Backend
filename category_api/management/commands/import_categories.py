@@ -12,7 +12,7 @@ class Command(BaseCommand):
         parser.add_argument(
             'file_path',
             type=str,
-            help='Path to the categories JSON file (e.g., resources/categories_cleaned.json)'   # noqa
+            help='Path to the categories JSON file (e.g., resources/categories.json)'   # noqa
         )
         parser.add_argument(
             '--clear',
