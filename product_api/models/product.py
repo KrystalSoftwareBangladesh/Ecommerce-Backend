@@ -12,15 +12,32 @@ User = get_user_model()
 
 class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     name = models.CharField(max_length=200)
-    category = models.ForeignKey(
+    # category = models.ForeignKey(
+    #     Category,
+    #     on_delete=models.PROTECT,
+    #     related_name='products',
+    #     null=True,
+    #     blank=True
+    # )
+    categories = models.ManyToManyField(
         Category,
-        on_delete=models.PROTECT,
         related_name='products',
-        null=True,
         blank=True
     )
     current_selling_price = models.DecimalField(
         max_digits=12, decimal_places=2)
+    legacy_id = models.BigIntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+    )
+    description = models.TextField(blank=True)
+    short_description = models.TextField(blank=True)
+    specifications = models.TextField(blank=True)
 
     class Meta:
         ordering = ['name']

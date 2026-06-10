@@ -27,9 +27,15 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'current_selling_price', 'is_active']
-    list_filter = ['is_active', 'category']
+    list_display = ['name', 'get_categories',
+                    'current_selling_price', 'is_active']
+    list_filter = ['is_active', 'categories']
     search_fields = ['name']
+
+    def get_categories(self, obj):
+        return ", ".join(c.name for c in obj.categories.all())
+
+    get_categories.short_description = "Categories"
 
 
 @admin.register(ProductPriceHistory)
