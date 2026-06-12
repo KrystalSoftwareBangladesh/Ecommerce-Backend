@@ -11,6 +11,12 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
     description = models.TextField(blank=True, null=True)
+    legacy_id = models.BigIntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     parent = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
