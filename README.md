@@ -39,3 +39,21 @@ python manage.py migrate
 ```bash
 python manage.py createsuperuser
 ```
+
+### Seeding Data
+Export categories
+```bash
+python scripts/export_woocommerce_categories.py
+```
+Import categories
+```bash
+python manage.py import_categories resources/categories.json
+```
+Export products
+```bash
+python scripts/export_woocommerce_products.py
+```
+Import products
+```bash
+python manage.py import_products resources/products.json
+```
