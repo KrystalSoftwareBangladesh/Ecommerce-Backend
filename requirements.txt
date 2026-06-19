@@ -12,3 +12,4 @@ gunicorn
 drf-writable-nested
 openpyxl
 pandas
+PyMySQL==1.2.0
