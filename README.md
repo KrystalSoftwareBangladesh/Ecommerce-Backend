@@ -57,3 +57,7 @@ Import products
 ```bash
 python manage.py import_products resources/products.json
 ```
+Map products and categories
+```bash
+python manage.py import_product_categories resources/product_categories.json
+```
