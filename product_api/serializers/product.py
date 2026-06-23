@@ -1,6 +1,7 @@
 # product_api/serializers/product.py
 from rest_framework import serializers
 
+from category_api.models import Category
 from product_api.models import (
     Product, ProductPriceHistory, ProductVariant,
 )
@@ -61,11 +62,16 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     variants = ProductVariantSerializer(many=True, required=False)
+    categories = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(is_active=True),
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'category', 'current_selling_price', 'variants'
+            'id', 'name', 'categories', 'current_selling_price', 'variants'
         ]
         extra_kwargs = {
             'id': {'read_only': True}
@@ -82,7 +88,11 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         variants_data = validated_data.pop('variants', [])
+        categories = validated_data.pop('categories', [])
         product = Product.objects.create(**validated_data)
+
+        if categories:
+            product.categories.set(categories)
 
         ProductPriceHistory.objects.create(
             product=product,
@@ -102,7 +112,12 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         old_price = instance.current_selling_price
+        categories = validated_data.pop('categories', None)
         instance = super().update(instance, validated_data)
+
+        if categories is not None:
+            instance.categories.set(categories)
+
         new_price = instance.current_selling_price
         if old_price != new_price:
             ProductPriceHistory.objects.create(
@@ -110,6 +125,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
                 price=new_price,
                 changed_by=self.context['request'].user
             )
+
         return instance
 
     def to_representation(self, instance):
