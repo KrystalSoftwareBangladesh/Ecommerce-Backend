@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
+from EcommerceBackend.core.permission import PublicReadPermissionMixin
 from product_api.models import (
     Product, ProductVariant,
 )
@@ -32,7 +33,7 @@ class ProductFilter(django_filters.FilterSet):
 
 
 @extend_schema(tags=["Products"])
-class ProductViewSet(viewsets.ModelViewSet):
+class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
