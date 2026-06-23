@@ -1,5 +1,6 @@
 # category_api/serializers/category.py
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from category_api.models import Category
 
@@ -66,6 +67,7 @@ class CategorySerializer(serializers.ModelSerializer):
         """
         return attrs
 
+    @extend_schema_field(serializers.ListField())
     def get_children(self, obj):
         """
         Recursively serialize direct children categories.
