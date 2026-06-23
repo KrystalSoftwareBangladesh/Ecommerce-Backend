@@ -24,7 +24,7 @@ from product_api.serializers import (
 
 
 class ProductFilter(django_filters.FilterSet):
-    category = django_filters.NumberFilter(field_name='category__id')
+    category = django_filters.NumberFilter(field_name='categories__id')
 
     class Meta:
         model = Product
@@ -41,7 +41,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Product.objects.filter(
             is_active=True
-        ).select_related('category').order_by('name', 'id')
+        ).prefetch_related('categories').order_by('name', 'id')
 
     def get_serializer_class(self):
         if self.action == 'list':

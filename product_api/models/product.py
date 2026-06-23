@@ -12,13 +12,6 @@ User = get_user_model()
 
 class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     name = models.CharField(max_length=200)
-    # category = models.ForeignKey(
-    #     Category,
-    #     on_delete=models.PROTECT,
-    #     related_name='products',
-    #     null=True,
-    #     blank=True
-    # )
     categories = models.ManyToManyField(
         Category,
         related_name='products',
