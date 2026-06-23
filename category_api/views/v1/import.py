@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from EcommerceBackend.core.permission import PublicListPermissionMixin
+from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from category_api.serializers import (
     CategoryJsonImportSerializer,
@@ -17,7 +17,7 @@ from category_api.services import CategoryImportService
 
 
 @extend_schema(tags=["Categories - Import"])
-class CategoryImportViewSet(PublicListPermissionMixin, ViewSet):
+class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
     """
     ViewSet for importing categories from various file formats.
     """

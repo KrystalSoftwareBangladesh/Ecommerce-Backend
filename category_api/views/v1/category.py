@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from EcommerceBackend.core.permission import PublicListPermissionMixin
+from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from category_api.models import Category
 from category_api.serializers import CategorySerializer
@@ -16,7 +16,7 @@ from category_api.filters import CategoryFilter
 
 
 @extend_schema(tags=["Categories"])
-class CategoryViewSet(PublicListPermissionMixin, viewsets.ModelViewSet):
+class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.filter(
         deleted_at__isnull=True

@@ -254,7 +254,7 @@ EcommerceBackend/core/permission.py
 
 Class:
 
-PublicListPermissionMixin
+PublicReadPermissionMixin
 
 Use this mixin for endpoints that support public listing access.
 

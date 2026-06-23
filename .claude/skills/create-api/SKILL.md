@@ -28,7 +28,7 @@ Pagination:
 Permissions:
 
 - EcommerceBackend/core/permission.py
-- PublicListPermissionMixin
+- PublicReadPermissionMixin
 
 Do not create duplicate implementations unless explicitly required.
 
