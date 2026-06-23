@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from EcommerceBackend.core.permission import PublicListPermissionMixin
+from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from product_api.models import Brand
 from product_api.serializers import (
@@ -15,7 +15,7 @@ from product_api.serializers import (
 
 
 @extend_schema(tags=["Brands"])
-class BrandViewSet(PublicListPermissionMixin, viewsets.ModelViewSet):
+class BrandViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     """
     ViewSet for Brand CRUD operations.
 
