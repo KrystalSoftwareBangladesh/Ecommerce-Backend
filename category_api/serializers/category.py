@@ -79,3 +79,26 @@ class CategorySerializer(serializers.ModelSerializer):
             many=True,
             read_only=True
         ).data
+
+
+class CategoryDetailsSerializer(serializers.ModelSerializer):
+    slug = serializers.CharField(
+        required=False,
+        allow_blank=True
+    )
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "description",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+        ]
