@@ -11,7 +11,9 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from category_api.models import Category
-from category_api.serializers import CategorySerializer
+from category_api.serializers import (
+    CategorySerializer, CategoryDetailsSerializer
+)
 from category_api.filters import CategoryFilter
 
 
@@ -29,6 +31,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     ]
 
     filterset_class = CategoryFilter
+    lookup_field = "slug"
 
     search_fields = [
         "name",
@@ -52,6 +55,12 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             Prefetch('subcategories', queryset=children_qs)
         )
         return qs
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return CategoryDetailsSerializer
+
+        return CategorySerializer
 
     @extend_schema(tags=["Categories"])
     @action(detail=False, methods=['post'], url_path='edit-by-slug')
