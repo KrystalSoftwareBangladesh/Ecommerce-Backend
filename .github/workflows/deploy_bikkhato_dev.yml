@@ -10,7 +10,7 @@ jobs:
     name: Deploy to Development (bikkhato.com.bd)
     runs-on: ubuntu-latest
     environment:
-      name: development
+      name: development-bikkhato.com.bd
 
     steps:
       # 1. Checkout code
