@@ -1,4 +1,5 @@
 name: Lint Backend Code
+run-name: Linter Checker
 
 on:
   push:
