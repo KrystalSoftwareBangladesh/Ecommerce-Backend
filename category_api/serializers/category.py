@@ -6,10 +6,11 @@ from category_api.models import Category
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    slug = serializers.CharField(
+    slug = serializers.SlugField(
         required=False,
         allow_blank=True,
         allow_null=True,
+        default=None,
     )
     children = serializers.SerializerMethodField()
 
@@ -68,6 +69,13 @@ class CategorySerializer(serializers.ModelSerializer):
         """
         return attrs
 
+    def create(self, validated_data):
+        slug = validated_data.get("slug")
+        if not slug:
+            validated_data.pop("slug", None)
+
+        return super().create(validated_data)
+
     @extend_schema_field(serializers.ListField())
     def get_children(self, obj):
         """
@@ -83,10 +91,11 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class CategoryDetailsSerializer(serializers.ModelSerializer):
-    slug = serializers.CharField(
+    slug = serializers.SlugField(
         required=False,
         allow_blank=True,
         allow_null=True,
+        default=None,
     )
 
     class Meta:
