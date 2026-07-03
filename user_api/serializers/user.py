@@ -1,8 +1,18 @@
 from rest_framework import serializers
 
+from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 
 from user_api.models import User
+# from user_api.serializers.group import GroupSerializer
+
+
+class GroupPKRelatedField(serializers.PrimaryKeyRelatedField):
+    def to_representation(self, value):
+        return {
+            'id': value.id,
+            'name': value.name,
+        }
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -18,12 +28,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         required=False,
     )
 
+    groups = GroupPKRelatedField(
+        queryset=Group.objects.all(),
+        many=True,
+        required=False,
+    )
+    permissions = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'full_name', 'first_name', 'middle_name', 'last_name',
             'email', 'username', 'password', 'confirm_password', 'groups',
-            'is_superuser',
+            'permissions', 'is_superuser',
         ]
         read_only_fields = ['id', 'is_superuser']
         write_only = ['password', 'confirm_password']
@@ -49,6 +66,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             data['is_superadmin'] = data.pop('is_superuser')
 
         return data
+
+    def get_permissions(self, obj):
+        return sorted(obj.get_all_permissions())
 
     def validate(self, data):
         return data

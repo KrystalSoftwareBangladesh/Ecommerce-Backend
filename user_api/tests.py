@@ -1,4 +1,6 @@
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from django.contrib.auth.models import Group, Permission
 from rest_framework.test import APIClient
 from rest_framework import status
 from user_api.models import User
@@ -179,4 +181,54 @@ class CustomerSignupAPITestCase(TestCase):
         self.assertEqual(User.objects.count(), initial_user_count)
 
 
-# Create your tests here.
+class UserProfileAPITestCase(TestCase):
+    """Test cases for user profile / me API."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='admin@example.com',
+            username='admin',
+            password='SecurePassword123!',
+            first_name='Admin',
+            last_name='User',
+            is_superuser=True,
+        )
+        self.group = Group.objects.create(name='Content Manager')
+        content_type = ContentType.objects.get_for_model(User)
+        group_permission, _ = Permission.objects.get_or_create(
+            codename='view_user',
+            content_type=content_type,
+            defaults={'name': 'Can view user'},
+        )
+        user_permission, _ = Permission.objects.get_or_create(
+            codename='change_user',
+            content_type=content_type,
+            defaults={'name': 'Can change user'},
+        )
+        self.group.permissions.add(group_permission)
+        self.user.groups.add(self.group)
+        self.user.user_permissions.add(user_permission)
+        self.user.save()
+
+    def test_user_profile_includes_groups_and_permissions(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get('/api/users/me/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.user.id)
+        self.assertEqual(response.data['full_name'], 'Admin User')
+        self.assertEqual(response.data['email'], 'admin@example.com')
+        self.assertEqual(response.data['username'], 'admin')
+        self.assertTrue(response.data['is_superadmin'])
+
+        self.assertIn('groups', response.data)
+        self.assertIsInstance(response.data['groups'], list)
+        self.assertEqual(response.data['groups'][0]['id'], self.group.id)
+        self.assertEqual(response.data['groups'][0]['name'], 'Content Manager')
+
+        self.assertIn('permissions', response.data)
+        self.assertIsInstance(response.data['permissions'], list)
+        self.assertIn('user_api.view_user', response.data['permissions'])
+        self.assertIn('user_api.change_user', response.data['permissions'])

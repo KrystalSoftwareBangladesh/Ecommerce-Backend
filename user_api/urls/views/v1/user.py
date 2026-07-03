@@ -19,9 +19,16 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         """
-            Return the authenticated user.
+            Return the authenticated user with groups
+            and permissions prefetched.
         """
-        return self.request.user
+        return User.objects.filter(
+            pk=self.request.user.pk
+        ).prefetch_related(
+            'groups',
+            'user_permissions',
+            'groups__permissions',
+        ).first()
 
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
