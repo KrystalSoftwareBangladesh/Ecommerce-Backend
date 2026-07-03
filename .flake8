@@ -12,4 +12,4 @@
 # H405: multi line docstring summary not separated with an empty line
 # H501: Do not use self.__dict__ for string formatting
 ; ignore = F812,H101,H202,H233,H301,H306,H401,H403,H404,H405,H501
-exclude = __pycache__,tests.py,migrations,env,env.py
+exclude = __pycache__,tests.py,migrations,env,env.py,venv,.venv

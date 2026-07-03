@@ -8,7 +8,8 @@ from category_api.models import Category
 class CategorySerializer(serializers.ModelSerializer):
     slug = serializers.CharField(
         required=False,
-        allow_blank=True
+        allow_blank=True,
+        allow_null=True,
     )
     children = serializers.SerializerMethodField()
 
@@ -84,7 +85,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class CategoryDetailsSerializer(serializers.ModelSerializer):
     slug = serializers.CharField(
         required=False,
-        allow_blank=True
+        allow_blank=True,
+        allow_null=True,
     )
 
     class Meta:
