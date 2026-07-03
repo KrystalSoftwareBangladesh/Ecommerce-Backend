@@ -31,3 +31,19 @@ class CategoryApiTests(APITestCase):
         self.assertEqual(category.name, 'Electronics')
         self.assertEqual(category.slug, 'electronics')
         self.assertEqual(response.data['slug'], 'electronics')
+
+    def test_create_category_without_slug_generates_slug(self):
+        response = self.client.post(
+            '/api/v1/categories/',
+            {
+                'name': 'Home Appliances',
+                'description': 'Kitchen and household goods',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        category = Category.objects.get(pk=response.data['id'])
+        self.assertEqual(category.name, 'Home Appliances')
+        self.assertEqual(category.slug, 'home-appliances')
+        self.assertEqual(response.data['slug'], 'home-appliances')
