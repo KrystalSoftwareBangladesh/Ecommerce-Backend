@@ -1,6 +1,7 @@
 # product_api/models/product.py
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 
 from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
@@ -40,6 +41,25 @@ class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.slug:
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
+    def _generate_unique_slug(self):
+        base_slug = slugify(self.name)
+        slug = base_slug
+        counter = 1
+
+        qs = Product.objects.filter(slug=slug)
+
+        while qs.exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+            qs = Product.objects.filter(slug=slug)
+
+        return slug
 
 
 class ProductPriceHistory(models.Model):
