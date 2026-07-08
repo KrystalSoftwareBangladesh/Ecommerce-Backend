@@ -4,6 +4,7 @@ from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -56,6 +57,28 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         instance.is_active = False
         instance.save(update_fields=['is_active', 'updated_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get'], url_path='product-variants')
+    def product_variants(self, request, pk=None):
+        product = self.get_object()
+        queryset = ProductVariant.objects.filter(
+            product=product,
+            is_active=True,
+        ).select_related('product__category').annotate(
+            current_stock=Coalesce(
+                Sum('movements__quantity'),
+                Value(0),
+                output_field=IntegerField()
+            )
+        ).order_by('sku', 'id')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ProductVariantListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ProductVariantListSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class VariantFilter(django_filters.FilterSet):
