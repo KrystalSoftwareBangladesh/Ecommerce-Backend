@@ -11,7 +11,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     """Serializer for ProductVariant - used for nested creation"""
     class Meta:
         model = ProductVariant
-        fields = ['id', 'sku', 'color', 'size']
+        fields = ['id', 'name', 'sku', 'color', 'size']
         extra_kwargs = {
             'id': {'read_only': True}
         }
@@ -148,7 +148,9 @@ class ProductVariantListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductVariant
-        fields = ['id', 'product', 'sku', 'color', 'size', 'current_stock']
+        fields = [
+            'id', 'product', 'name', 'sku', 'color', 'size', 'current_stock'
+        ]
 
 
 class ProductVariantDetailSerializer(serializers.ModelSerializer):
@@ -165,7 +167,7 @@ class ProductVariantDetailSerializer(serializers.ModelSerializer):
 class ProductVariantCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
-        fields = ['id', 'product', 'sku', 'color', 'size']
+        fields = ['id', 'product', 'name', 'sku', 'color', 'size']
 
     def validate_sku(self, value):
         qs = ProductVariant.objects.filter(sku__exact=value, is_active=True)

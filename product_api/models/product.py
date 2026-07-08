@@ -89,6 +89,7 @@ class ProductVariant(TimeStampedModel, SoftDeleteModel):
         on_delete=models.CASCADE,
         related_name='variants'
     )
+    name = models.CharField(max_length=200, blank=True, null=True)
     sku = models.CharField(max_length=100)
     color = models.CharField(max_length=50, blank=True, null=True)
     size = models.CharField(max_length=50, blank=True, null=True)
