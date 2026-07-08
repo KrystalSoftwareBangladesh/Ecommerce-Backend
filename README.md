@@ -18,6 +18,13 @@ cd Ecommerce-Backend
 ```
 
 ### Install dependency
+If the existing virtual environment is already present, activate it:
+```bash
+source env/bin/activate
+pip install -r requirements.txt
+```
+
+If the environment does not exist yet, create it once:
 ```bash
 python3 -m venv env
 source env/bin/activate
