@@ -39,3 +39,23 @@ class ProductVariantApiTests(TestCase):
         self.assertIsNone(
             ProductVariant.objects.get(pk=response.data['id']).name
         )
+
+    def test_list_product_variants_by_product(self):
+        ProductVariant.objects.create(
+            product=self.product,
+            sku='SKU-001',
+            name='Blue Variant'
+        )
+        ProductVariant.objects.create(
+            product=self.product,
+            sku='SKU-002',
+            name='Red Variant'
+        )
+
+        response = self.client.get(
+            f'/api/v1/products/{self.product.id}/product-variants/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+        self.assertEqual(len(response.data['results']), 2)
