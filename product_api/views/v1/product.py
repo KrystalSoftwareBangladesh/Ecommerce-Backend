@@ -64,7 +64,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         queryset = ProductVariant.objects.filter(
             product=product,
             is_active=True,
-        ).select_related('product__category').annotate(
+        ).select_related('product').annotate(
             current_stock=Coalesce(
                 Sum('movements__quantity'),
                 Value(0),
@@ -99,7 +99,7 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ProductVariant.objects.filter(
             is_active=True
-        ).select_related('product__category').annotate(
+        ).select_related('product').annotate(
             current_stock=Coalesce(
                 Sum('movements__quantity'),
                 Value(0),
