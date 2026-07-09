@@ -59,3 +59,16 @@ class ProductVariantApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 2)
         self.assertEqual(len(response.data['results']), 2)
+
+    def test_list_variants_endpoint_works(self):
+        ProductVariant.objects.create(
+            product=self.product,
+            sku='SKU-001',
+            name='Blue Variant'
+        )
+
+        response = self.client.get('/api/v1/product-variants/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['sku'], 'SKU-001')
