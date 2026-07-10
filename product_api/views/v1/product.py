@@ -26,11 +26,18 @@ from product_api.serializers import (
 
 
 class ProductFilter(django_filters.FilterSet):
-    category = django_filters.NumberFilter(field_name='categories__id')
+    category = django_filters.BaseInFilter(
+        field_name='categories__id',
+        lookup_expr='in',
+    )
+    categories = django_filters.BaseInFilter(
+        field_name='categories__id',
+        lookup_expr='in',
+    )
 
     class Meta:
         model = Product
-        fields = ['category']
+        fields = ['category', 'categories']
 
 
 @extend_schema(tags=["Products"])
