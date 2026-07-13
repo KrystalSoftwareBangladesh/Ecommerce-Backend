@@ -1,6 +1,11 @@
 # Ecommerce Backend
 Complete backend for Ecommerce Platform's web application with management system.
 
+## Prepared to Serve
+- [Zayrah Life](https://ZayrahLife.rkshaon.info/)
+- [Best Computer Hub](https://bestcomputerhub.com/)
+- [bikkhato](https://bikkhato.rkshaon.info/)
+
 ---
 
 ## Prerequisite
