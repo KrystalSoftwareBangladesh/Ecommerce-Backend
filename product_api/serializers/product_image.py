@@ -3,6 +3,7 @@ from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
 from product_api.models import Product, ProductImage
+from product_api.services import set_product_image_default
 
 
 class ProductImageListSerializer(serializers.ModelSerializer):
@@ -114,3 +115,12 @@ class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
 
         value.seek(0)
         return value
+
+    def update(self, instance, validated_data):
+        if validated_data.get('is_default'):
+            set_product_image_default(
+                instance,
+                updated_by=self.context['request'].user,
+            )
+            validated_data.pop('is_default')
+        return super().update(instance, validated_data)
