@@ -41,6 +41,13 @@ class ProductImage(TimeStampedModel, UserStampedModel, SoftDeleteModel):
             models.Index(fields=['product', 'display_order']),
             models.Index(fields=['product', 'is_default']),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['product'],
+                condition=models.Q(is_default=True, is_active=True),
+                name='product_image_single_default_per_product',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.product.name} image"

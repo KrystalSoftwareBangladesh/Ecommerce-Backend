@@ -10,6 +10,7 @@ Product images are managed independently from product records and support a reus
 - Images are uploaded after product creation.
 - The first active image becomes the default image.
 - Exactly one active image is expected to be marked as default.
+- This rule is enforced at the database level via a partial unique constraint and at the service layer for all create, update, and set-default operations.
 - Image ordering is managed server-side and remains sequential.
 - Soft deletion is used for image removal.
 - Replacement updates the stored file while preserving metadata and image identity.

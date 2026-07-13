@@ -8,6 +8,7 @@ from .models import (
     Brand, ProductImage,
     # InventoryMovement
 )
+from .services import set_product_image_default
 
 
 @admin.register(Brand)
@@ -73,6 +74,8 @@ class ProductImageAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+        if obj.is_default:
+            set_product_image_default(obj, updated_by=request.user)
 
 
 # @admin.register(InventoryMovement)

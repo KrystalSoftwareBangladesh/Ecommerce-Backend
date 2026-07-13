@@ -201,6 +201,33 @@ class ProductImageApiTests(TestCase):
         image.refresh_from_db()
         self.assertEqual(image.alt_text, 'Updated alt')
 
+    def test_patch_is_default_unsets_other_defaults(self):
+        first = ProductImage.objects.create(
+            product=self.product,
+            image=self._create_test_image('first.png'),
+            alt_text='First',
+            display_order=1,
+            is_default=True,
+        )
+        second = ProductImage.objects.create(
+            product=self.product,
+            image=self._create_test_image('second.png'),
+            alt_text='Second',
+            display_order=2,
+        )
+
+        response = self.client.patch(
+            f'/api/v1/product-images/{second.id}/',
+            {'is_default': True},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertFalse(first.is_default)
+        self.assertTrue(second.is_default)
+
     def test_replace_image_preserves_metadata_and_flags(self):
         image = ProductImage.objects.create(
             product=self.product,
@@ -368,6 +395,18 @@ class ProductImageBusinessRuleTests(TestCase):
         first.refresh_from_db()
         third.refresh_from_db()
         self.assertEqual([first.display_order, third.display_order], [1, 2])
+
+    def test_setting_default_via_service_unsets_previous_default(self):
+        first = upload_product_image(self.product, self._create_test_image('first.png'))
+        second = upload_product_image(self.product, self._create_test_image('second.png'))
+        self.assertTrue(first.is_default)
+        self.assertFalse(second.is_default)
+
+        set_product_image_default(second)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertFalse(first.is_default)
+        self.assertTrue(second.is_default)
 
 
 class ProductImageValidationTests(TestCase):
