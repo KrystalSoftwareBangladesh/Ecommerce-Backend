@@ -34,6 +34,25 @@ Request
 
 ## Product Domain
 
+### Product Image Gallery
+
+Location:
+
+`product_api`
+
+Product images are managed as a dedicated model and API surface that supports:
+- upload and metadata capture
+- default image selection
+- ordering management
+- image replacement
+- soft deletion
+
+Architecture:
+- Model: `ProductImage`
+- Serializer layer: `ProductImageListSerializer`, `ProductImageDetailSerializer`, `ProductImageCreateUpdateSerializer`
+- Service layer: `product_api/services.py`
+- API layer: `ProductImageViewSet`
+
 ### Brand Management
 
 Location:

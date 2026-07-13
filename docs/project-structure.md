@@ -8,6 +8,15 @@ krystalsoftwarebangladesh-ecommerce-backend/
 ├── customer_api/
 ├── inventory_api/
 ├── product_api/
+│   ├── models/
+│   │   ├── product.py
+│   │   ├── product_image.py
+│   │   └── brand.py
+│   ├── serializers/
+│   ├── views/
+│   │   └── v1/
+│   ├── services.py
+│   └── tests.py
 ├── purchase_api/
 ├── sale_api/
 ├── supplier_api/

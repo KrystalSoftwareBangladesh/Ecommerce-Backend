@@ -45,16 +45,22 @@ class ProductImageViewSet(
             return ProductImageDetailSerializer
         return ProductImageCreateUpdateSerializer
 
-    def perform_create(self, serializer):
-        image_file = serializer.validated_data.get('image')
-        product = serializer.validated_data.get('product')
-        alt_text = serializer.validated_data.get('alt_text', '')
-        upload_product_image(
-            product=product,
-            image_file=image_file,
-            alt_text=alt_text,
-            created_by=self.request.user,
-            updated_by=self.request.user,
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        image = upload_product_image(
+            product=serializer.validated_data.get('product'),
+            image_file=serializer.validated_data.get('image'),
+            alt_text=serializer.validated_data.get('alt_text', ''),
+            created_by=request.user,
+            updated_by=request.user,
+        )
+        response_serializer = ProductImageDetailSerializer(image)
+        headers = self.get_success_headers(response_serializer.data)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
         )
 
     def perform_update(self, serializer):
