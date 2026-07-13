@@ -61,16 +61,16 @@ json_content = json.dumps(nested_json).encode('utf-8')
 print("Testing nested category import...")
 result = CategoryImportService.import_from_json(json_content, user=None)
 
-print(f"\nResult:")
+print("\nResult:")
 print(f"  Success: {result['success']}")
 print(f"  Created: {result['created']}")
 print(f"  Errors: {result.get('errors', [])}")
-print(f"\nCreated Categories:")
+print("\nCreated Categories:")
 for cat in result.get('created_categories', []):
     print(f"  - {cat}")
 
 # Verify in database
-print(f"\nDatabase Verification:")
+print("\nDatabase Verification:")
 print(f"Total categories: {Category.objects.count()}")
 for cat in Category.objects.all().order_by('id'):
     parent_name = cat.parent.name if cat.parent else "None"

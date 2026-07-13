@@ -5,7 +5,7 @@ from django.db.models.functions import Coalesce
 
 from .models import (
     Product, ProductPriceHistory, ProductVariant,
-    Brand,
+    Brand, ProductImage,
     # InventoryMovement
 )
 
@@ -58,6 +58,21 @@ class ProductVariantAdmin(admin.ModelAdmin):
         )['stock']
 
     current_stock.short_description = 'Current Stock'
+
+
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = [
+        'product', 'image', 'display_order', 'is_default', 'is_active']
+    list_filter = ['is_active', 'is_default', 'product']
+    search_fields = ['product__name', 'alt_text']
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 # @admin.register(InventoryMovement)
