@@ -13,7 +13,7 @@ import django_filters
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
 from product_api.models import (
-    Product, ProductVariant,
+    Product, ProductVariant, ProductImage,
 )
 from product_api.serializers import (
     ProductListSerializer,
@@ -22,6 +22,7 @@ from product_api.serializers import (
     ProductVariantListSerializer,
     ProductVariantDetailSerializer,
     ProductVariantCreateUpdateSerializer,
+    ProductImageListSerializer,
 )
 
 
@@ -85,6 +86,23 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = ProductVariantListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='product-images')
+    def product_images(self, request, pk=None):
+        product = self.get_object()
+        queryset = ProductImage.objects.filter(
+            product=product,
+            is_active=True,
+            deleted_at__isnull=True,
+        ).order_by('display_order', 'created_at', 'id')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ProductImageListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ProductImageListSerializer(queryset, many=True)
         return Response(serializer.data)
 
 

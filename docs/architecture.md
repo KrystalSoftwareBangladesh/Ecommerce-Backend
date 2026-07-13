@@ -52,6 +52,7 @@ Architecture:
 - Serializer layer: `ProductImageListSerializer`, `ProductImageDetailSerializer`, `ProductImageCreateUpdateSerializer`
 - Service layer: `product_api/services.py`
 - API layer: `ProductImageViewSet`
+- Nested endpoint: `GET /products/{id}/product-images/` returns active images for a product via `ProductViewSet.product_images` action
 
 ### Brand Management
 
