@@ -16,24 +16,71 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProductImage',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('is_active', models.BooleanField(db_index=True, default=True)),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('image', models.ImageField(max_length=500, upload_to='products/images/')),
-                ('alt_text', models.CharField(blank=True, default='', max_length=255)),
-                ('display_order', models.PositiveIntegerField(db_index=True, default=0)),
-                ('is_default', models.BooleanField(db_index=True, default=False)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_created', to=settings.AUTH_USER_MODEL)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='product_api.product')),
-                ('updated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_updated', to=settings.AUTH_USER_MODEL)),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, db_index=True)
+                ),
+                (
+                    'is_active',
+                    models.BooleanField(db_index=True, default=True)
+                ),
+                ('deleted_at', models.DateTimeField(
+                    blank=True, db_index=True, null=True)),
+                ('image', models.ImageField(
+                    max_length=500, upload_to='products/images/')),
+                ('alt_text', models.CharField(
+                    blank=True, default='', max_length=255)),
+                ('display_order', models.PositiveIntegerField(
+                    db_index=True, default=0)),
+                (
+                    'is_default',
+                    models.BooleanField(db_index=True, default=False)
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                     blank=True,
+                     null=True,
+                     on_delete=django.db.models.deletion.SET_NULL,
+                     related_name='%(class)s_created',
+                     to=settings.AUTH_USER_MODEL
+                    )
+                ),
+                (
+                    'product',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='images', to='product_api.product'
+                    )
+                ),
+                (
+                    'updated_by',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='%(class)s_updated',
+                        to=settings.AUTH_USER_MODEL
+                    )
+                ),
             ],
             options={
                 'verbose_name': 'Product Image',
                 'verbose_name_plural': 'Product Images',
                 'ordering': ['display_order', 'created_at'],
-                'indexes': [models.Index(fields=['product', 'display_order'], name='product_api_product_a5b8c2_idx'), models.Index(fields=['product', 'is_default'], name='product_api_product_ce7bec_idx')],
+                'indexes': [
+                    models.Index(
+                        fields=['product', 'display_order'],
+                        name='product_api_product_a5b8c2_idx'
+                    ),
+                    models.Index(
+                        fields=['product', 'is_default'],
+                        name='product_api_product_ce7bec_idx')
+                    ],
             },
         ),
     ]
