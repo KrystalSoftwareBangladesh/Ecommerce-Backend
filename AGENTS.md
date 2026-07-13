@@ -27,6 +27,7 @@ Do not introduce store-specific logic.
 
 Before making changes, review:
 
+- docs/api-conventions.md
 - docs/architecture.md
 - docs/business-rules.md
 - docs/project-structure.md
