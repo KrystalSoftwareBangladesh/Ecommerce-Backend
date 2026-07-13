@@ -1,5 +1,6 @@
 # product_api/views/v1/product_image.py
 from django.db import transaction
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,6 +21,7 @@ from product_api.services import (
 )
 
 
+@extend_schema(tags=["Products"])
 class ProductImageViewSet(
     PublicReadPermissionMixin,
     viewsets.ModelViewSet,
