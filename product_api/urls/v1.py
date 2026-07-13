@@ -7,7 +7,16 @@ router = DefaultRouter()
 
 router.register(r'brands', v1.BrandViewSet, basename='brand')
 router.register(r'products', v1.ProductViewSet, basename='product')
-router.register(r'product-variants', v1.ProductVariantViewSet, basename='product-variant')  # noqa
+router.register(
+    r'product-variants',
+    v1.ProductVariantViewSet,
+    basename='product-variant',
+)  # noqa
+router.register(
+    r'product-images',
+    v1.ProductImageViewSet,
+    basename='product-image',
+)
 # router.register(r'inventory-movements', InventoryMovementViewSet,
 #                 basename='inventory-movement')
 
