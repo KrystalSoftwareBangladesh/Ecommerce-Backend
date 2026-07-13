@@ -1,0 +1,116 @@
+# product_api/serializers/product_image.py
+from PIL import Image, UnidentifiedImageError
+from rest_framework import serializers
+
+from product_api.models import Product, ProductImage
+
+
+class ProductImageListSerializer(serializers.ModelSerializer):
+    """Serializer for listing product images."""
+
+    class Meta:
+        model = ProductImage
+        fields = [
+            'id',
+            'image',
+            'alt_text',
+            'display_order',
+            'is_default',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class ProductImageDetailSerializer(serializers.ModelSerializer):
+    """Serializer for full product image details."""
+    product = serializers.StringRelatedField(read_only=True)
+    created_by = serializers.StringRelatedField(read_only=True)
+    updated_by = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = ProductImage
+        fields = [
+            'id',
+            'product',
+            'image',
+            'alt_text',
+            'display_order',
+            'is_default',
+            'is_active',
+            'created_at',
+            'updated_at',
+            'created_by',
+            'updated_by',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'created_by',
+            'updated_by',
+        ]
+
+
+class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for creating and updating product image metadata."""
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(is_active=True),
+        required=False
+    )
+
+    class Meta:
+        model = ProductImage
+        fields = [
+            'id',
+            'product',
+            'image',
+            'alt_text',
+            'display_order',
+            'is_default',
+        ]
+        extra_kwargs = {
+            'id': {'read_only': True},
+        }
+
+    def validate_image(self, value):
+        """Validate that the uploaded file is a supported image."""
+        if value is None:
+            return value
+
+        max_size = 1024 * 1024
+        if getattr(value, 'size', None) is not None and value.size > max_size:
+            raise serializers.ValidationError(
+                'Image size must be 1 MB or less.'
+            )
+
+        extension = value.name.lower().rsplit('.', 1)[-1] if value.name else ''
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'webp'}
+        if extension not in allowed_extensions:
+            raise serializers.ValidationError(
+                'Unsupported image format. Allowed formats are '
+                'jpg, jpeg, png, and webp.'
+            )
+
+        try:
+            with Image.open(value) as image_file:
+                image_format = image_file.format
+                image_file.verify()
+        except (UnidentifiedImageError, OSError):
+            raise serializers.ValidationError(
+                'Uploaded file is not a valid image.'
+            )
+
+        if image_format is None:
+            raise serializers.ValidationError(
+                'Uploaded file is not a valid image.'
+            )
+
+        normalized_format = image_format.lower()
+        if normalized_format not in {'jpeg', 'png', 'webp', 'jpg'}:
+            raise serializers.ValidationError(
+                'Unsupported image format. Allowed formats are '
+                'jpg, jpeg, png, and webp.'
+            )
+
+        value.seek(0)
+        return value
