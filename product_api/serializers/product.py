@@ -43,9 +43,20 @@ class ProductPriceHistorySerializer(serializers.ModelSerializer):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
+    default_image = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'current_selling_price']
+        fields = ['id', 'name', 'current_selling_price', 'default_image']
+
+    def get_default_image(self, obj):
+        from product_api.serializers.product_image import (
+            ProductDefaultImageSerializer,
+        )
+        default_images = getattr(obj, '_default_images', [])
+        if not default_images:
+            return None
+        return ProductDefaultImageSerializer(default_images[0]).data
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
