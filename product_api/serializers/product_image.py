@@ -6,6 +6,21 @@ from product_api.models import Product, ProductImage
 from product_api.services import set_product_image_default
 
 
+class ProductDefaultImageSerializer(serializers.Serializer):
+    """Lightweight serializer for a product's default image."""
+    id = serializers.IntegerField(read_only=True)
+    image = serializers.ImageField(read_only=True)
+    alt_text = serializers.CharField(read_only=True)
+    display_order = serializers.IntegerField(read_only=True)
+    is_default = serializers.BooleanField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+    def to_representation(self, instance):
+        if instance is None:
+            return None
+        return super().to_representation(instance)
+
+
 class ProductImageListSerializer(serializers.ModelSerializer):
     """Serializer for listing product images."""
 

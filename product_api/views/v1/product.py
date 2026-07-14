@@ -1,5 +1,5 @@
 # product_api/views/v1/product.py
-from django.db.models import Sum, Value, IntegerField
+from django.db.models import Prefetch, Sum, Value, IntegerField
 from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 
@@ -49,9 +49,18 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     search_fields = ['name']
 
     def get_queryset(self):
+        default_image_qs = ProductImage.objects.filter(
+            is_default=True, is_active=True, deleted_at__isnull=True,
+        ).only('id', 'image', 'alt_text', 'display_order', 'is_default',
+               'created_at')
+
         return Product.objects.filter(
             is_active=True
-        ).prefetch_related('categories').order_by('name', 'id')
+        ).prefetch_related(
+            'categories',
+            Prefetch('images', queryset=default_image_qs,
+                     to_attr='_default_images'),
+        ).order_by('name', 'id')
 
     def get_serializer_class(self):
         if self.action == 'list':
