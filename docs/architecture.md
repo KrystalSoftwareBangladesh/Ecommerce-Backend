@@ -278,4 +278,10 @@ PublicReadPermissionMixin
 
 Use this mixin for endpoints that support public listing access.
 
+By default, `list` and `retrieve` actions are public.
+
+To make additional custom actions public, extend `public_actions`:
+
+    public_actions = PublicReadPermissionMixin.public_actions + ["my_custom_action"]
+
 Reuse existing permission patterns before creating new permission classes.
