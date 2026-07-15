@@ -44,6 +44,9 @@ class ProductFilter(django_filters.FilterSet):
 @extend_schema(tags=["Products"])
 class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
+    public_actions = PublicReadPermissionMixin.public_actions + [
+        "product_variants", "product_images",
+    ]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
     search_fields = ['name']
