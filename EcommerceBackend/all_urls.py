@@ -9,6 +9,7 @@ from product_api import urls as product_urls
 from inventory_api import urls as inventory_urls
 from purchase_api import urls as purchase_urls
 from sale_api import urls as sale_urls
+from origin_api import urls as origin_urls
 
 
 urlpatterns = []
@@ -23,3 +24,4 @@ urlpatterns += product_urls.urlpatterns
 urlpatterns += inventory_urls.urlpatterns
 urlpatterns += purchase_urls.urlpatterns
 urlpatterns += sale_urls.urlpatterns
+urlpatterns += origin_urls.urlpatterns
