@@ -22,6 +22,15 @@ class OriginDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class OriginSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Origin
+        fields = ['id', 'slug', 'name']
+        read_only_fields = [
+            'id', 'name', 'slug',
+        ]
+
+
 class OriginCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Origin

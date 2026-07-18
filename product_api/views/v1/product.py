@@ -59,7 +59,8 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         return Product.objects.filter(
             is_active=True
-        ).prefetch_related(
+        ).select_related("origin"
+                         ).prefetch_related(
             'categories',
             Prefetch('images', queryset=default_image_qs,
                      to_attr='_default_images'),
