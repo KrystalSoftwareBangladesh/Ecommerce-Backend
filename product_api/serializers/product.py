@@ -2,9 +2,11 @@
 from rest_framework import serializers
 
 from category_api.models import Category
+from origin_api.models import Origin
 from product_api.models import (
     Product, ProductPriceHistory, ProductVariant,
 )
+from origin_api.serializers import OriginSummarySerializer
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
@@ -44,10 +46,12 @@ class ProductPriceHistorySerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     default_image = serializers.SerializerMethodField()
+    origin = OriginSummarySerializer(read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'current_selling_price', 'default_image']
+        fields = ['id', 'name', 'current_selling_price',
+                  'default_image', 'origin']
 
     def get_default_image(self, obj):
         from product_api.serializers.product_image import (
@@ -60,7 +64,9 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    category = serializers.StringRelatedField()
+    # category = serializers.StringRelatedField()
+    categories = serializers.StringRelatedField(many=True)
+    origin = OriginSummarySerializer(read_only=True)
     price_histories = ProductPriceHistorySerializer(many=True, read_only=True)
 
     class Meta:
@@ -76,11 +82,17 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    origin = serializers.PrimaryKeyRelatedField(
+        queryset=Origin.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'categories', 'current_selling_price', 'variants'
+            'id', 'name', 'categories', 'origin', 'current_selling_price',
+            'variants',
         ]
         extra_kwargs = {
             'id': {'read_only': True}

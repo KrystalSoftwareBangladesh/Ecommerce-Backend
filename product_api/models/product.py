@@ -32,6 +32,13 @@ class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     description = models.TextField(blank=True)
     short_description = models.TextField(blank=True)
     specifications = models.TextField(blank=True)
+    origin = models.ForeignKey(
+        "origin_api.Origin",
+        on_delete=models.SET_NULL,
+        related_name="products",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ['name']
