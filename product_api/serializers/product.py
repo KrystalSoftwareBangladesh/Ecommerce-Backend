@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from category_api.models import Category
 from origin_api.models import Origin
+from category_api.serializers import CategorySummarySerializer
 from product_api.models import (
     Product, ProductPriceHistory, ProductVariant,
 )
@@ -65,7 +66,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     # category = serializers.StringRelatedField()
-    categories = serializers.StringRelatedField(many=True)
+    categories = CategorySummarySerializer(many=True)
     origin = OriginSummarySerializer(read_only=True)
     price_histories = ProductPriceHistorySerializer(many=True, read_only=True)
 
