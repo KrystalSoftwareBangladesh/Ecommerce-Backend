@@ -113,3 +113,13 @@ class CategoryDetailsSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class CategorySummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "slug",
+        ]
