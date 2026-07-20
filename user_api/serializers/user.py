@@ -1,7 +1,10 @@
+# user_api/serializers/user.py
 from rest_framework import serializers
 
 from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
+
+from drf_spectacular.utils import extend_schema_field
 
 from user_api.models import User
 # from user_api.serializers.group import GroupSerializer
@@ -67,7 +70,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         return data
 
-    def get_permissions(self, obj):
+    # def get_permissions(self, obj):
+    #     return sorted(obj.get_all_permissions())
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_permissions(self, obj) -> list[str]:
         return sorted(obj.get_all_permissions())
 
     def validate(self, data):
