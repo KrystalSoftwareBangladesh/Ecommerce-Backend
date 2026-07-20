@@ -1,7 +1,11 @@
 # product_api/views/v1/product.py
 from django.db.models import Prefetch, Sum, Value, IntegerField
 from django.db.models.functions import Coalesce
-from drf_spectacular.utils import extend_schema
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiParameter,
+    OpenApiTypes,
+)
 
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
@@ -42,6 +46,18 @@ class ProductFilter(django_filters.FilterSet):
 
 
 @extend_schema(tags=["Products"])
+@extend_schema_view(
+    retrieve=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Product ID or slug",
+            )
+        ]
+    )
+)
 class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     public_actions = PublicReadPermissionMixin.public_actions + [
@@ -50,6 +66,19 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
     search_fields = ['name']
+
+    def get_object(self):
+        lookup_value = self.kwargs[self.lookup_url_kwarg or self.lookup_field]
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if lookup_value.isdigit():
+            obj = get_object_or_404(queryset, pk=int(lookup_value))
+        else:
+            obj = get_object_or_404(queryset, slug=lookup_value)
+
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def get_queryset(self):
         default_image_qs = ProductImage.objects.filter(
