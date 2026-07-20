@@ -29,7 +29,7 @@ class OriginViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return Origin.objects.filter(
             is_active=True
-        ).select_related('created_by', 'updated_by')
+        ).select_related('parent', 'created_by', 'updated_by')
 
     def get_serializer_class(self):
         if self.action == 'list':

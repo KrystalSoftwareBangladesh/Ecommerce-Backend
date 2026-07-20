@@ -28,6 +28,13 @@ class Origin(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         blank=True,
         unique=True
     )
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        related_name="children",
+        on_delete=models.SET_NULL,
+    )
 
     class Meta:
         db_table = 'origins'
