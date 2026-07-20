@@ -5,7 +5,8 @@ from .models import Origin
 
 @admin.register(Origin)
 class OriginAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'is_active', 'created_at']
+    list_display = ['id', 'name', 'slug', 'parent', 'is_active', 'created_at']
+    list_display_links = ['name']
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}

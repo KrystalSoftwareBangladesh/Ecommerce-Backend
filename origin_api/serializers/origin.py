@@ -3,6 +3,15 @@ from rest_framework import serializers
 from origin_api.models import Origin
 
 
+class OriginSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Origin
+        fields = ['id', 'slug', 'name']
+        read_only_fields = [
+            'id', 'name', 'slug',
+        ]
+
+
 class OriginListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Origin
@@ -12,6 +21,7 @@ class OriginListSerializer(serializers.ModelSerializer):
 class OriginDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.StringRelatedField()
     updated_by = serializers.StringRelatedField()
+    parent = OriginSummarySerializer(read_only=True)
 
     class Meta:
         model = Origin
@@ -22,19 +32,16 @@ class OriginDetailSerializer(serializers.ModelSerializer):
         ]
 
 
-class OriginSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Origin
-        fields = ['id', 'slug', 'name']
-        read_only_fields = [
-            'id', 'name', 'slug',
-        ]
-
-
 class OriginCreateUpdateSerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=Origin.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = Origin
-        fields = ['id', 'name', 'description', 'legacy_id']
+        fields = ['id', 'name', 'parent', 'description', 'legacy_id']
 
     def validate_name(self, value):
         queryset = Origin.objects.filter(name__iexact=value, is_active=True)
