@@ -1,12 +1,15 @@
 # product_api/serializers/product.py
+from drf_spectacular.utils import extend_schema_field
+
 from rest_framework import serializers
 
 from category_api.models import Category
 from origin_api.models import Origin
-from category_api.serializers import CategorySummarySerializer
 from product_api.models import (
     Product, ProductPriceHistory, ProductVariant,
 )
+from category_api.serializers import CategorySummarySerializer
+from product_api.serializers.product_image import ProductDefaultImageSerializer
 from origin_api.serializers import OriginSummarySerializer
 
 
@@ -54,10 +57,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'current_selling_price',
                   'default_image', 'origin']
 
+    @extend_schema_field(ProductDefaultImageSerializer)
     def get_default_image(self, obj):
-        from product_api.serializers.product_image import (
-            ProductDefaultImageSerializer,
-        )
         default_images = getattr(obj, '_default_images', [])
         if not default_images:
             return None
