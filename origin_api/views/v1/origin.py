@@ -11,7 +11,8 @@ from origin_api.models import Origin
 from origin_api.serializers import (
     OriginListSerializer,
     OriginDetailSerializer,
-    OriginCreateUpdateSerializer,
+    OriginCreateSerializer,
+    OriginUpdateSerializer,
 )
 
 
@@ -36,7 +37,10 @@ class OriginViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return OriginListSerializer
         if self.action == 'retrieve':
             return OriginDetailSerializer
-        return OriginCreateUpdateSerializer
+        if self.action == "create":
+            return OriginCreateSerializer
+        if self.action in ["update", "partial_update"]:
+            return OriginUpdateSerializer
 
     def perform_create(self, serializer):
         serializer.save(

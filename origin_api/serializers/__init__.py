@@ -2,7 +2,8 @@ from .origin import (
     OriginListSerializer,
     OriginDetailSerializer,
     OriginSummarySerializer,
-    OriginCreateUpdateSerializer,
+    OriginCreateSerializer,
+    OriginUpdateSerializer,
 )
 
 
@@ -10,5 +11,6 @@ __all__ = [
     "OriginListSerializer",
     "OriginDetailSerializer",
     "OriginSummarySerializer",
-    "OriginCreateUpdateSerializer",
+    "OriginCreateSerializer",
+    "OriginUpdateSerializer",
 ]
