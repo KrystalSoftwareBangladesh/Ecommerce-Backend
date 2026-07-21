@@ -4,12 +4,17 @@ from origin_api.models import Origin
 
 
 class OriginSummarySerializer(serializers.ModelSerializer):
+    parent = serializers.SerializerMethodField()
+
     class Meta:
         model = Origin
-        fields = ['id', 'slug', 'name']
-        read_only_fields = [
-            'id', 'name', 'slug',
-        ]
+        fields = ['id', 'slug', 'name', 'parent']
+        read_only_fields = ['id', 'slug', 'name', 'parent']
+
+    def get_parent(self, obj):
+        if obj.parent is None:
+            return None
+        return OriginSummarySerializer(obj.parent, context=self.context).data
 
 
 class OriginListSerializer(serializers.ModelSerializer):
