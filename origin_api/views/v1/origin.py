@@ -42,6 +42,8 @@ class OriginViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         if self.action in ["update", "partial_update"]:
             return OriginUpdateSerializer
 
+        return OriginDetailSerializer
+
     def perform_create(self, serializer):
         serializer.save(
             created_by=self.request.user,
