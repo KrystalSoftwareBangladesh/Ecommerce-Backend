@@ -32,7 +32,7 @@ class OriginDetailSerializer(serializers.ModelSerializer):
         ]
 
 
-class OriginCreateUpdateSerializer(serializers.ModelSerializer):
+class OriginCreateSerializer(serializers.ModelSerializer):
     parent = serializers.PrimaryKeyRelatedField(
         queryset=Origin.objects.filter(is_active=True),
         required=False,
@@ -42,6 +42,28 @@ class OriginCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Origin
         fields = ['id', 'name', 'parent', 'description', 'legacy_id']
+
+    def validate_name(self, value):
+        queryset = Origin.objects.filter(name__iexact=value, is_active=True)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError(
+                'An origin with this name already exists.'
+            )
+        return value
+
+
+class OriginUpdateSerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=Origin.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = Origin
+        fields = ['id', 'name', 'parent', 'slug', 'description', 'legacy_id']
 
     def validate_name(self, value):
         queryset = Origin.objects.filter(name__iexact=value, is_active=True)
