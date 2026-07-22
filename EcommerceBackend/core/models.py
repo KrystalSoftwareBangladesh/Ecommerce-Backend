@@ -57,3 +57,56 @@ class SoftDeleteModel(models.Model):
         self.is_active = False
         self.deleted_at = timezone.now()
         self.save(update_fields=["is_active", "deleted_at"])
+
+
+class ModerationStatus(models.IntegerChoices):
+    PENDING = 1, 'Pending Moderation'
+    APPROVED = 2, 'Approved'
+    REJECTED = 3, 'Rejected'
+
+
+class ModerationModel(models.Model):
+    status = models.SmallIntegerField(
+        choices=ModerationStatus.choices,
+        default=ModerationStatus.PENDING,
+        verbose_name="Moderation Status",
+        db_index=True
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(class)s_approved"
+    )
+
+    class Meta:
+        abstract = True
+
+    def approve(self, user):
+        self.status = ModerationStatus.APPROVED
+        self.approved_at = timezone.now()
+        self.approved_by = user
+        self.save(update_fields=["status", "approved_at", "approved_by"])
+
+    def reject(self):
+        self.status = ModerationStatus.REJECTED
+        self.approved_at = None
+        self.approved_by = None
+        self.save(update_fields=["status", "approved_at", "approved_by"])
+
+    def reset_to_pending(self):
+        self.status = ModerationStatus.PENDING
+        self.approved_at = None
+        self.approved_by = None
+        self.save(update_fields=["status", "approved_at", "approved_by"])
+
+    @property
+    def is_approved(self):
+        """Backward-compatible property for templates/serializers."""
+        return self.status == ModerationStatus.APPROVED
