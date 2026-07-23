@@ -16,9 +16,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
+from EcommerceBackend.core.models import ModerationStatus
 from product_api.models import (
     Product, ProductVariant, ProductImage,
 )
+from review_api.models import Review
 from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
@@ -28,6 +30,7 @@ from product_api.serializers import (
     ProductVariantCreateUpdateSerializer,
     ProductImageListSerializer,
 )
+from review_api.serializers import ReviewListSerializer
 
 
 class ProductFilter(django_filters.FilterSet):
@@ -145,6 +148,27 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = ProductImageListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='reviews')
+    def product_reviews(self, request, pk=None):
+        product = self.get_object()
+        queryset = (
+            Review.objects.filter(
+                product=product,
+                is_active=True,
+                status=ModerationStatus.APPROVED,
+            )
+            .select_related("created_by")
+            .order_by('-created_at', 'id')
+        )
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ReviewListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ReviewListSerializer(queryset, many=True)
         return Response(serializer.data)
 
 
