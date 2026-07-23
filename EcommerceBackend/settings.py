@@ -132,6 +132,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'EcommerceBackend.core.pagination.Pagination',
     'PAGE_SIZE': 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "EcommerceBackend.core.exceptions.custom_exception_handler",   # noqa
 }
 
 AUTHENTICATION_BACKENDS = [

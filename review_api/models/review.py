@@ -4,7 +4,8 @@ from django.db.models import Q, UniqueConstraint
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from EcommerceBackend.core.models import (
-    TimeStampedModel, UserStampedModel, SoftDeleteModel, ModerationModel
+    TimeStampedModel, UserStampedModel, SoftDeleteModel, ModerationModel,
+    ModerationStatus,
 )
 
 
@@ -35,7 +36,8 @@ class Review(TimeStampedModel, UserStampedModel, SoftDeleteModel, ModerationMode
         constraints = [
             UniqueConstraint(
                 fields=['product', 'created_by'],
-                condition=Q(is_active=True),
+                # condition=Q(is_active=True),
+                condition=~Q(status=ModerationStatus.REJECTED),
                 name='unique_active_review_per_product_user'
             )
         ]

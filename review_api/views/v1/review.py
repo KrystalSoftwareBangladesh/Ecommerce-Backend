@@ -1,5 +1,8 @@
 # review_api/views/v1/review.py
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
+
+import django_filters
 
 from drf_spectacular.utils import extend_schema
 
@@ -8,12 +11,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from django_filters.rest_framework import DjangoFilterBackend
-import django_filters
-
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
-
 from EcommerceBackend.core.models import ModerationStatus
+
 from review_api.models import Review
 from review_api.serializers import (
     ReviewListSerializer,
@@ -85,6 +85,33 @@ class ReviewViewSet(
             return ReviewDetailSerializer
 
         return ReviewCreateUpdateSerializer
+
+    def create(self, request, *args, **kwargs):
+        product_id = request.data.get("product")
+        if Review.objects.filter(
+            product_id=product_id,
+            created_by=request.user,
+        ).exclude(
+            status=ModerationStatus.REJECTED,
+        ).exists():
+            return Response(
+                {
+                    "detail": "You have already reviewed this product."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        review = serializer.save()
+
+        return Response(
+            ReviewDetailSerializer(
+                review,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def destroy(self, request, *args, **kwargs):
         review = self.get_object()
