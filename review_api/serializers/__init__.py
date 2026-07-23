@@ -1,15 +1,15 @@
 # review_api/serializers/__init__.py
 from .review import (
-    UserMinimalSerializer,
+    # UserMinimalSerializer,
     ReviewListSerializer,
     ReviewDetailSerializer,
     ReviewCreateUpdateSerializer,
-    ProductReviewStatsSerializer,
+    # ProductReviewStatsSerializer,
 )
 
 
 __all__ = [
-    'UserMinimalSerializer',
+    # 'UserMinimalSerializer',
     'ReviewListSerializer',
     'ReviewDetailSerializer',
     'ReviewCreateUpdateSerializer',
