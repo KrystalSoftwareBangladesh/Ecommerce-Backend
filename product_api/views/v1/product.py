@@ -16,7 +16,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
-from EcommerceBackend.core.models import ModerationStatus
+from EcommerceBackend.core.choices import ModerationStatus
 from product_api.models import (
     Product, ProductVariant, ProductImage,
 )

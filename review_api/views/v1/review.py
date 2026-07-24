@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
-from EcommerceBackend.core.models import ModerationStatus
+from EcommerceBackend.core.choices import ModerationStatus
 
 from review_api.models import Review
 from review_api.serializers import (

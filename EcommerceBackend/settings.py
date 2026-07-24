@@ -66,6 +66,7 @@ LOCAL_APPS = [
     'sale_api',
     'origin_api',
     'review_api',
+    'meta_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 

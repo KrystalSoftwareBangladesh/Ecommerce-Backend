@@ -2,6 +2,7 @@
 from django.db import models
 from django.utils import timezone
 
+from .choices import ModerationStatus
 from user_api.models import User
 
 
@@ -57,12 +58,6 @@ class SoftDeleteModel(models.Model):
         self.is_active = False
         self.deleted_at = timezone.now()
         self.save(update_fields=["is_active", "deleted_at"])
-
-
-class ModerationStatus(models.IntegerChoices):
-    PENDING = 1, 'Pending Moderation'
-    APPROVED = 2, 'Approved'
-    REJECTED = 3, 'Rejected'
 
 
 class ModerationModel(models.Model):
