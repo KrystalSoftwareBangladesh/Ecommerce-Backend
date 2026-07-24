@@ -143,3 +143,9 @@ class UserExistenceCheckSerializer(serializers.Serializer):
                 "Either email or username must be provided."
             )
         return data
+
+
+class UserSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'full_name', 'email', 'username']

@@ -7,21 +7,22 @@ from review_api.services.review import (
     create_review,
     update_review,
 )
+from user_api.serializers import UserSummarySerializer
 
 
 class ReviewListSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source="created_by", read_only=True)
+    created_by = UserSummarySerializer(read_only=True)
 
     class Meta:
         model = Review
         fields = [
             "id",
-            "user",
             "rating",
             "title",
             "body",
             "is_verified_purchase",
             "created_at",
+            "created_by",
         ]
 
 
