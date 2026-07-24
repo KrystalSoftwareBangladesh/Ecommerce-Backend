@@ -1,5 +1,5 @@
 # product_api/views/v1/product.py
-from django.db.models import Prefetch, Sum, Value, IntegerField, Q
+from django.db.models import Prefetch, Sum, Value, IntegerField, Q, Avg, Count
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
@@ -30,7 +30,10 @@ from product_api.serializers import (
     ProductVariantCreateUpdateSerializer,
     ProductImageListSerializer,
 )
-from review_api.serializers import ReviewListSerializer
+from review_api.serializers import (
+    ReviewListSerializer,
+    ProductReviewSummarySerializer,
+)
 
 
 class ProductFilter(django_filters.FilterSet):
@@ -64,7 +67,8 @@ class ProductFilter(django_filters.FilterSet):
 class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     public_actions = PublicReadPermissionMixin.public_actions + [
-        "product_variants", "product_images",
+        "product_variants", "product_images", "product_reviews",
+        "product_review_summary",
     ]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
@@ -112,6 +116,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
+        summary="Product variants",
         responses=ProductVariantListSerializer(many=True),
     )
     @action(detail=True, methods=['get'], url_path='product-variants')
@@ -137,6 +142,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
+        summary="Product images",
         responses=ProductImageListSerializer(many=True),
     )
     @action(detail=True, methods=['get'], url_path='product-images')
@@ -157,6 +163,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
+        summary="Product reviews",
         responses=ReviewListSerializer(many=True),
     )
     @action(detail=True, methods=['get'], url_path='reviews')
@@ -184,6 +191,29 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = ReviewListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Product review summary",
+        responses=ProductReviewSummarySerializer,
+    )
+    @action(detail=True, methods=["get"], url_path="review-summary")
+    def product_review_summary(self, request, pk=None):
+        product = self.get_object()
+
+        summary = (
+            Review.objects.filter(
+                product=product,
+                is_active=True,
+                status=ModerationStatus.APPROVED,
+            )
+            .aggregate(
+                average_rating=Avg("rating"),
+                total_reviews=Count("id"),
+            )
+        )
+
+        serializer = ProductReviewSummarySerializer(summary)
         return Response(serializer.data)
 
 

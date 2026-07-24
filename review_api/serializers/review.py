@@ -80,3 +80,8 @@ class ReviewCreateUpdateSerializer(serializers.ModelSerializer):
             user=self.context["request"].user,
             **validated_data,
         )
+
+
+class ProductReviewSummarySerializer(serializers.Serializer):
+    average_rating = serializers.FloatField(allow_null=True)
+    total_reviews = serializers.IntegerField()
