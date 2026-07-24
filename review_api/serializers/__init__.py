@@ -4,6 +4,7 @@ from .review import (
     ReviewListSerializer,
     ReviewDetailSerializer,
     ReviewCreateUpdateSerializer,
+    ProductReviewSummarySerializer,
     # ProductReviewStatsSerializer,
 )
 
@@ -14,4 +15,5 @@ __all__ = [
     'ReviewDetailSerializer',
     'ReviewCreateUpdateSerializer',
     'ProductReviewStatsSerializer',
+    'ProductReviewSummarySerializer',
 ]
