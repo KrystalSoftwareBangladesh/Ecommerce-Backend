@@ -12,6 +12,10 @@ from user_api.serializers import UserSummarySerializer
 
 class ReviewListSerializer(serializers.ModelSerializer):
     created_by = UserSummarySerializer(read_only=True)
+    status_label = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
 
     class Meta:
         model = Review
@@ -20,6 +24,8 @@ class ReviewListSerializer(serializers.ModelSerializer):
             "rating",
             "title",
             "body",
+            "status",
+            "status_label",
             "is_verified_purchase",
             "created_at",
             "created_by",
