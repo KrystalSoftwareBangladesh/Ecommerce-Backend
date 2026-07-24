@@ -1,5 +1,5 @@
 # product_api/views/v1/product.py
-from django.db.models import Prefetch, Sum, Value, IntegerField
+from django.db.models import Prefetch, Sum, Value, IntegerField, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
@@ -153,14 +153,29 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='reviews')
     def product_reviews(self, request, pk=None):
         product = self.get_object()
+        # queryset = (
+        #     Review.objects.filter(
+        #         product=product,
+        #         is_active=True,
+        #         status=ModerationStatus.APPROVED,
+        #     )
+        #     .select_related("created_by")
+        #     .order_by('-created_at', 'id')
+        # )
         queryset = (
             Review.objects.filter(
                 product=product,
                 is_active=True,
-                status=ModerationStatus.APPROVED,
+            )
+            .filter(
+                Q(status=ModerationStatus.APPROVED)
+                | Q(
+                    status=ModerationStatus.PENDING,
+                    created_by=request.user,
+                )
             )
             .select_related("created_by")
-            .order_by('-created_at', 'id')
+            .order_by("-created_at", "id")
         )
 
         page = self.paginate_queryset(queryset)
