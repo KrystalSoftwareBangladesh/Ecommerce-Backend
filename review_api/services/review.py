@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from EcommerceBackend.core.models import ModerationStatus
+from EcommerceBackend.core.choices import ModerationStatus
 from review_api.models import Review
 
 

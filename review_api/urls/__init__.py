@@ -1,9 +1,9 @@
-# product_api/urls/__init__.py
+# review_api/urls/__init__.py
 from django.urls import path, include
 
-from .v1 import urlpatterns as product_urlpatterns
+from .v1 import urlpatterns as review_urlpatterns
 
 
 urlpatterns = [
-    path('v1/', include(product_urlpatterns)),
+    path('v1/', include(review_urlpatterns)),
 ]
