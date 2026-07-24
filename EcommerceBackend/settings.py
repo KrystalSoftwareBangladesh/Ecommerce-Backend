@@ -116,6 +116,7 @@ SPECTACULAR_SETTINGS = {
         "PurchaseStatusEnum": "purchase_api.models.purchase.PurchaseStatus.choices",    # noqa
         "TransactionStatusEnum": "transaction_api.models.transaction.TransactionStatus.choices",  # noqa
         "TransactionTypeEnum": "transaction_api.models.transaction.TransactionType.choices",  # noqa
+        "ModerationStatus": "EcommerceBackend.core.choices.ModerationStatus",
     },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,

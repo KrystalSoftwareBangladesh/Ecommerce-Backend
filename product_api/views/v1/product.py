@@ -111,6 +111,9 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         instance.save(update_fields=['is_active', 'updated_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        responses=ProductVariantListSerializer(many=True),
+    )
     @action(detail=True, methods=['get'], url_path='product-variants')
     def product_variants(self, request, pk=None):
         product = self.get_object()
@@ -133,6 +136,9 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         serializer = ProductVariantListSerializer(queryset, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        responses=ProductImageListSerializer(many=True),
+    )
     @action(detail=True, methods=['get'], url_path='product-images')
     def product_images(self, request, pk=None):
         product = self.get_object()
@@ -150,6 +156,9 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         serializer = ProductImageListSerializer(queryset, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        responses=ReviewListSerializer(many=True),
+    )
     @action(detail=True, methods=['get'], url_path='reviews')
     def product_reviews(self, request, pk=None):
         product = self.get_object()
