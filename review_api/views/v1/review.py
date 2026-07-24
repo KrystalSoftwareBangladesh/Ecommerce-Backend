@@ -1,5 +1,5 @@
 # review_api/views/v1/review.py
-from django.db.models import Q
+# from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 
 import django_filters
@@ -58,22 +58,22 @@ class ReviewViewSet(
 
     def get_queryset(self):
         queryset = Review.objects.filter(
-            is_active=True,
+            # is_active=True,
         ).select_related(
             "product",
             "created_by",
             "approved_by",
         )
 
-        if self.request.user.is_authenticated:
-            queryset = queryset.filter(
-                Q(status=ModerationStatus.APPROVED)
-                | Q(created_by=self.request.user)
-            )
-        else:
-            queryset = queryset.filter(
-                status=ModerationStatus.APPROVED
-            )
+        # if self.request.user.is_authenticated:
+        #     queryset = queryset.filter(
+        #         Q(status=ModerationStatus.APPROVED)
+        #         | Q(created_by=self.request.user)
+        #     )
+        # else:
+        #     queryset = queryset.filter(
+        #         status=ModerationStatus.APPROVED
+        #     )
 
         return queryset.order_by("-created_at")
 
