@@ -123,6 +123,11 @@ class ReviewViewSet(
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        request=None,
+        responses={200: None},
+        description="Approve a review."
+    )
     @action(
         detail=True,
         methods=["post"],
@@ -141,6 +146,11 @@ class ReviewViewSet(
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        request=None,
+        responses={200: None},
+        description="Reject a review."
+    )
     @action(
         detail=True,
         methods=["post"],
