@@ -169,6 +169,21 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='reviews')
     def product_reviews(self, request, pk=None):
         product = self.get_object()
+        # queryset = (
+        #     Review.objects.filter(
+        #         product=product,
+        #         is_active=True,
+        #     )
+        #     .filter(
+        #         Q(status=ModerationStatus.APPROVED)
+        #         | Q(
+        #             status=ModerationStatus.PENDING,
+        #             created_by=request.user,
+        #         )
+        #     )
+        #     .select_related("created_by")
+        #     .order_by("-created_at", "id")
+        # )
         queryset = (
             Review.objects.filter(
                 product=product,
@@ -181,8 +196,24 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                     created_by=request.user,
                 )
             )
-            .select_related("created_by")
-            .order_by("-created_at", "id")
+        )
+
+        status_value = request.query_params.get("status")
+        if status_value:
+            queryset = queryset.filter(status=status_value)
+
+        search = request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(body__icontains=search)
+            )
+
+        queryset = queryset.select_related(
+            "created_by"
+        ).order_by(
+            "-created_at",
+            "id",
         )
 
         page = self.paginate_queryset(queryset)
