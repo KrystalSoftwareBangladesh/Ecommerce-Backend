@@ -27,10 +27,16 @@ def create_review(
     if product is None:
         raise ValidationError("Product is required.")
 
+    # existing_review = Review.objects.filter(
+    #     product=product,
+    #     created_by=user,
+    #     is_active=True,
+    # ).exists()
     existing_review = Review.objects.filter(
         product=product,
         created_by=user,
-        is_active=True,
+    ).exclude(
+        status=ModerationStatus.REJECTED,
     ).exists()
 
     if existing_review:
