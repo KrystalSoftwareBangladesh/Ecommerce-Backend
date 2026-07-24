@@ -153,15 +153,6 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='reviews')
     def product_reviews(self, request, pk=None):
         product = self.get_object()
-        # queryset = (
-        #     Review.objects.filter(
-        #         product=product,
-        #         is_active=True,
-        #         status=ModerationStatus.APPROVED,
-        #     )
-        #     .select_related("created_by")
-        #     .order_by('-created_at', 'id')
-        # )
         queryset = (
             Review.objects.filter(
                 product=product,
