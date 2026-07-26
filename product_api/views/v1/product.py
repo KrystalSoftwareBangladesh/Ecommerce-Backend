@@ -36,6 +36,14 @@ from review_api.serializers import (
 )
 
 
+PRODUCT_LOOKUP_PARAMETER = OpenApiParameter(
+    name="id",
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.PATH,
+    description="Product ID or slug",
+)
+
+
 class ProductFilter(django_filters.FilterSet):
     category = django_filters.BaseInFilter(
         field_name='categories__id',
@@ -73,6 +81,9 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
     search_fields = ['name']
+    lookup_field = "id"
+    lookup_url_kwarg = "id"
+    lookup_value_regex = r"[^/]+"
 
     def get_object(self):
         lookup_value = self.kwargs[self.lookup_url_kwarg or self.lookup_field]
@@ -117,10 +128,11 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Product variants",
+        parameters=[PRODUCT_LOOKUP_PARAMETER],
         responses=ProductVariantListSerializer(many=True),
     )
     @action(detail=True, methods=['get'], url_path='product-variants')
-    def product_variants(self, request, pk=None):
+    def product_variants(self, request, id=None):
         product = self.get_object()
         queryset = ProductVariant.objects.filter(
             product=product,
@@ -143,10 +155,11 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Product images",
+        parameters=[PRODUCT_LOOKUP_PARAMETER],
         responses=ProductImageListSerializer(many=True),
     )
     @action(detail=True, methods=['get'], url_path='product-images')
-    def product_images(self, request, pk=None):
+    def product_images(self, request, id=None):
         product = self.get_object()
         queryset = ProductImage.objects.filter(
             product=product,
@@ -164,10 +177,11 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Product reviews",
+        parameters=[PRODUCT_LOOKUP_PARAMETER],
         responses=ReviewListSerializer(many=True),
     )
     @action(detail=True, methods=['get'], url_path='reviews')
-    def product_reviews(self, request, pk=None):
+    def product_reviews(self, request, id=None):
         product = self.get_object()
         queryset = Review.objects.filter(
             product=product,
@@ -215,10 +229,11 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Product review summary",
+        parameters=[PRODUCT_LOOKUP_PARAMETER],
         responses=ProductReviewSummarySerializer,
     )
     @action(detail=True, methods=["get"], url_path="review-summary")
-    def product_review_summary(self, request, pk=None):
+    def product_review_summary(self, request, id=None):
         product = self.get_object()
 
         summary = (
