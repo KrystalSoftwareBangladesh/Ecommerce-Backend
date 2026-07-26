@@ -29,10 +29,11 @@ from review_api.services.review import (
 class ReviewFilter(django_filters.FilterSet):
     product = django_filters.NumberFilter(field_name="product_id")
     rating = django_filters.NumberFilter(field_name="rating")
+    status = django_filters.NumberFilter(field_name="status")
 
     class Meta:
         model = Review
-        fields = ["product", "rating"]
+        fields = ["product", "rating", "status"]
 
 
 @extend_schema(tags=["Reviews"])
