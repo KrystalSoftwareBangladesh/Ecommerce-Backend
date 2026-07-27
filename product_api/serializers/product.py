@@ -51,11 +51,15 @@ class ProductPriceHistorySerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     default_image = serializers.SerializerMethodField()
     origin = OriginSummarySerializer(read_only=True)
+    average_rating = serializers.FloatField(read_only=True)
+    total_reviews = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'current_selling_price',
-                  'default_image', 'origin']
+        fields = [
+            'id', 'name', 'current_selling_price', 'default_image', 'origin',
+            "average_rating", "total_reviews",
+        ]
 
     @extend_schema_field(ProductDefaultImageSerializer)
     def get_default_image(self, obj):

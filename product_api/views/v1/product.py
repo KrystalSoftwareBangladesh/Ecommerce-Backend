@@ -104,14 +104,36 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         ).only('id', 'image', 'alt_text', 'display_order', 'is_default',
                'created_at')
 
-        return Product.objects.filter(
-            is_active=True
-        ).select_related("origin"
-                         ).prefetch_related(
-            'categories',
-            Prefetch('images', queryset=default_image_qs,
-                     to_attr='_default_images'),
-        ).order_by('name', 'id')
+        return (
+            Product.objects.filter(is_active=True)
+            .select_related("origin")
+            .prefetch_related(
+                "categories",
+                Prefetch(
+                    "images",
+                    queryset=default_image_qs,
+                    to_attr="_default_images",
+                ),
+            )
+            .annotate(
+                average_rating=Avg(
+                    "reviews__rating",
+                    filter=Q(
+                        reviews__is_active=True,
+                        reviews__status=ModerationStatus.APPROVED,
+                    ),
+                ),
+                total_reviews=Count(
+                    "reviews",
+                    filter=Q(
+                        reviews__is_active=True,
+                        reviews__status=ModerationStatus.APPROVED,
+                    ),
+                    distinct=True,
+                ),
+            )
+            .order_by("name", "id")
+        )
 
     def get_serializer_class(self):
         if self.action == 'list':
