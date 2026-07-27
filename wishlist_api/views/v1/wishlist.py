@@ -25,6 +25,7 @@ class WishlistViewSet(
     GenericViewSet,
 ):
     permission_classes = [IsAuthenticated]
+    queryset = Wishlist.objects.all()
 
     def get_queryset(self):
         return (
