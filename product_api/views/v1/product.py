@@ -1,5 +1,8 @@
 # product_api/views/v1/product.py
-from django.db.models import Prefetch, Sum, Value, IntegerField, Q, Avg, Count
+from django.db.models import (
+    Prefetch, Sum, Value, IntegerField, Q, Avg, Count, Exists, OuterRef,
+    BooleanField
+)
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
@@ -21,6 +24,7 @@ from product_api.models import (
     Product, ProductVariant, ProductImage,
 )
 from review_api.models import Review
+from wishlist_api.models import Wishlist
 from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
@@ -104,7 +108,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         ).only('id', 'image', 'alt_text', 'display_order', 'is_default',
                'created_at')
 
-        return (
+        queryset = (
             Product.objects.filter(is_active=True)
             .select_related("origin")
             .prefetch_related(
@@ -132,8 +136,23 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                     distinct=True,
                 ),
             )
-            .order_by("name", "id")
+            # .order_by("name", "id")
         )
+        if self.request.user.is_authenticated:
+            queryset = queryset.annotate(
+                wishlist=Exists(
+                    Wishlist.objects.filter(
+                        product=OuterRef("pk"),
+                        created_by=self.request.user,
+                        is_active=True,
+                    )
+                )
+            )
+        else:
+            queryset = queryset.annotate(
+                wishlist=Value(False, output_field=BooleanField())
+            )
+        return queryset.order_by("name", "id")
 
     def get_serializer_class(self):
         if self.action == 'list':

@@ -53,12 +53,13 @@ class ProductListSerializer(serializers.ModelSerializer):
     origin = OriginSummarySerializer(read_only=True)
     average_rating = serializers.FloatField(read_only=True)
     total_reviews = serializers.IntegerField(read_only=True)
+    wishlist = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'current_selling_price', 'default_image', 'origin',
-            "average_rating", "total_reviews",
+            "average_rating", "total_reviews", "wishlist",
         ]
 
     @extend_schema_field(ProductDefaultImageSerializer)
@@ -70,15 +71,20 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    # category = serializers.StringRelatedField()
     categories = CategorySummarySerializer(many=True)
     origin = OriginSummarySerializer(read_only=True)
     price_histories = ProductPriceHistorySerializer(many=True, read_only=True)
+    wishlist = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Product
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at', 'is_active']
+        read_only_fields = [
+            'created_at',
+            'updated_at',
+            'is_active',
+            'wishlist',
+        ]
 
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
