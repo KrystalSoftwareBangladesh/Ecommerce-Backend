@@ -12,6 +12,7 @@ from sale_api import urls as sale_urls
 from origin_api import urls as origin_urls
 from review_api import urls as review_urls
 from meta_api import urls as meta_urls
+from wishlist_api import urls as wishlist_urls
 
 
 urlpatterns = []
@@ -29,3 +30,4 @@ urlpatterns += sale_urls.urlpatterns
 urlpatterns += origin_urls.urlpatterns
 urlpatterns += review_urls.urlpatterns
 urlpatterns += meta_urls.urlpatterns
+urlpatterns += wishlist_urls.urlpatterns
