@@ -36,16 +36,13 @@ class Review(TimeStampedModel, UserStampedModel, SoftDeleteModel, ModerationMode
         constraints = [
             UniqueConstraint(
                 fields=['product', 'created_by'],
-                # condition=Q(is_active=True),
                 condition=~Q(status=ModerationStatus.REJECTED),
                 name='unique_active_review_per_product_user'
             )
         ]
 
         indexes = [
-            # Fast fetching of approved reviews for a product
             models.Index(fields=['product', 'status']),
-            # Fast aggregation for average rating
             models.Index(fields=['rating']),
         ]
 
