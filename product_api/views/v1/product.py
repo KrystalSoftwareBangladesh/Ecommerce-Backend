@@ -104,14 +104,6 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         ).only('id', 'image', 'alt_text', 'display_order', 'is_default',
                'created_at')
 
-        # return Product.objects.filter(
-        #     is_active=True
-        # ).select_related("origin"
-        #                  ).prefetch_related(
-        #     'categories',
-        #     Prefetch('images', queryset=default_image_qs,
-        #              to_attr='_default_images'),
-        # ).order_by('name', 'id')
         return (
             Product.objects.filter(is_active=True)
             .select_related("origin")
@@ -137,6 +129,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                         reviews__is_active=True,
                         reviews__status=ModerationStatus.APPROVED,
                     ),
+                    distinct=True,
                 ),
             )
             .order_by("name", "id")
