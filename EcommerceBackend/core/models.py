@@ -59,6 +59,11 @@ class SoftDeleteModel(models.Model):
         self.deleted_at = timezone.now()
         self.save(update_fields=["is_active", "deleted_at"])
 
+    def restore(self):
+        self.is_active = True
+        self.deleted_at = None
+        self.save(update_fields=["is_active", "deleted_at"])
+
 
 class ModerationModel(models.Model):
     status = models.SmallIntegerField(
