@@ -281,7 +281,7 @@ class CustomerSignupSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         """Ensure email is unique."""
-        if User.objects.filter(email=value).exists():
+        if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError(
                 "A user with this email already exists."
             )

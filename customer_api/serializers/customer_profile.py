@@ -27,7 +27,7 @@ class CustomerProfileCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value):
-        if value and User.objects.filter(email=value).exists():
+        if value and User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError(
                 "A user with this email already exists.")
         return value

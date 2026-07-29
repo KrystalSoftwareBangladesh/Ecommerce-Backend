@@ -30,15 +30,6 @@ class LoginView(TokenObtainPairView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-    # def post(self, request, *args, **kwargs):
-    #     request.data['username'] = request.data.get('credential', None)
-    #     response = super().post(request, *args, **kwargs)
-
-    #     if response.status_code == 200:
-    #         response.data["message"] = "Login successful"
-
-    #     return response
-
 
 @extend_schema(tags=["Authentication"])
 class TokenRefreshView(TokenRefreshView):
