@@ -309,6 +309,7 @@ class CustomerSignupSerializer(serializers.Serializer):
 
         # Extract data
         email = validated_data.pop('email')
+        email = email.lower()
         password = validated_data.pop('password')
         validated_data.pop('confirm_password')  # Remove confirm_password
 
