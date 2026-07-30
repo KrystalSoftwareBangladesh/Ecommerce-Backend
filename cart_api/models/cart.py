@@ -1,19 +1,11 @@
-# cart_api/models/__init__.py
+# cart_api/models/cart.py
 from django.db import models
-from django.db.models import (
-    CASCADE,
-    ForeignKey,
-    PositiveIntegerField,
-    Q,
-    UniqueConstraint,
-)
+from django.db.models import Q
 
 from EcommerceBackend.core.models import (
-    SoftDeleteModel,
-    TimeStampedModel,
-    UserStampedModel,
+    SoftDeleteModel, TimeStampedModel, UserStampedModel
 )
-from product_api.models import Product
+from EcommerceBackend.core.choices import CartStatus
 
 
 class Cart(
@@ -21,36 +13,27 @@ class Cart(
     UserStampedModel,
     SoftDeleteModel,
 ):
-    product = ForeignKey(
-        Product,
-        on_delete=CASCADE,
-        related_name="cart_items",
-    )
-    quantity = PositiveIntegerField(
-        default=1,
+    status = models.PositiveSmallIntegerField(
+        choices=CartStatus.choices,
+        default=CartStatus.ACTIVE,
+        db_index=True,
     )
 
     class Meta:
-        ordering = ["-created_at", "id"]
+        verbose_name = "Cart"
+        verbose_name_plural = "Carts"
+        ordering = ["-created_at"]
 
         constraints = [
-            UniqueConstraint(
-                fields=["product", "created_by"],
-                condition=Q(is_active=True),
-                name="unique_active_cart_item",
-            ),
-            models.CheckConstraint(
-                condition=Q(quantity__gte=1),
-                name="cart_quantity_gte_1",
-            ),
-        ]
-
-        indexes = [
-            models.Index(
-                fields=["created_by", "-created_at"],
-                name="cart_user_created_idx",
+            models.UniqueConstraint(
+                fields=["created_by"],
+                condition=Q(
+                    is_active=True,
+                    status=CartStatus.ACTIVE,
+                ),
+                name="unique_active_cart_per_user",
             ),
         ]
 
     def __str__(self):
-        return f"{self.created_by} - {self.product} ({self.quantity})"
+        return f"Cart #{self.pk}"
