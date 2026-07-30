@@ -1,7 +1,9 @@
 # cart_api/services/__init__.py
-from .cart import add_to_cart, update_cart_item, remove_cart_item
+from .cart_type import CartTypeService
+from .cart import CartService
+from .cart_item import CartItemService
 
 
 __all__ = [
-    add_to_cart, update_cart_item, remove_cart_item,
+    CartTypeService, CartService, CartItemService,
 ]
