@@ -1,11 +1,11 @@
 # cart_api/models/cart.py
 from django.db import models
-from django.db.models import Q
 
 from EcommerceBackend.core.models import (
     SoftDeleteModel, TimeStampedModel, UserStampedModel
 )
 from EcommerceBackend.core.choices import CartStatus
+from .cart_type import CartType
 
 
 class Cart(
@@ -13,27 +13,29 @@ class Cart(
     UserStampedModel,
     SoftDeleteModel,
 ):
+    name = models.CharField(
+        max_length=255,
+    )
+    type = models.ForeignKey(
+        CartType,
+        on_delete=models.PROTECT,
+        related_name="carts",
+    )
     status = models.PositiveSmallIntegerField(
         choices=CartStatus.choices,
         default=CartStatus.ACTIVE,
         db_index=True,
     )
+    is_default = models.BooleanField(
+        default=False,
+        db_index=True,
+    )
 
     class Meta:
-        verbose_name = "Cart"
-        verbose_name_plural = "Carts"
-        ordering = ["-created_at"]
-
-        constraints = [
-            models.UniqueConstraint(
-                fields=["created_by"],
-                condition=Q(
-                    is_active=True,
-                    status=CartStatus.ACTIVE,
-                ),
-                name="unique_active_cart_per_user",
-            ),
-        ]
+        ordering = (
+            "-is_default",
+            "-updated_at",
+        )
 
     def __str__(self):
-        return f"Cart #{self.pk}"
+        return self.name
