@@ -2,10 +2,15 @@
 from rest_framework import serializers
 
 from cart_api.models import CartItem
+from cart_api.services import (
+    add_cart_item,
+    update_cart_item,
+)
+from product_api.models import Product
 from product_api.serializers import ProductListSerializer
 
 
-class CartItemListSerializer(serializers.ModelSerializer):
+class CartItemSerializer(serializers.ModelSerializer):
     product = ProductListSerializer(read_only=True)
 
     class Meta:
@@ -19,8 +24,12 @@ class CartItemListSerializer(serializers.ModelSerializer):
         ]
 
 
-class CartItemDetailSerializer(serializers.ModelSerializer):
-    product = ProductListSerializer(read_only=True)
+class CartItemCreateUpdateSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(
+            is_active=True,
+        )
+    )
 
     class Meta:
         model = CartItem
@@ -28,23 +37,19 @@ class CartItemDetailSerializer(serializers.ModelSerializer):
             "id",
             "product",
             "quantity",
-            "created_at",
-            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
         ]
 
+    def create(self, validated_data):
+        return add_cart_item(
+            user=self.context["request"].user,
+            **validated_data,
+        )
 
-class CartItemCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CartItem
-        fields = [
-            "product",
-            "quantity",
-        ]
-
-
-class CartItemUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CartItem
-        fields = [
-            "quantity",
-        ]
+    def update(self, instance, validated_data):
+        return update_cart_item(
+            cart_item=instance,
+            **validated_data,
+        )

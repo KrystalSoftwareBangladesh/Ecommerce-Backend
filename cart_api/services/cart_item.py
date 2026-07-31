@@ -77,16 +77,20 @@ def update_cart_item(
     """
     Update cart item quantity.
     """
-
-    if cart_item.cart.status != CartStatus.ACTIVE:
+    if not cart_item.is_active:
+        raise ValidationError(
+            "Cart item not found."
+        )
+    if cart_item.cart.status is not CartStatus.ACTIVE:
         raise ValidationError(
             "Only active cart items can be updated."
         )
-
     if quantity < 1:
         raise ValidationError(
             "Quantity must be greater than zero."
         )
+    if cart_item.quantity == quantity:
+        return cart_item
 
     cart_item.quantity = quantity
 
