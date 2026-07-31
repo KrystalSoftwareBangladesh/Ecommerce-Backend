@@ -1,102 +1,92 @@
 # cart_api/views/v1/cart.py
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema
 
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from cart_api.models import Cart
-from cart_api.serializers import (
-    CartCreateUpdateSerializer,
-    CartListSerializer,
-)
+from cart_api.serializers import CartSerializer
 from cart_api.services import (
-    add_to_cart,
-    remove_cart_item,
-    update_cart_item,
+    abandon_cart,
+    checkout_cart,
+    get_or_create_active_cart,
 )
 
 
-@extend_schema(tags=["Carts"])
-class CartViewSet(ModelViewSet):
+@extend_schema(tags=["Cart"])
+class CartViewSet(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CartSerializer
+    queryset = Cart.objects.none()
+    serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
-    http_method_names = [
-        "get",
-        "post",
-        "patch",
-        "delete",
-    ]
-
-    def get_queryset(self):
-        return (
-            Cart.objects.filter(
-                created_by=self.request.user,
-                is_active=True,
-            )
-            .select_related("product")
-            .order_by("-created_at", "id")
-        )
-
-    def get_serializer_class(self):
-        if self.action in (
-            "create",
-            "partial_update",
-        ):
-            return CartCreateUpdateSerializer
-
-        return CartListSerializer
-
+    @extend_schema(
+        responses=CartSerializer,
+    )
     def retrieve(self, request, *args, **kwargs):
-        return Response(
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        cart = add_to_cart(
+        # cart = get_or_create_active_cart(
+        #     user=request.user,
+        # )
+        cart = get_or_create_active_cart(
             user=request.user,
-            product=serializer.validated_data["product"],
-            quantity=serializer.validated_data["quantity"],
+            with_summary=True,
         )
 
-        return Response(
-            CartListSerializer(
-                cart,
-                context=self.get_serializer_context(),
-            ).data,
-            status=status.HTTP_201_CREATED,
+        serializer = self.get_serializer(cart)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        request=None,
+        responses={200: None},
+        description="Checkout active cart.",
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+    )
+    def checkout(self, request):
+        cart = get_or_create_active_cart(
+            user=request.user,
         )
 
-    def partial_update(self, request, *args, **kwargs):
-        cart = self.get_object()
-
-        serializer = self.get_serializer(
-            cart,
-            data=request.data,
-            partial=True,
-        )
-        serializer.is_valid(raise_exception=True)
-
-        cart = update_cart_item(
+        checkout_cart(
             cart=cart,
-            quantity=serializer.validated_data["quantity"],
+            user=request.user,
         )
 
         return Response(
-            CartListSerializer(
-                cart,
-                context=self.get_serializer_context(),
-            ).data
+            {
+                "detail": "Cart checked out successfully."
+            },
+            status=status.HTTP_200_OK,
         )
 
-    def destroy(self, request, *args, **kwargs):
-        cart = self.get_object()
+    @extend_schema(
+        request=None,
+        responses={200: None},
+        description="Abandon active cart.",
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+    )
+    def abandon(self, request):
+        cart = get_or_create_active_cart(
+            user=request.user,
+        )
 
-        remove_cart_item(cart=cart)
+        abandon_cart(
+            cart=cart,
+            user=request.user,
+        )
 
         return Response(
-            status=status.HTTP_204_NO_CONTENT
+            {
+                "detail": "Cart abandoned successfully."
+            },
+            status=status.HTTP_200_OK,
         )

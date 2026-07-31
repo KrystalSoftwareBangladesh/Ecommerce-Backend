@@ -1,5 +1,14 @@
 # cart_api/services/cart.py
 from django.db import transaction
+from django.db.models import (
+    Count,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Q,
+    Sum,
+)
+from django.db.models.functions import Coalesce
 
 from rest_framework.exceptions import ValidationError
 
@@ -19,20 +28,77 @@ def get_active_cart(*, user):
     ).first()
 
 
+# @transaction.atomic
+# def get_or_create_active_cart(*, user):
+#     """
+#     Return the user's active cart.
+#     Create one if it does not exist.
+#     """
+#     cart = get_active_cart(user=user)
+
+#     if cart:
+#         return cart
+
+#     return Cart.objects.create(
+#         created_by=user,
+#         updated_by=user,
+#     )
 @transaction.atomic
-def get_or_create_active_cart(*, user):
+def get_or_create_active_cart(
+    *,
+    user,
+    with_summary: bool = False,
+):
     """
     Return the user's active cart.
     Create one if it does not exist.
+
+    If `with_summary` is True, annotate the cart with:
+    - total_items
+    - total_quantity
+    - subtotal
     """
     cart = get_active_cart(user=user)
 
-    if cart:
+    if cart is None:
+        cart = Cart.objects.create(
+            created_by=user,
+            updated_by=user,
+        )
+
+    if not with_summary:
         return cart
 
-    return Cart.objects.create(
-        created_by=user,
-        updated_by=user,
+    return (
+        Cart.objects.filter(pk=cart.pk)
+        .annotate(
+            total_items=Count(
+                "items",
+                filter=Q(items__is_active=True),
+            ),
+            total_quantity=Coalesce(
+                Sum(
+                    "items__quantity",
+                    filter=Q(items__is_active=True),
+                ),
+                0,
+            ),
+            subtotal=Coalesce(
+                Sum(
+                    ExpressionWrapper(
+                        F("items__quantity")
+                        * F("items__product__current_selling_price"),
+                        output_field=DecimalField(
+                            max_digits=12,
+                            decimal_places=2,
+                        ),
+                    ),
+                    filter=Q(items__is_active=True),
+                ),
+                0,
+            ),
+        )
+        .first()
     )
 
 
