@@ -9,6 +9,12 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ['id', 'full_name', 'username', 'email', 'is_deleted']
     list_per_page = 10
     list_display_links = ('full_name', 'username', 'email')
+    search_fields = [
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+    ]
 
     def save_model(self, request, obj, form, change):
         if "password" in form.changed_data:

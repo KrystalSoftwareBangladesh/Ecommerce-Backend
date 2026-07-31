@@ -40,6 +40,23 @@ class CartViewSet(viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @extend_schema(
+        responses=CartSerializer,
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+    )
+    def active(self, request):
+        cart = get_or_create_active_cart(
+            user=request.user,
+            with_summary=True,
+        )
+
+        serializer = self.get_serializer(cart)
+
+        return Response(serializer.data)
+
+    @extend_schema(
         request=None,
         responses={200: None},
         description="Checkout active cart.",
