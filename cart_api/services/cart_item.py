@@ -4,7 +4,20 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from cart_api.models import CartItem, CartStatus
-from cart_api.services.cart import get_or_create_default_cart
+from cart_api.services.cart import get_or_create_active_cart
+
+
+def list_cart_items(*, user):
+    """
+    Return all active items from the user's active cart.
+    """
+    cart = get_or_create_active_cart(user=user)
+
+    return (
+        cart.items.filter(is_active=True)
+        .select_related("product")
+        .order_by("created_at")
+    )
 
 
 @transaction.atomic
@@ -14,41 +27,44 @@ def add_cart_item(
     product,
     quantity,
 ):
-    cart = get_or_create_default_cart(user=user)
+    """
+    Add a product into the user's active cart.
 
-    if cart.status != CartStatus.ACTIVE:
+    Business Rules
+    --------------
+    - Create an active cart if none exists.
+    - If the product already exists, increase quantity.
+    - Otherwise create a new cart item.
+    """
+
+    if quantity < 1:
         raise ValidationError(
-            {
-                "detail": (
-                    "Items can only be added to an active cart."
-                )
-            }
+            "Quantity must be greater than zero."
         )
 
-    cart_item = CartItem.objects.filter(
-        cart=cart,
+    cart = get_or_create_active_cart(user=user)
+
+    cart_item = cart.items.filter(
         product=product,
         is_active=True,
     ).first()
 
     if cart_item:
         cart_item.quantity += quantity
-        cart_item.updated_by = user
+
         cart_item.save(
             update_fields=[
                 "quantity",
-                "updated_by",
                 "updated_at",
             ]
         )
+
         return cart_item
 
     return CartItem.objects.create(
         cart=cart,
         product=product,
         quantity=quantity,
-        created_by=user,
-        updated_by=user,
     )
 
 
@@ -56,33 +72,27 @@ def add_cart_item(
 def update_cart_item(
     *,
     cart_item,
-    user,
     quantity,
 ):
+    """
+    Update cart item quantity.
+    """
+
     if cart_item.cart.status != CartStatus.ACTIVE:
         raise ValidationError(
-            {
-                "detail": (
-                    "Only items in an active cart can be updated."
-                )
-            }
+            "Only active cart items can be updated."
         )
 
     if quantity < 1:
         raise ValidationError(
-            {
-                "quantity": (
-                    "Quantity must be greater than zero."
-                )
-            }
+            "Quantity must be greater than zero."
         )
 
     cart_item.quantity = quantity
-    cart_item.updated_by = user
+
     cart_item.save(
         update_fields=[
             "quantity",
-            "updated_by",
             "updated_at",
         ]
     )
@@ -94,24 +104,15 @@ def update_cart_item(
 def remove_cart_item(
     *,
     cart_item,
-    user,
 ):
+    """
+    Soft delete a cart item.
+    """
+
     if cart_item.cart.status != CartStatus.ACTIVE:
         raise ValidationError(
-            {
-                "detail": (
-                    "Only items in an active cart can be removed."
-                )
-            }
+            "Only active cart items can be removed."
         )
-
-    cart_item.updated_by = user
-    cart_item.save(
-        update_fields=[
-            "updated_by",
-            "updated_at",
-        ]
-    )
 
     cart_item.soft_delete()
 
