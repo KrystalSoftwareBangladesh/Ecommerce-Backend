@@ -1,62 +1,90 @@
 # cart_api/services/cart_type.py
+from django.db import transaction
+from django.utils.text import slugify
+
+from rest_framework.exceptions import ValidationError
+
 from cart_api.models import CartType
 
 
-class CartTypeService:
-    @staticmethod
-    def list():
-        """
-        Return all active cart types.
-        """
-        return CartType.objects.filter(
-            is_active=True
-        ).order_by("name")
+def create_cart_type(
+    *,
+    user,
+    name: str,
+    description: str = "",
+    is_active: bool = True,
+):
+    slug = slugify(name)
 
-    @staticmethod
-    def get(cart_type_id: int):
-        """
-        Return a cart type by ID.
-        """
-        return CartType.objects.get(
-            id=cart_type_id,
-            is_active=True,
+    if CartType.objects.filter(slug=slug).exists():
+        raise ValidationError(
+            {"name": "A cart type with this name already exists."}
         )
 
-    @staticmethod
-    def create(**validated_data):
-        """
-        Create a new cart type.
-        """
-        return CartType.objects.create(
-            **validated_data
+    return CartType.objects.create(
+        name=name,
+        slug=slug,
+        description=description,
+        is_active=is_active,
+        created_by=user,
+        updated_by=user,
+    )
+
+
+@transaction.atomic
+def update_cart_type(
+    *,
+    cart_type: CartType,
+    user,
+    **validated_data,
+):
+    if "name" in validated_data:
+        slug = slugify(validated_data["name"])
+
+        if (
+            CartType.objects.exclude(pk=cart_type.pk)
+            .filter(slug=slug)
+            .exists()
+        ):
+            raise ValidationError(
+                {"name": "A cart type with this name already exists."}
+            )
+
+        cart_type.slug = slug
+
+    for field, value in validated_data.items():
+        setattr(cart_type, field, value)
+
+    cart_type.updated_by = user
+    cart_type.save()
+
+    return cart_type
+
+
+@transaction.atomic
+def deactivate_cart_type(
+    *,
+    cart_type: CartType,
+    user,
+):
+    if cart_type.carts.filter(is_active=True).exists():
+        raise ValidationError(
+            {
+                "detail": (
+                    "Cannot deactivate a cart type that is "
+                    "used by active carts."
+                )
+            }
         )
 
-    @staticmethod
-    def update(
-        cart_type: CartType,
-        **validated_data,
-    ):
-        """
-        Update an existing cart type.
-        """
-        for field, value in validated_data.items():
-            setattr(cart_type, field, value)
+    cart_type.is_active = False
+    cart_type.updated_by = user
+    cart_type.save(
+        update_fields=[
+            "is_active",
+            "updated_by",
+            "updated_at",
+        ]
+    )
 
-        cart_type.save()
-
-        return cart_type
-
-    @staticmethod
-    def delete(cart_type: CartType):
-        """
-        Soft delete (deactivate) a cart type.
-        """
-        cart_type.is_active = False
-        cart_type.save(
-            update_fields=[
-                "is_active",
-                "updated_at",
-            ]
-        )
-
-        return cart_type
+    return cart_type

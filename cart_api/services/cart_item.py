@@ -1,188 +1,118 @@
 # cart_api/services/cart_item.py
 from django.db import transaction
+
 from rest_framework.exceptions import ValidationError
 
-from cart_api.models import Cart, CartItem, CartStatus
-from product_api.models import Product
+from cart_api.models import CartItem, CartStatus
+from cart_api.services.cart import get_or_create_default_cart
 
 
-class CartItemService:
-    @staticmethod
-    def list(cart: Cart):
-        CartItemService._ensure_cart_operable(cart)
+@transaction.atomic
+def add_cart_item(
+    *,
+    user,
+    product,
+    quantity,
+):
+    cart = get_or_create_default_cart(user=user)
 
-        return (
-            CartItem.objects.filter(
-                cart=cart,
-                is_active=True,
-            )
-            .select_related("product")
-            .order_by("created_at")
+    if cart.status != CartStatus.ACTIVE:
+        raise ValidationError(
+            {
+                "detail": (
+                    "Items can only be added to an active cart."
+                )
+            }
         )
 
-    @staticmethod
-    @transaction.atomic
-    def add(
-        cart: Cart,
-        product: Product,
-        quantity: int = 1,
-    ):
-        CartItemService._ensure_cart_operable(cart)
+    cart_item = CartItem.objects.filter(
+        cart=cart,
+        product=product,
+        is_active=True,
+    ).first()
 
-        if quantity < 1:
-            raise ValidationError(
-                {
-                    "quantity": "Quantity must be at least 1."
-                }
-            )
-
-        cart_item = CartItem.objects.filter(
-            cart=cart,
-            product=product,
-        ).first()
-
-        if cart_item:
-            if cart_item.is_active:
-                cart_item.quantity += quantity
-            else:
-                cart_item.is_active = True
-                cart_item.deleted_at = None
-                cart_item.quantity = quantity
-
-            cart_item.save(
-                update_fields=[
-                    "quantity",
-                    "is_active",
-                    "deleted_at",
-                    "updated_at",
-                ]
-            )
-
-            return cart_item
-
-        return CartItem.objects.create(
-            cart=cart,
-            product=product,
-            quantity=quantity,
-        )
-
-    @staticmethod
-    @transaction.atomic
-    def update(
-        cart_item: CartItem,
-        quantity: int,
-    ):
-        CartItemService._ensure_cart_operable(
-            cart_item.cart
-        )
-
-        if quantity < 1:
-            raise ValidationError(
-                {
-                    "quantity": "Quantity must be at least 1."
-                }
-            )
-
-        cart_item.quantity = quantity
-
-        cart_item.save(
-            update_fields=[
-                "quantity",
-                "updated_at",
-            ]
-        )
-
-        return cart_item
-
-    @staticmethod
-    @transaction.atomic
-    def increase_quantity(
-        cart_item: CartItem,
-        quantity: int = 1,
-    ):
-        CartItemService._ensure_cart_operable(
-            cart_item.cart
-        )
-
-        if quantity < 1:
-            raise ValidationError(
-                {
-                    "quantity": "Quantity must be at least 1."
-                }
-            )
-
+    if cart_item:
         cart_item.quantity += quantity
-
+        cart_item.updated_by = user
         cart_item.save(
             update_fields=[
                 "quantity",
+                "updated_by",
                 "updated_at",
             ]
         )
-
         return cart_item
 
-    @staticmethod
-    @transaction.atomic
-    def decrease_quantity(
-        cart_item: CartItem,
-        quantity: int = 1,
-    ):
-        CartItemService._ensure_cart_operable(
-            cart_item.cart
+    return CartItem.objects.create(
+        cart=cart,
+        product=product,
+        quantity=quantity,
+        created_by=user,
+        updated_by=user,
+    )
+
+
+@transaction.atomic
+def update_cart_item(
+    *,
+    cart_item,
+    user,
+    quantity,
+):
+    if cart_item.cart.status != CartStatus.ACTIVE:
+        raise ValidationError(
+            {
+                "detail": (
+                    "Only items in an active cart can be updated."
+                )
+            }
         )
 
-        if quantity < 1:
-            raise ValidationError(
-                {
-                    "quantity": "Quantity must be at least 1."
-                }
-            )
-
-        if cart_item.quantity <= quantity:
-            cart_item.soft_delete()
-            return None
-
-        cart_item.quantity -= quantity
-
-        cart_item.save(
-            update_fields=[
-                "quantity",
-                "updated_at",
-            ]
+    if quantity < 1:
+        raise ValidationError(
+            {
+                "quantity": (
+                    "Quantity must be greater than zero."
+                )
+            }
         )
 
-        return cart_item
+    cart_item.quantity = quantity
+    cart_item.updated_by = user
+    cart_item.save(
+        update_fields=[
+            "quantity",
+            "updated_by",
+            "updated_at",
+        ]
+    )
 
-    @staticmethod
-    @transaction.atomic
-    def remove(
-        cart_item: CartItem,
-    ):
-        CartItemService._ensure_cart_operable(
-            cart_item.cart
+    return cart_item
+
+
+@transaction.atomic
+def remove_cart_item(
+    *,
+    cart_item,
+    user,
+):
+    if cart_item.cart.status != CartStatus.ACTIVE:
+        raise ValidationError(
+            {
+                "detail": (
+                    "Only items in an active cart can be removed."
+                )
+            }
         )
 
-        cart_item.soft_delete()
+    cart_item.updated_by = user
+    cart_item.save(
+        update_fields=[
+            "updated_by",
+            "updated_at",
+        ]
+    )
 
-    @staticmethod
-    def _ensure_cart_operable(
-        cart: Cart,
-    ):
-        if cart.status == CartStatus.CHECKED_OUT:
-            raise ValidationError(
-                {
-                    "detail": (
-                        "Checked out cart cannot be modified."
-                    )
-                }
-            )
+    cart_item.soft_delete()
 
-        if cart.status == CartStatus.ABANDONED:
-            raise ValidationError(
-                {
-                    "detail": (
-                        "Abandoned cart cannot be modified."
-                    )
-                }
-            )
+    return cart_item
