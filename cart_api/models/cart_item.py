@@ -1,10 +1,10 @@
 # cart_api/models/cart_item.py
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Q
 
 from EcommerceBackend.core.models import (
-    SoftDeleteModel, TimeStampedModel
+    SoftDeleteModel,
+    TimeStampedModel,
 )
 
 from product_api.models import Product
@@ -20,11 +20,13 @@ class CartItem(
         on_delete=models.CASCADE,
         related_name="items",
     )
+
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
         related_name="cart_items",
     )
+
     quantity = models.PositiveIntegerField(
         default=1,
         validators=[
@@ -33,19 +35,30 @@ class CartItem(
     )
 
     class Meta:
-        ordering = ("created_at",)
+        ordering = (
+            "created_at",
+        )
 
         constraints = [
             models.UniqueConstraint(
-                fields=["cart", "product"],
-                condition=Q(is_active=True),
+                fields=[
+                    "cart",
+                    "product",
+                ],
+                condition=models.Q(
+                    is_active=True,
+                ),
                 name="unique_active_product_per_cart",
             ),
             models.CheckConstraint(
-                condition=Q(quantity__gte=1),
+                condition=models.Q(
+                    quantity__gte=1,
+                ),
                 name="cart_item_quantity_gte_1",
             ),
         ]
 
     def __str__(self):
-        return f"{self.product} x {self.quantity}"
+        return (
+            f"{self.product} × {self.quantity}"
+        )

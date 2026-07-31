@@ -2,10 +2,11 @@
 from django.db import models
 
 from EcommerceBackend.core.models import (
-    SoftDeleteModel, TimeStampedModel, UserStampedModel
+    SoftDeleteModel,
+    TimeStampedModel,
+    UserStampedModel,
 )
 from EcommerceBackend.core.choices import CartStatus
-from .cart_type import CartType
 
 
 class Cart(
@@ -13,29 +14,30 @@ class Cart(
     UserStampedModel,
     SoftDeleteModel,
 ):
-    name = models.CharField(
-        max_length=255,
-    )
-    type = models.ForeignKey(
-        CartType,
-        on_delete=models.PROTECT,
-        related_name="carts",
-    )
     status = models.PositiveSmallIntegerField(
         choices=CartStatus.choices,
         default=CartStatus.ACTIVE,
         db_index=True,
     )
-    is_default = models.BooleanField(
-        default=False,
-        db_index=True,
-    )
 
     class Meta:
         ordering = (
-            "-is_default",
-            "-updated_at",
+            "-created_at",
         )
+        constraints = [
+            models.UniqueConstraint(
+                fields=["created_by"],
+                condition=models.Q(
+                    status=CartStatus.ACTIVE,
+                    is_active=True,
+                ),
+                name="unique_active_cart_per_user",
+            )
+        ]
 
     def __str__(self):
-        return self.name
+        return (
+            f"Cart #{self.pk} - "
+            f"{self.created_by} - "
+            f"{self.get_status_display()}"
+        )
