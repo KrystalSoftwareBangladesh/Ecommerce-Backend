@@ -6,6 +6,11 @@ from cart_api.views import v1
 
 router = DefaultRouter()
 router.register(r'carts', v1.CartViewSet, basename='cart')
+router.register(
+    "cart/items",
+    v1.CartItemViewSet,
+    basename="cart-item",
+)
 
 urlpatterns = []
 urlpatterns += router.urls

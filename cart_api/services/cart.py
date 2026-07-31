@@ -12,7 +12,8 @@ from django.db.models.functions import Coalesce
 
 from rest_framework.exceptions import ValidationError
 
-from cart_api.models import Cart, CartStatus
+from EcommerceBackend.core.choices import CartStatus
+from cart_api.models import Cart
 
 
 def get_active_cart(*, user):

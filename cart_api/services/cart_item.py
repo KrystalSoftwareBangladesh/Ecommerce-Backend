@@ -3,7 +3,8 @@ from django.db import transaction
 
 from rest_framework.exceptions import ValidationError
 
-from cart_api.models import CartItem, CartStatus
+from EcommerceBackend.core.choices import CartStatus
+from cart_api.models import CartItem
 from cart_api.services.cart import get_or_create_active_cart
 
 
