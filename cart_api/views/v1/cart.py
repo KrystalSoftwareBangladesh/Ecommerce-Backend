@@ -27,9 +27,6 @@ class CartViewSet(viewsets.GenericViewSet):
         responses=CartSerializer,
     )
     def retrieve(self, request, *args, **kwargs):
-        # cart = get_or_create_active_cart(
-        #     user=request.user,
-        # )
         cart = get_or_create_active_cart(
             user=request.user,
             with_summary=True,

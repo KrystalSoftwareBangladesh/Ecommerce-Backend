@@ -1,16 +1,14 @@
 # cart_api/services/cart.py
 from django.db import transaction
 from django.db.models import (
-    Count,
-    DecimalField,
-    ExpressionWrapper,
-    F,
-    Q,
-    Sum,
+    Count, DecimalField, ExpressionWrapper, F, Q, Sum,
+    Value,
 )
 from django.db.models.functions import Coalesce
 
 from rest_framework.exceptions import ValidationError
+
+import decimal
 
 from EcommerceBackend.core.choices import CartStatus
 from cart_api.models import Cart
@@ -74,29 +72,37 @@ def get_or_create_active_cart(
         Cart.objects.filter(pk=cart.pk)
         .annotate(
             total_items=Count(
-                "items",
-                filter=Q(items__is_active=True),
+                "cart_items",
+                filter=Q(cart_items__is_active=True),
             ),
             total_quantity=Coalesce(
                 Sum(
-                    "items__quantity",
-                    filter=Q(items__is_active=True),
+                    "cart_items__quantity",
+                    filter=Q(cart_items__is_active=True),
                 ),
-                0,
+                # 0,
+                Value(0)
             ),
             subtotal=Coalesce(
                 Sum(
                     ExpressionWrapper(
-                        F("items__quantity")
-                        * F("items__product__current_selling_price"),
+                        F("cart_items__quantity")
+                        * F("cart_items__product__current_selling_price"),
                         output_field=DecimalField(
                             max_digits=12,
                             decimal_places=2,
                         ),
                     ),
-                    filter=Q(items__is_active=True),
+                    filter=Q(cart_items__is_active=True),
                 ),
-                0,
+                # 0,
+                Value(
+                    decimal.Decimal("0.00"),
+                    output_field=DecimalField(
+                        max_digits=12,
+                        decimal_places=2,
+                    ),
+                )
             ),
         )
         .first()
