@@ -45,7 +45,7 @@ def add_cart_item(
 
     cart = get_or_create_active_cart(user=user)
 
-    cart_item = cart.items.filter(
+    cart_item = cart.cart_item.filter(
         product=product,
         is_active=True,
     ).first()
