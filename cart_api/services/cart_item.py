@@ -15,7 +15,7 @@ def list_cart_items(*, user):
     cart = get_or_create_active_cart(user=user)
 
     return (
-        cart.items.filter(is_active=True)
+        cart.cart_items.filter(is_active=True)
         .select_related("product")
         .order_by("created_at")
     )
@@ -45,7 +45,7 @@ def add_cart_item(
 
     cart = get_or_create_active_cart(user=user)
 
-    cart_item = cart.cart_item.filter(
+    cart_item = cart.cart_items.filter(
         product=product,
         is_active=True,
     ).first()
