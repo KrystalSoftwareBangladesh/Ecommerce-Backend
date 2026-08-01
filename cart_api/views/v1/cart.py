@@ -18,10 +18,8 @@ from cart_api.services import (
 @extend_schema(tags=["Cart"])
 class CartViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
-    serializer_class = CartSerializer
     queryset = Cart.objects.none()
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         responses=CartSerializer,

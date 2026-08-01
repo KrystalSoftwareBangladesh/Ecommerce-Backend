@@ -2,9 +2,14 @@
 from rest_framework import serializers
 
 from cart_api.models import Cart
+from .cart_item import CartItemSerializer
 
 
 class CartSerializer(serializers.ModelSerializer):
+    cart_items = CartItemSerializer(
+        many=True,
+        read_only=True,
+    )
     total_items = serializers.IntegerField(
         read_only=True,
     )
@@ -22,6 +27,7 @@ class CartSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "status",
+            "cart_items",
             "total_items",
             "total_quantity",
             "subtotal",
