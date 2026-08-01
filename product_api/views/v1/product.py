@@ -19,12 +19,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
-from EcommerceBackend.core.choices import ModerationStatus
+from EcommerceBackend.core.choices import ModerationStatus, CartStatus
 from product_api.models import (
     Product, ProductVariant, ProductImage,
 )
 from review_api.models import Review
 from wishlist_api.models import Wishlist
+from cart_api.models import CartItem
 from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
@@ -146,11 +147,21 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                         created_by=self.request.user,
                         is_active=True,
                     )
-                )
+                ),
+                in_cart=Exists(
+                    CartItem.objects.filter(
+                        product=OuterRef("pk"),
+                        cart__created_by=self.request.user,
+                        cart__status=CartStatus.ACTIVE,
+                        cart__is_active=True,
+                        is_active=True,
+                    )
+                ),
             )
         else:
             queryset = queryset.annotate(
-                wishlist=Value(False, output_field=BooleanField())
+                wishlist=Value(False, output_field=BooleanField()),
+                in_cart=Value(False, output_field=BooleanField()),
             )
         return queryset.order_by("name", "id")
 
