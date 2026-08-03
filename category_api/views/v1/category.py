@@ -12,7 +12,7 @@ from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from category_api.models import Category
 from category_api.serializers import (
-    CategorySerializer, CategoryDetailsSerializer
+    CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer
 )
 from category_api.filters import CategoryFilter
 
@@ -57,6 +57,8 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return qs
 
     def get_serializer_class(self):
+        if self.action == "list":
+            return CategoryListSerializer
         if self.action == "retrieve":
             return CategoryDetailsSerializer
 

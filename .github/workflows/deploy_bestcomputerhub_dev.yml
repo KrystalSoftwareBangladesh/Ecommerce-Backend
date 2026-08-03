@@ -10,7 +10,7 @@ jobs:
     name: Deploy to Development (Best Computer Hub)
     runs-on: ubuntu-latest
     environment:
-      name: development
+      name: development-bestcomputerhub.com
 
     steps:
       # 1. Checkout code
