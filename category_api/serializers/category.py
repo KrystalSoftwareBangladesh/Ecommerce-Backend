@@ -5,6 +5,31 @@ from drf_spectacular.utils import extend_schema_field
 from category_api.models import Category
 
 
+class CategoryListSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "slug",
+            "name",
+            "children",
+        ]
+
+    @extend_schema_field(serializers.ListField())
+    def get_children(self, obj):
+        children = obj.subcategories.filter(
+            deleted_at__isnull=True
+        )
+
+        return CategoryListSerializer(
+            children,
+            many=True,
+            read_only=True,
+        ).data
+
+
 class CategorySerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
         required=False,
@@ -22,9 +47,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "slug",
             "description",
             "order",
-            # "content_type",
             "parent",
-            # "country_code",
             "children",
             "created_at",
             "updated_at",
@@ -35,31 +58,9 @@ class CategorySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    # ---------------------------
-    # VALIDATIONS
-    # ---------------------------
-
     def validate_parent(self, parent):
-        """
-        Parent category must match:
-        - content_type
-        - country_code
-        """
         if not parent:
             return parent
-
-        # content_type = self.initial_data.get("content_type")
-        # country_code = self.initial_data.get("country_code")
-
-        # if parent.content_type != content_type:
-        #     raise serializers.ValidationError(
-        #         "Parent category must have the same content_type."
-        #     )
-
-        # if parent.country_code != country_code:
-        #     raise serializers.ValidationError(
-        #         "Parent category must belong to the same country scope."
-        #     )
 
         return parent
 
