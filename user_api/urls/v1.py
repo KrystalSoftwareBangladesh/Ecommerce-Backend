@@ -8,7 +8,7 @@ from user_api.views import v1
 router = DefaultRouter()
 
 
-# router.register('roles', v1.GroupViewSet, basename='roles')
+router.register('roles', v1.GroupViewSet, basename='roles')
 
 
 urlpatterns = [
