@@ -3,11 +3,14 @@ from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework import status
 
+from drf_spectacular.utils import extend_schema
+
 from django.contrib.auth.models import Group
 
 from user_api.serializers import GroupSerializer
 
 
+@extend_schema(tags=["Permissions & Groups"])
 class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().order_by('name', 'id')
     serializer_class = GroupSerializer
