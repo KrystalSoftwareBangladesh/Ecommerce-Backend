@@ -50,15 +50,6 @@ class UserViewSet(viewsets.ModelViewSet):
     ]
 
 
-@extend_schema(tags=["Users"])
-class UserListView(generics.ListAPIView):
-    queryset = User.objects.filter(
-        is_deleted=False
-    ).order_by('-added_at', '-id')
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
 class AssignGroupView(generics.UpdateAPIView):
     queryset = User.objects.filter(is_deleted=False)
     serializer_class = AssignGroupSerializer
