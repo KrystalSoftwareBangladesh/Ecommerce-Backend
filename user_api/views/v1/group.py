@@ -19,10 +19,10 @@ class GroupViewSet(viewsets.ModelViewSet):
         permissions.IsAdminUser
     ]
 
-    def create(self, request, *args, **kwargs):
-        request.data['permission_ids'] = request.data.pop('permissions', [])
+    # def create(self, request, *args, **kwargs):
+    #     request.data['permission_ids'] = request.data.pop('permissions', [])
 
-        return super().create(request, *args, **kwargs)
+    #     return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
