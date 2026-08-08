@@ -10,6 +10,7 @@ from user_api.views.v1.create import CreateUserView
 from user_api.views.v1.permission import PermissionListView
 from user_api.views.v1.group import GroupViewSet
 from .user import UserExistenceCheckView
+from .user import UserViewSet
 
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     PermissionListView,
     GroupViewSet,
     "UserExistenceCheckView",
+    "UserViewSet",
 ]
