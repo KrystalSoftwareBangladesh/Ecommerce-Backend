@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, permissions
 from rest_framework import status
+from rest_framework import viewsets
 
 from drf_spectacular.utils import extend_schema
 
@@ -33,6 +34,20 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
+
+
+@extend_schema(tags=["Users"])
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.filter(
+        is_deleted=False
+    ).order_by("-added_at", "-id")
+
+    serializer_class = UserProfileSerializer
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        permissions.IsAdminUser,
+    ]
 
 
 @extend_schema(tags=["Users"])
