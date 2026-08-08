@@ -1,6 +1,7 @@
 # user_api/views/v1/user.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import generics, permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -49,14 +50,22 @@ class UserViewSet(viewsets.ModelViewSet):
         permissions.IsAdminUser,
     ]
 
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot delete your own user account."
+            )
 
-@extend_schema(tags=["Users"])
-class UserListView(generics.ListAPIView):
-    queryset = User.objects.filter(
-        is_deleted=False
-    ).order_by('-added_at', '-id')
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+        user.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": "User deleted successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AssignGroupView(generics.UpdateAPIView):
