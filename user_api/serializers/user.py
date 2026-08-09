@@ -133,6 +133,145 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return user
 
 
+class UserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        validators=[validate_password],
+    )
+
+    confirm_password = serializers.CharField(
+        write_only=True,
+        required=True,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "username",
+            "password",
+            "confirm_password",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+
+        if password != confirm_password:
+            raise serializers.ValidationError({
+                "password": "Password do not match."
+            })
+
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop("confirm_password")
+
+        password = validated_data.pop("password")
+
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+
+        return user
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "username",
+        ]
+        read_only_fields = ["id"]
+
+
+class UserListSerializer(serializers.ModelSerializer):
+
+    permissions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "email",
+            "username",
+            "permissions",
+            "is_superuser",
+        ]
+
+    @extend_schema_field(
+        serializers.ListField(
+            child=serializers.CharField()
+        )
+    )
+    def get_permissions(self, obj) -> list[str]:
+        return sorted(obj.get_all_permissions())
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        data["is_superadmin"] = data.pop("is_superuser")
+
+        return data
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+
+    permissions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "email",
+            "username",
+            "permissions",
+            "is_superuser",
+        ]
+        read_only_fields = [
+            "id",
+            "is_superuser",
+        ]
+
+    @extend_schema_field(
+        serializers.ListField(
+            child=serializers.CharField()
+        )
+    )
+    def get_permissions(self, obj) -> list[str]:
+        return sorted(obj.get_all_permissions())
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        data.pop("first_name", None)
+        data.pop("middle_name", None)
+        data.pop("last_name", None)
+
+        data["is_superadmin"] = data.pop("is_superuser")
+
+        return data
+
+
 class UserExistenceCheckSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
