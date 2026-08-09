@@ -117,6 +117,10 @@ class UserViewSet(viewsets.ModelViewSet):
             raise PermissionDenied(
                 "You cannot delete your own user account."
             )
+        if user.is_superuser:
+            raise PermissionDenied(
+                "You cannot assign roles to a superuser."
+            )
 
         serializer = AssignGroupSerializer(
             instance=user,
@@ -151,6 +155,10 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.pk == request.user.pk:
             raise PermissionDenied(
                 "You cannot delete your own user account."
+            )
+        if user.is_superuser:
+            raise PermissionDenied(
+                "You cannot remove roles from a superuser."
             )
 
         serializer = RemoveGroupSerializer(
