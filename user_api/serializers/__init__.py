@@ -7,7 +7,7 @@ from .user import UserExistenceCheckSerializer
 from .user import UserSummarySerializer
 from .permission import PermissionSerializer
 from .group import GroupSerializer
-from .group import AssignGroupSerializer
+from .group import AssignGroupSerializer, RemoveGroupSerializer
 
 
 __all__ = [
@@ -18,6 +18,6 @@ __all__ = [
     UserSummarySerializer,
     PermissionSerializer,
     GroupSerializer,
-    AssignGroupSerializer,
+    AssignGroupSerializer, RemoveGroupSerializer,
     "UserExistenceCheckSerializer",
 ]

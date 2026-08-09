@@ -77,3 +77,25 @@ class AssignGroupSerializer(serializers.Serializer):
         instance.groups.add(role)
 
         return instance
+
+
+class RemoveGroupSerializer(serializers.Serializer):
+    role_id = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.all(),
+        source="role",
+    )
+
+    def validate(self, attrs):
+        user = self.instance
+        role = attrs["role"]
+
+        if not user.groups.filter(pk=role.pk).exists():
+            raise serializers.ValidationError({
+                "role_id": "This role is not assigned to the user."
+            })
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.groups.remove(validated_data["role"])
+        return instance

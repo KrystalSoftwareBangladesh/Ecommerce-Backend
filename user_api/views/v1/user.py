@@ -12,7 +12,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 from user_api.models import User
 
 from user_api.serializers import UserProfileSerializer
-from user_api.serializers import AssignGroupSerializer
+from user_api.serializers import AssignGroupSerializer, RemoveGroupSerializer
 from user_api.serializers import UserExistenceCheckSerializer
 
 
@@ -95,6 +95,37 @@ class UserViewSet(viewsets.ModelViewSet):
             {
                 "success": True,
                 "message": "Role assigned successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=RemoveGroupSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Role removed successfully."
+            ),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="remove-role",
+    )
+    def remove_role(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        serializer = RemoveGroupSerializer(
+            instance=user,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Role removed successfully.",
             },
             status=status.HTTP_200_OK,
         )
