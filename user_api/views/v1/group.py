@@ -1,9 +1,11 @@
 # user_api/views/v1/group.py
-from rest_framework import viewsets, permissions
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter
+from rest_framework import viewsets, permissions
 from rest_framework import status
 
 from drf_spectacular.utils import extend_schema
+
 
 from django.contrib.auth.models import Group
 
@@ -18,6 +20,8 @@ class GroupViewSet(viewsets.ModelViewSet):
         permissions.IsAuthenticated,
         permissions.IsAdminUser
     ]
+    filter_backends = [SearchFilter]
+    search_fields = ['name',]
 
     # def create(self, request, *args, **kwargs):
     #     request.data['permission_ids'] = request.data.pop('permissions', [])

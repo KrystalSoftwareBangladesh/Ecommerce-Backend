@@ -1,10 +1,10 @@
 # user_api/views/v1/permission.py
 from rest_framework import generics, permissions
-from django.contrib.auth.models import Permission
+from rest_framework.filters import SearchFilter
 
 from drf_spectacular.utils import extend_schema
 
-from EcommerceBackend.core.filter import SearchFilter
+from django.contrib.auth.models import Permission
 
 from user_api.serializers import PermissionSerializer
 
