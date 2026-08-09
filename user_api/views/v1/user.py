@@ -57,7 +57,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_superuser:
             queryset = queryset.filter(is_superuser=False)
 
-        if self.action == "list":
+        if self.action in ["list", "retrieve"]:
             queryset = queryset.prefetch_related("groups")
 
         return queryset
