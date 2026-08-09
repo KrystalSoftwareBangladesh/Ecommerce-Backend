@@ -83,6 +83,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return UserDetailSerializer
 
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot edit your own user account."
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot edit your own user account."
+            )
+
+        return super().partial_update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
         if user.pk == request.user.pk:
