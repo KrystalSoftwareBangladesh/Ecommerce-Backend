@@ -43,7 +43,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'full_name', 'first_name', 'middle_name', 'last_name',
             'email', 'username', 'password', 'confirm_password', 'groups',
-            'permissions', 'is_superuser',
+            'permissions', 'is_superuser', 'role',
         ]
         read_only_fields = ['id', 'is_superuser']
         write_only = ['password', 'confirm_password']
