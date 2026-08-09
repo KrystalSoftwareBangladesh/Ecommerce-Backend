@@ -113,6 +113,10 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def assign_role(self, request, *args, **kwargs):
         user = self.get_object()
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot delete your own user account."
+            )
 
         serializer = AssignGroupSerializer(
             instance=user,
@@ -144,6 +148,10 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def remove_role(self, request, *args, **kwargs):
         user = self.get_object()
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot delete your own user account."
+            )
 
         serializer = RemoveGroupSerializer(
             instance=user,
