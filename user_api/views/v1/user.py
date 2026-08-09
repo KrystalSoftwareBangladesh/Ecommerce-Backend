@@ -54,6 +54,8 @@ class UserViewSet(viewsets.ModelViewSet):
             .filter(is_deleted=False)
             .order_by("-added_at", "-id")
         )
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(is_superuser=False)
 
         if self.action == "list":
             queryset = queryset.prefetch_related("groups")
