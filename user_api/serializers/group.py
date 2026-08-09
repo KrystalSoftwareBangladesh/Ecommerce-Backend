@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import Group, Permission
 # from user_api.models import User
 
-from user_api.serializers import PermissionSerializer
+from .permission import PermissionSerializer
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -52,6 +52,15 @@ class GroupSerializer(serializers.ModelSerializer):
             instance.permissions.set(permissions)
 
         return instance
+
+
+class GroupSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = [
+            "id",
+            "name",
+        ]
 
 
 class AssignGroupSerializer(serializers.Serializer):

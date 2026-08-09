@@ -7,7 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from drf_spectacular.utils import extend_schema_field
 
 from user_api.models import User
-# from user_api.serializers.group import GroupSerializer
+from .group import GroupSummarySerializer
 
 
 class GroupPKRelatedField(serializers.PrimaryKeyRelatedField):
@@ -70,8 +70,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         return data
 
-    # def get_permissions(self, obj):
-    #     return sorted(obj.get_all_permissions())
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_permissions(self, obj) -> list[str]:
         return sorted(obj.get_all_permissions())
@@ -200,8 +198,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserListSerializer(serializers.ModelSerializer):
-
-    permissions = serializers.SerializerMethodField()
+    groups = GroupSummarySerializer(
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = User
@@ -210,24 +210,8 @@ class UserListSerializer(serializers.ModelSerializer):
             "full_name",
             "email",
             "username",
-            "permissions",
-            "is_superuser",
+            "groups",
         ]
-
-    @extend_schema_field(
-        serializers.ListField(
-            child=serializers.CharField()
-        )
-    )
-    def get_permissions(self, obj) -> list[str]:
-        return sorted(obj.get_all_permissions())
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        data["is_superadmin"] = data.pop("is_superuser")
-
-        return data
 
 
 class UserDetailSerializer(serializers.ModelSerializer):

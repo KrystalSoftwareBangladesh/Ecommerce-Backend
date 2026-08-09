@@ -9,22 +9,16 @@ from .user import (
 )
 from .permission import PermissionSerializer
 from .group import (
-    GroupSerializer, AssignGroupSerializer, RemoveGroupSerializer,
+    GroupSerializer, GroupSummarySerializer, AssignGroupSerializer,
+    RemoveGroupSerializer,
 )
 
 
 __all__ = [
-    TokenSerializer,
-    ChangePasswordSerializer,
-    CustomerSignupSerializer,
-    UserProfileSerializer,
-    UserSummarySerializer,
-    UserCreateSerializer,
-    UserUpdateSerializer,
-    UserListSerializer,
-    UserDetailSerializer,
-    PermissionSerializer,
-    GroupSerializer,
-    AssignGroupSerializer, RemoveGroupSerializer,
+    TokenSerializer, ChangePasswordSerializer, CustomerSignupSerializer,
+    UserProfileSerializer, UserSummarySerializer, UserCreateSerializer,
+    UserUpdateSerializer, UserListSerializer, UserDetailSerializer,
     "UserExistenceCheckSerializer",
+    PermissionSerializer, GroupSerializer, GroupSummarySerializer,
+    AssignGroupSerializer, RemoveGroupSerializer,
 ]

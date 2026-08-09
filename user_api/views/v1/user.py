@@ -42,16 +42,23 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 @extend_schema(tags=["Users"])
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.filter(
-        is_deleted=False
-    ).order_by("-added_at", "-id")
-
     serializer_class = UserProfileSerializer
-
     permission_classes = [
         permissions.IsAuthenticated,
         permissions.IsAdminUser,
     ]
+
+    def get_queryset(self):
+        queryset = (
+            User.objects
+            .filter(is_deleted=False)
+            .order_by("-added_at", "-id")
+        )
+
+        if self.action == "list":
+            queryset = queryset.prefetch_related("groups")
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
