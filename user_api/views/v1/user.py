@@ -11,9 +11,11 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from user_api.models import User
 
-from user_api.serializers import UserProfileSerializer
-from user_api.serializers import AssignGroupSerializer, RemoveGroupSerializer
-from user_api.serializers import UserExistenceCheckSerializer
+from user_api.serializers import (
+    UserProfileSerializer, AssignGroupSerializer, RemoveGroupSerializer,
+    UserExistenceCheckSerializer, UserListSerializer, UserDetailSerializer,
+    UserCreateSerializer, UserUpdateSerializer,
+)
 
 
 @extend_schema(tags=["Users"])
@@ -50,6 +52,27 @@ class UserViewSet(viewsets.ModelViewSet):
         permissions.IsAuthenticated,
         permissions.IsAdminUser,
     ]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return UserListSerializer
+
+        if self.action == "retrieve":
+            return UserDetailSerializer
+
+        if self.action == "create":
+            return UserCreateSerializer
+
+        if self.action in ["update", "partial_update"]:
+            return UserUpdateSerializer
+
+        if self.action == "assign_role":
+            return AssignGroupSerializer
+
+        if self.action == "remove_role":
+            return RemoveGroupSerializer
+
+        return UserDetailSerializer
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
