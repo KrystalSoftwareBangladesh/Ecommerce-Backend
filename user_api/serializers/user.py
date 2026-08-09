@@ -215,8 +215,10 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
-
-    permissions = serializers.SerializerMethodField()
+    groups = GroupSummarySerializer(
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = User
@@ -228,7 +230,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "username",
-            "permissions",
+            "groups",
             "is_superuser",
         ]
         read_only_fields = [
