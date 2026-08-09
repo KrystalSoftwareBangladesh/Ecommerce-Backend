@@ -188,3 +188,34 @@ class CustomerSignupSerializer(serializers.Serializer):
     def to_representation(self, instance):
         """Return the created customer data with tokens."""
         return instance
+
+
+class ChangeUserPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        validators=[validate_password],
+    )
+    confirm_password = serializers.CharField(
+        write_only=True,
+        required=True,
+    )
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+
+        if password != confirm_password:
+            raise serializers.ValidationError({
+                "password": "Password do not match."
+            })
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        password = validated_data["password"]
+
+        instance.set_password(password)
+        instance.save(update_fields=["password"])
+
+        return instance
