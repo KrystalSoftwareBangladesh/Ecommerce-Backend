@@ -15,7 +15,7 @@ from user_api.models import User
 from user_api.serializers import (
     UserProfileSerializer, AssignGroupSerializer, RemoveGroupSerializer,
     UserExistenceCheckSerializer, UserListSerializer, UserDetailSerializer,
-    UserCreateSerializer, UserUpdateSerializer,
+    UserCreateSerializer, UserUpdateSerializer, ChangeUserPasswordSerializer,
 )
 
 
@@ -194,6 +194,42 @@ class UserViewSet(viewsets.ModelViewSet):
             {
                 "success": True,
                 "message": "Role removed successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=ChangeUserPasswordSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Password changed successfully."
+            ),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="change-password",
+    )
+    def change_password(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot change your own password from this endpoint."
+            )
+
+        serializer = ChangeUserPasswordSerializer(
+            instance=user,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Password changed successfully.",
             },
             status=status.HTTP_200_OK,
         )
