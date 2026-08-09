@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from django.contrib.auth.models import Group, Permission
-from user_api.models import User
+# from user_api.models import User
 
 from user_api.serializers import PermissionSerializer
 
@@ -54,14 +54,26 @@ class GroupSerializer(serializers.ModelSerializer):
         return instance
 
 
-class AssignGroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'groups']
+class AssignGroupSerializer(serializers.Serializer):
+    role_id = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.all(),
+        source='role',
+    )
+
+    def validate(self, attrs):
+        user = self.instance
+        role = attrs['role']
+
+        if user.groups.filter(pk=role.pk).exists():
+            raise serializers.ValidationError({
+                'role_id': 'This role is already assigned to the user.'
+            })
+
+        return attrs
 
     def update(self, instance, validated_data):
-        """Assign the specified roles to the user."""
-        groups = validated_data.pop('groups', [])
-        instance.groups.set(groups)
+        role = validated_data['role']
+
+        instance.groups.add(role)
 
         return instance
