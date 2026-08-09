@@ -23,11 +23,6 @@ class GroupViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ['name',]
 
-    # def create(self, request, *args, **kwargs):
-    #     request.data['permission_ids'] = request.data.pop('permissions', [])
-
-    #     return super().create(request, *args, **kwargs)
-
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 

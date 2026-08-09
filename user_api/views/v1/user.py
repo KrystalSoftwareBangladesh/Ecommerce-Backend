@@ -9,8 +9,9 @@ from rest_framework import viewsets
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-from user_api.models import User
+from EcommerceBackend.core.permission import ModelPermissionAccess
 
+from user_api.models import User
 from user_api.serializers import (
     UserProfileSerializer, AssignGroupSerializer, RemoveGroupSerializer,
     UserExistenceCheckSerializer, UserListSerializer, UserDetailSerializer,
@@ -44,8 +45,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [
-        permissions.IsAuthenticated,
-        permissions.IsAdminUser,
+        ModelPermissionAccess,
     ]
 
     def get_queryset(self):
