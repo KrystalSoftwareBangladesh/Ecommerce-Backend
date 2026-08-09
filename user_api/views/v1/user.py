@@ -2,11 +2,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import action
 from rest_framework import generics, permissions
 from rest_framework import status
 from rest_framework import viewsets
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from user_api.models import User
 
@@ -67,14 +68,36 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        request=AssignGroupSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Role assigned successfully."
+            ),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="assign-role",
+    )
+    def assign_role(self, request, *args, **kwargs):
+        user = self.get_object()
 
-class AssignGroupView(generics.UpdateAPIView):
-    queryset = User.objects.filter(is_deleted=False)
-    serializer_class = AssignGroupSerializer
-    permission_classes = [
-        permissions.IsAuthenticated,
-        permissions.IsAdminUser,
-    ]
+        serializer = AssignGroupSerializer(
+            instance=user,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Role assigned successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(tags=["Users"])
