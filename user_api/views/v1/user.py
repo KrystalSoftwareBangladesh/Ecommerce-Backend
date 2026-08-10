@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework import generics, permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -55,6 +56,15 @@ class UserViewSet(viewsets.ModelViewSet):
         "change_username": "change_user_username",
         "change_email": "change_user_email",
     }
+    filter_backends = [SearchFilter]
+    search_fields = [
+        'first_name',
+        'middle_name',
+        'last_name',
+        'full_name',
+        'email',
+        'username',
+    ]
 
     def get_queryset(self):
         queryset = (
