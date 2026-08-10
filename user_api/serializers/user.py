@@ -282,30 +282,32 @@ class ChangeUserUsernameSerializer(serializers.ModelSerializer):
         instance.save(update_fields=["username", "updated_at"])
 
         return instance
-# class ChangeUserEmailSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         fields = ["email"]
 
-#     def validate_email(self, value):
-#         value = value.strip().lower()
 
-#         if User.objects.filter(
-#             email__iexact=value
-#         ).exclude(
-#             pk=self.instance.pk
-#         ).exists():
-#             raise serializers.ValidationError(
-#                 "A user with this email already exists."
-#             )
+class ChangeUserEmailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["email"]
 
-#         return value
+    def validate_email(self, value):
+        value = value.strip().lower()
 
-    # def update(self, instance, validated_data):
-    #     instance.email = validated_data["email"]
-    #     instance.save(update_fields=["email", "updated_at"])
+        if User.objects.filter(
+            email__iexact=value
+        ).exclude(
+            pk=self.instance.pk
+        ).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists."
+            )
 
-    #     return instance
+        return value
+
+    def update(self, instance, validated_data):
+        instance.email = validated_data["email"]
+        instance.save(update_fields=["email", "updated_at"])
+
+        return instance
 
 
 class UserExistenceCheckSerializer(serializers.Serializer):

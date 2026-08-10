@@ -16,8 +16,7 @@ from user_api.serializers import (
     UserProfileSerializer, AssignGroupSerializer, RemoveGroupSerializer,
     UserExistenceCheckSerializer, UserListSerializer, UserDetailSerializer,
     UserCreateSerializer, UserUpdateSerializer, ChangeUserPasswordSerializer,
-    ChangeUserUsernameSerializer,
-    # ChangeUserEmailSerializer,
+    ChangeUserUsernameSerializer, ChangeUserEmailSerializer,
 )
 
 
@@ -54,7 +53,7 @@ class UserViewSet(viewsets.ModelViewSet):
         "remove_role": "remove_user_role",
         "change_password": "change_user_password",
         "change_username": "change_user_username",
-        # "change_email": "change_user_email",
+        "change_email": "change_user_email",
     }
 
     def get_queryset(self):
@@ -88,8 +87,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return ChangeUserPasswordSerializer
         if self.action == "change_username":
             return ChangeUserUsernameSerializer
-        # if self.action == "change_email":
-        #     return ChangeUserEmailSerializer
+        if self.action == "change_email":
+            return ChangeUserEmailSerializer
 
         return UserDetailSerializer
 
@@ -280,41 +279,41 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    # @extend_schema(
-    #     request=ChangeUserEmailSerializer,
-    #     responses={
-    #         200: OpenApiResponse(
-    #             description="Email changed successfully."
-    #         ),
-    #     },
-    # )
-    # @action(
-    #     detail=True,
-    #     methods=["post"],
-    #     url_path="change-email",
-    # )
-    # def change_email(self, request, *args, **kwargs):
-    #     user = self.get_object()
+    @extend_schema(
+        request=ChangeUserEmailSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Email changed successfully."
+            ),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="change-email",
+    )
+    def change_email(self, request, *args, **kwargs):
+        user = self.get_object()
 
-    #     if user.pk == request.user.pk:
-    #         raise PermissionDenied(
-    #             "You cannot change your own email from this endpoint."
-    #         )
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot change your own email from this endpoint."
+            )
 
-    #     serializer = ChangeUserEmailSerializer(
-    #         instance=user,
-    #         data=request.data,
-    #     )
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
+        serializer = ChangeUserEmailSerializer(
+            instance=user,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-    #     return Response(
-    #         {
-    #             "success": True,
-    #             "message": "Email changed successfully.",
-    #         },
-    #         status=status.HTTP_200_OK,
-    #     )
+        return Response(
+            {
+                "success": True,
+                "message": "Email changed successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(tags=["Users"])

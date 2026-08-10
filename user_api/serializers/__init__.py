@@ -7,6 +7,7 @@ from .user import (
     UserProfileSerializer, UserExistenceCheckSerializer, UserSummarySerializer,
     UserCreateSerializer, UserUpdateSerializer, UserListSerializer,
     UserDetailSerializer, ChangeUserUsernameSerializer,
+    ChangeUserEmailSerializer,
 )
 from .permission import PermissionSerializer
 from .group import (
@@ -20,7 +21,8 @@ __all__ = [
     ChangeUserPasswordSerializer,
     UserProfileSerializer, UserSummarySerializer, UserCreateSerializer,
     UserUpdateSerializer, UserListSerializer, UserDetailSerializer,
-    ChangeUserUsernameSerializer, UserExistenceCheckSerializer,
+    ChangeUserUsernameSerializer, ChangeUserEmailSerializer,
+    UserExistenceCheckSerializer,
     PermissionSerializer, GroupSerializer, GroupSummarySerializer,
     AssignGroupSerializer, RemoveGroupSerializer,
 ]
