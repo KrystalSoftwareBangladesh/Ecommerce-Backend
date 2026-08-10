@@ -11,14 +11,61 @@ class PublicReadPermissionMixin:
         return super().get_permissions()
 
 
+# class ModelPermissionAccess(permissions.DjangoModelPermissions):
+#     """
+#     Enforces Django model permissions for authenticated API requests.
+
+#     GET/HEAD/OPTIONS  -> view
+#     POST              -> add
+#     PUT/PATCH         -> change
+#     DELETE            -> delete
+#     """
+
+#     perms_map = {
+#         "GET": ["%(app_label)s.view_%(model_name)s"],
+#         "HEAD": ["%(app_label)s.view_%(model_name)s"],
+#         "OPTIONS": ["%(app_label)s.view_%(model_name)s"],
+#         "POST": ["%(app_label)s.add_%(model_name)s"],
+#         "PUT": ["%(app_label)s.change_%(model_name)s"],
+#         "PATCH": ["%(app_label)s.change_%(model_name)s"],
+#         "DELETE": ["%(app_label)s.delete_%(model_name)s"],
+#     }
+
+#     def get_required_permissions(self, method, model_cls):
+#         view = getattr(self, "view", None)
+
+#         if view is not None:
+#             custom_permissions = getattr(
+#                 view,
+#                 "custom_permissions",
+#                 {},
+#             )
+
+#             action = getattr(view, "action", None)
+
+#             if action in custom_permissions:
+#                 permission = custom_permissions[action]
+
+#                 return [
+#                     f"{model_cls._meta.app_label}.{permission}"
+#                 ]
+
+#         return super().get_required_permissions(
+#             method,
+#             model_cls,
+#         )
 class ModelPermissionAccess(permissions.DjangoModelPermissions):
     """
     Enforces Django model permissions for authenticated API requests.
 
-    GET/HEAD/OPTIONS  -> view
-    POST              -> add
-    PUT/PATCH         -> change
-    DELETE            -> delete
+    Standard actions:
+        GET/HEAD/OPTIONS  -> view
+        POST              -> add
+        PUT/PATCH         -> change
+        DELETE            -> delete
+
+    Custom actions can be declared on a ViewSet using
+    the `custom_permissions` mapping.
     """
 
     perms_map = {
@@ -30,3 +77,26 @@ class ModelPermissionAccess(permissions.DjangoModelPermissions):
         "PATCH": ["%(app_label)s.change_%(model_name)s"],
         "DELETE": ["%(app_label)s.delete_%(model_name)s"],
     }
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        custom_permissions = getattr(
+            view,
+            "custom_permissions",
+            {},
+        )
+
+        action = getattr(view, "action", None)
+
+        if action in custom_permissions:
+            permission = custom_permissions[action]
+
+            app_label = view.get_queryset().model._meta.app_label
+
+            return request.user.has_perm(
+                f"{app_label}.{permission}"
+            )
+
+        return super().has_permission(request, view)

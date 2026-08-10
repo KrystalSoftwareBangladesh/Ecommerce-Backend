@@ -47,6 +47,11 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [
         ModelPermissionAccess,
     ]
+    custom_permissions = {
+        "assign_role": "assign_user_role",
+        "remove_role": "remove_user_role",
+        "change_password": "change_user_password",
+    }
 
     def get_queryset(self):
         queryset = (
