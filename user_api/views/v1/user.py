@@ -61,7 +61,6 @@ class UserViewSet(viewsets.ModelViewSet):
         'first_name',
         'middle_name',
         'last_name',
-        'full_name',
         'email',
         'username',
     ]
