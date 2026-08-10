@@ -156,7 +156,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         if user.pk == request.user.pk:
             raise PermissionDenied(
-                "You cannot delete your own user account."
+                "You cannot assign role to your own user account."
             )
         if user.is_superuser:
             raise PermissionDenied(
@@ -195,7 +195,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         if user.pk == request.user.pk:
             raise PermissionDenied(
-                "You cannot delete your own user account."
+                "You cannot remove role from your own user account."
             )
         if user.is_superuser:
             raise PermissionDenied(
@@ -235,7 +235,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user.pk == request.user.pk:
             raise PermissionDenied(
-                "You cannot change your own password from this endpoint."
+                "You cannot change your own password."
             )
 
         serializer = ChangeUserPasswordSerializer(
@@ -271,7 +271,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user.pk == request.user.pk:
             raise PermissionDenied(
-                "You cannot change your own username from this endpoint."
+                "You cannot change your own username."
             )
 
         serializer = ChangeUserUsernameSerializer(
@@ -307,7 +307,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user.pk == request.user.pk:
             raise PermissionDenied(
-                "You cannot change your own email from this endpoint."
+                "You cannot change your own email."
             )
 
         serializer = ChangeUserEmailSerializer(
