@@ -174,7 +174,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         password = validated_data.pop("password")
 
-        user = User(**validated_data)
+        user = User(**validated_data, role="STAFF",)
         user.set_password(password)
         user.save()
 
