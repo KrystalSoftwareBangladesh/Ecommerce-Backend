@@ -79,5 +79,12 @@ class User(AbstractUser):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
 
+        permissions = [
+            ("change_user_username", "Can change user username"),
+            ("change_user_password", "Can change user password"),
+            ("assign_user_role", "Can assign user role"),
+            ("remove_user_role", "Can remove user role"),
+        ]
+
     def __str__(self):
         return self.full_name
