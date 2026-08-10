@@ -80,6 +80,7 @@ class User(AbstractUser):
         verbose_name_plural = 'Users'
 
         permissions = [
+            ("change_user_email", "Can change user email"),
             ("change_user_username", "Can change user username"),
             ("change_user_password", "Can change user password"),
             ("assign_user_role", "Can assign user role"),

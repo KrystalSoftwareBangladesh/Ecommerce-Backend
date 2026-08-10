@@ -16,6 +16,8 @@ from user_api.serializers import (
     UserProfileSerializer, AssignGroupSerializer, RemoveGroupSerializer,
     UserExistenceCheckSerializer, UserListSerializer, UserDetailSerializer,
     UserCreateSerializer, UserUpdateSerializer, ChangeUserPasswordSerializer,
+    ChangeUserUsernameSerializer,
+    # ChangeUserEmailSerializer,
 )
 
 
@@ -51,6 +53,8 @@ class UserViewSet(viewsets.ModelViewSet):
         "assign_role": "assign_user_role",
         "remove_role": "remove_user_role",
         "change_password": "change_user_password",
+        "change_username": "change_user_username",
+        # "change_email": "change_user_email",
     }
 
     def get_queryset(self):
@@ -70,21 +74,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return UserListSerializer
-
         if self.action == "retrieve":
             return UserDetailSerializer
-
         if self.action == "create":
             return UserCreateSerializer
-
         if self.action in ["update", "partial_update"]:
             return UserUpdateSerializer
-
         if self.action == "assign_role":
             return AssignGroupSerializer
-
         if self.action == "remove_role":
             return RemoveGroupSerializer
+        if self.action == "change_password":
+            return ChangeUserPasswordSerializer
+        if self.action == "change_username":
+            return ChangeUserUsernameSerializer
+        # if self.action == "change_email":
+        #     return ChangeUserEmailSerializer
 
         return UserDetailSerializer
 
@@ -238,6 +243,78 @@ class UserViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        request=ChangeUserUsernameSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Username changed successfully."
+            ),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="change-username",
+    )
+    def change_username(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.pk == request.user.pk:
+            raise PermissionDenied(
+                "You cannot change your own username from this endpoint."
+            )
+
+        serializer = ChangeUserUsernameSerializer(
+            instance=user,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Username changed successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    # @extend_schema(
+    #     request=ChangeUserEmailSerializer,
+    #     responses={
+    #         200: OpenApiResponse(
+    #             description="Email changed successfully."
+    #         ),
+    #     },
+    # )
+    # @action(
+    #     detail=True,
+    #     methods=["post"],
+    #     url_path="change-email",
+    # )
+    # def change_email(self, request, *args, **kwargs):
+    #     user = self.get_object()
+
+    #     if user.pk == request.user.pk:
+    #         raise PermissionDenied(
+    #             "You cannot change your own email from this endpoint."
+    #         )
+
+    #     serializer = ChangeUserEmailSerializer(
+    #         instance=user,
+    #         data=request.data,
+    #     )
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+
+    #     return Response(
+    #         {
+    #             "success": True,
+    #             "message": "Email changed successfully.",
+    #         },
+    #         status=status.HTTP_200_OK,
+    #     )
 
 
 @extend_schema(tags=["Users"])
