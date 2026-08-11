@@ -27,7 +27,7 @@ class Brand(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         null=True
     )
     display_order = models.PositiveIntegerField(
-        default=0,
+        default=1,
         db_index=True,
         help_text='Display order for brands. Lower values appear first.'
     )

@@ -8,7 +8,7 @@ from .models import (
     Brand, ProductImage,
     # InventoryMovement
 )
-from .services import set_product_image_default
+from .services.product import set_product_image_default
 
 
 @admin.register(Brand)

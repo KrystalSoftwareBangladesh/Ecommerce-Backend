@@ -1,6 +1,8 @@
 # product_api/serializers/brand.py
 from rest_framework import serializers
 
+from product_api.services import BrandService
+
 from product_api.models import Brand
 
 
@@ -56,9 +58,10 @@ class BrandDetailSerializer(serializers.ModelSerializer):
 
 
 class BrandCreateUpdateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating and updating brands.
-    """
+    display_order = serializers.IntegerField(
+        required=False,
+        min_value=1,
+    )
     slug = serializers.CharField(
         required=False,
         allow_blank=True
@@ -75,14 +78,10 @@ class BrandCreateUpdateSerializer(serializers.ModelSerializer):
             'is_active',
         ]
         read_only_fields = [
-            'id',
+            'id', 'is_active',
         ]
 
     def validate_name(self, value):
-        """
-        Validate that brand name is unique.
-        Allow case-insensitive duplicates only if they differ in case.
-        """
         qs = Brand.objects.filter(name__iexact=value)
 
         # Exclude current instance when updating
@@ -96,10 +95,6 @@ class BrandCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        """
-        Validate that slug is not updated after creation.
-        Prevent slug updates for SEO safety.
-        """
         instance = self.instance
 
         if instance and 'slug' in attrs and attrs['slug']:
@@ -108,3 +103,16 @@ class BrandCreateUpdateSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+
+    def create(self, validated_data):
+        return BrandService.create_brand(
+            validated_data=validated_data,
+            user=self.context["request"].user,
+        )
+
+    def update(self, instance, validated_data):
+        return BrandService.update_brand(
+            instance=instance,
+            validated_data=validated_data,
+            user=self.context["request"].user,
+        )
