@@ -1,8 +1,10 @@
 # product_api/views/v1/brand.py
-from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.parsers import MultiPartParser, FormParser
+from django_filters.rest_framework import DjangoFilterBackend
+
+from drf_spectacular.utils import extend_schema
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
@@ -17,6 +19,10 @@ from product_api.serializers import (
 @extend_schema(tags=["Brands"])
 class BrandViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     queryset = Brand.objects.filter(is_active=True, deleted_at__isnull=True)
+    parser_classes = [
+        MultiPartParser,
+        FormParser,
+    ]
     filter_backends = [
         DjangoFilterBackend,
         SearchFilter,

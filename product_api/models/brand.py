@@ -8,14 +8,15 @@ from EcommerceBackend.core.models import (
 
 
 class Brand(TimeStampedModel, UserStampedModel, SoftDeleteModel):
-    """
-    Brand model for product categorization.
-    Represents manufacturers or brand names.
-    """
     name = models.CharField(
         max_length=255,
         unique=True,
         db_index=True
+    )
+    logo = models.ImageField(
+        upload_to="brands/logos/",
+        blank=True,
+        null=True,
     )
     slug = models.SlugField(
         max_length=255,
