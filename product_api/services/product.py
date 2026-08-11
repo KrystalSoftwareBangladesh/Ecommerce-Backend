@@ -1,9 +1,9 @@
-# product_api/services.py
+# product_api/services/product.py
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from .models import ProductImage
+from product_api.models import ProductImage
 
 
 def _get_active_images(product):

@@ -16,16 +16,6 @@ from product_api.serializers import (
 
 @extend_schema(tags=["Brands"])
 class BrandViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
-    """
-    ViewSet for Brand CRUD operations.
-
-    Features:
-    - Public list endpoint (no authentication required)
-    - Authenticated create, update, delete
-    - Search by name and description
-    - Filter by active status
-    - Ordering by name, created_at
-    """
     queryset = Brand.objects.filter(is_active=True, deleted_at__isnull=True)
     filter_backends = [
         DjangoFilterBackend,
@@ -40,38 +30,17 @@ class BrandViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         'description',
     ]
     ordering_fields = [
-        'name',
-        'created_at',
-        'id',
+        "display_order",
+        "name",
+        "created_at",
+        "id",
     ]
-    ordering = ['name', 'id']
+    ordering = ["display_order", "id"]
 
     def get_serializer_class(self):
-        """
-        Return appropriate serializer based on action.
-        """
         if self.action == 'list':
             return BrandListSerializer
         elif self.action == 'retrieve':
             return BrandDetailSerializer
-        else:  # create, update, partial_update
+        else:
             return BrandCreateUpdateSerializer
-
-    def get_queryset(self):
-        """
-        Return queryset filtered by active and non-deleted brands.
-        """
-        qs = super().get_queryset()
-        return qs
-
-    def perform_create(self, serializer):
-        """
-        Save brand with created_by user.
-        """
-        serializer.save(created_by=self.request.user)
-
-    def perform_update(self, serializer):
-        """
-        Save brand with updated_by user.
-        """
-        serializer.save(updated_by=self.request.user)

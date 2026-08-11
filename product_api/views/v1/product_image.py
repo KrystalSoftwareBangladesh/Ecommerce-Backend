@@ -12,7 +12,7 @@ from product_api.serializers import (
     ProductImageDetailSerializer,
     ProductImageListSerializer,
 )
-from product_api.services import (
+from product_api.services.product import (
     replace_product_image,
     reorder_product_images,
     set_product_image_default,

@@ -3,7 +3,7 @@ from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
 from product_api.models import Product, ProductImage
-from product_api.services import set_product_image_default
+from product_api.services.product import set_product_image_default
 
 
 class ProductDefaultImageSerializer(serializers.Serializer):
