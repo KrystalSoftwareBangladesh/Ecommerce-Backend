@@ -7,14 +7,12 @@ from product_api.models import Brand
 
 
 class BrandListSerializer(serializers.ModelSerializer):
-    """
-    Serializer for listing brands (read-only).
-    """
     class Meta:
         model = Brand
         fields = [
             'id',
             'name',
+            "logo",
             'slug',
             'display_order',
             'is_active',
@@ -27,10 +25,6 @@ class BrandListSerializer(serializers.ModelSerializer):
 
 
 class BrandDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer for brand detail view.
-    Includes all fields and metadata.
-    """
     created_by = serializers.StringRelatedField(read_only=True)
     updated_by = serializers.StringRelatedField(read_only=True)
 
@@ -40,6 +34,7 @@ class BrandDetailSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'slug',
+            "logo",
             'description',
             'display_order',
             'is_active',
@@ -72,6 +67,7 @@ class BrandCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            "logo",
             'slug',
             'description',
             'display_order',
