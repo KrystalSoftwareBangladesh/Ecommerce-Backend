@@ -124,3 +124,24 @@ class CategorySummarySerializer(serializers.ModelSerializer):
             "name",
             "slug",
         ]
+
+
+class CategoryTreeListSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "slug",
+            "name",
+            "children",
+        ]
+
+    @extend_schema_field(serializers.ListField())
+    def get_children(self, obj):
+        return CategoryTreeListSerializer(
+            getattr(obj, "_tree_children", []),
+            many=True,
+            read_only=True,
+        ).data

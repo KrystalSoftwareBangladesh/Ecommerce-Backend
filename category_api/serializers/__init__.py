@@ -1,7 +1,7 @@
 # category_api/serializers/__init__.py
 from .category import (
     CategorySerializer, CategoryDetailsSerializer, CategorySummarySerializer,
-    CategoryListSerializer,
+    CategoryListSerializer, CategoryTreeListSerializer,
 )
 from .category_import import (
     CategoryJsonImportSerializer,
@@ -14,6 +14,7 @@ from .category_import import (
 __all__ = [
     "CategorySerializer", "CategoryDetailsSerializer",
     "CategorySummarySerializer", "CategoryListSerializer",
+    "CategoryTreeListSerializer",
     "CategoryJsonImportSerializer",
     "CategoryCsvImportSerializer",
     "CategoryXlsxImportSerializer",
