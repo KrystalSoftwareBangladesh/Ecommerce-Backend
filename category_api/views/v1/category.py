@@ -85,6 +85,11 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return CategorySerializer
 
     def _build_category_tree(self, roots):
+        """
+        Build the complete category hierarchy in memory for the parent-category
+        tree endpoint, avoiding recursive database queries during
+        serialization.
+        """
         categories = list(
             Category.objects.filter(
                 deleted_at__isnull=True,
@@ -127,6 +132,8 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         if request.query_params.get("is_parent") != "true":
             return super().list(request, *args, **kwargs)
 
+        # The parent-category endpoint returns the complete nested hierarchy.
+        # Build the tree in memory to avoid recursive N+1 queries.
         queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
