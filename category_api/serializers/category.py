@@ -145,3 +145,16 @@ class CategoryTreeListSerializer(serializers.ModelSerializer):
             many=True,
             read_only=True,
         ).data
+
+
+class CategoryNavigationSerializer(serializers.ModelSerializer):
+    has_children = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "slug",
+            "name",
+            "has_children",
+        ]
