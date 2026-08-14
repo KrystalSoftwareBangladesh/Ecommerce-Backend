@@ -1,19 +1,24 @@
 # category_api/views/category.py
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
-from django.db.models import Prefetch
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiTypes,
+    extend_schema,
+)
+from django.db.models import Prefetch, Exists, OuterRef
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.exceptions import ValidationError
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from category_api.models import Category
 from category_api.serializers import (
     CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
-    CategoryTreeListSerializer,
+    CategoryTreeListSerializer, CategoryNavigationSerializer,
 )
 from category_api.filters import CategoryFilter
 
@@ -56,8 +61,30 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     #         Prefetch('subcategories', queryset=children_qs)
     #     )
     #     return qs
+    # def get_queryset(self):
+    #     qs = super().get_queryset()
+
+    #     if (
+    #         self.action == "list"
+    #         and self.request.query_params.get("is_parent") == "true"
+    #     ):
+    #         return qs
+
+    #     children_qs = Category.objects.filter(
+    #         deleted_at__isnull=True
+    #     )
+
+    #     return qs.prefetch_related(
+    #         Prefetch(
+    #             "subcategories",
+    #             queryset=children_qs,
+    #         )
+    #     )
     def get_queryset(self):
         qs = super().get_queryset()
+
+        if self.action in ["roots", "children"]:
+            return qs
 
         if (
             self.action == "list"
@@ -127,6 +154,39 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             attach_children(root)
 
         return roots
+
+    def _get_category_ids_from_params(self, queryset):
+        ids = self.request.query_params.get("ids")
+        slugs = self.request.query_params.get("slugs")
+
+        category_ids = set()
+
+        if ids:
+            try:
+                category_ids.update(
+                    int(value.strip())
+                    for value in ids.split(",")
+                    if value.strip()
+                )
+            except ValueError:
+                raise ValidationError({
+                    "ids": "IDs must be comma-separated integers."
+                })
+
+        if slugs:
+            slug_values = [
+                value.strip()
+                for value in slugs.split(",")
+                if value.strip()
+            ]
+
+            category_ids.update(
+                queryset.filter(
+                    slug__in=slug_values
+                ).values_list("id", flat=True)
+            )
+
+        return category_ids
 
     def list(self, request, *args, **kwargs):
         if request.query_params.get("is_parent") != "true":
@@ -211,3 +271,160 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    @extend_schema(
+        tags=["Categories"],
+        parameters=[
+            OpenApiParameter(
+                name="ids",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Comma-separated category IDs.",
+            ),
+            OpenApiParameter(
+                name="slugs",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Comma-separated category slugs.",
+            ),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="roots",
+    )
+    def roots(self, request):
+        # queryset = Category.objects.filter(
+        #     deleted_at__isnull=True,
+        #     parent__isnull=True,
+        # )
+        children_exists = Category.objects.filter(
+            parent_id=OuterRef("pk"),
+            deleted_at__isnull=True,
+        )
+
+        queryset = Category.objects.filter(
+            deleted_at__isnull=True,
+            parent__isnull=True,
+        ).annotate(
+            has_children=Exists(children_exists)
+        )
+
+        ids = request.query_params.get("ids")
+        slugs = request.query_params.get("slugs")
+
+        if ids or slugs:
+            category_ids = self._get_category_ids_from_params(queryset)
+            queryset = queryset.filter(id__in=category_ids)
+
+        queryset = queryset.order_by(
+            "order",
+            "name",
+            "id",
+        )
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = CategoryNavigationSerializer(
+                page,
+                many=True,
+                context=self.get_serializer_context(),
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = CategoryNavigationSerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Categories"],
+        parameters=[
+            OpenApiParameter(
+                name="ids",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Comma-separated parent category IDs.",
+            ),
+            OpenApiParameter(
+                name="slugs",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Comma-separated parent category slugs.",
+            ),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="children",
+    )
+    def children(self, request):
+        # parent_queryset = Category.objects.filter(
+        #     deleted_at__isnull=True,
+        # )
+
+        # parent_ids = self._get_category_ids_from_params(
+        #     parent_queryset
+        # )
+
+        # if not parent_ids:
+        #     raise ValidationError({
+        #         "detail": "At least one category ID or slug is required."
+        #     })
+
+        # queryset = Category.objects.filter(
+        #     deleted_at__isnull=True,
+        #     parent_id__in=parent_ids,
+        # ).order_by(
+        #     "parent_id",
+        #     "order",
+        #     "name",
+        #     "id",
+        # )
+        parent_queryset = Category.objects.filter(
+            deleted_at__isnull=True,
+        )
+
+        parent_ids = self._get_category_ids_from_params(
+            parent_queryset
+        )
+
+        if not parent_ids:
+            raise ValidationError({
+                "detail": "At least one category ID or slug is required."
+            })
+
+        children_exists = Category.objects.filter(
+            parent_id=OuterRef("pk"),
+            deleted_at__isnull=True,
+        )
+
+        queryset = Category.objects.filter(
+            deleted_at__isnull=True,
+            parent_id__in=parent_ids,
+        ).annotate(
+            has_children=Exists(children_exists)
+        ).order_by(
+            "parent_id",
+            "order",
+            "name",
+            "id",
+        )
+
+        serializer = CategoryNavigationSerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(serializer.data)
