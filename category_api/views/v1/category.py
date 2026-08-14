@@ -12,7 +12,8 @@ from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
 from category_api.models import Category
 from category_api.serializers import (
-    CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer
+    CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
+    CategoryTreeListSerializer,
 )
 from category_api.filters import CategoryFilter
 
@@ -47,14 +48,33 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     ordering = ["order", "name", "id"]
 
+    # def get_queryset(self):
+    #     qs = super().get_queryset()
+    #     # Prefetch subcategories to avoid N+1 queries
+    #     children_qs = Category.objects.filter(deleted_at__isnull=True)
+    #     qs = qs.prefetch_related(
+    #         Prefetch('subcategories', queryset=children_qs)
+    #     )
+    #     return qs
     def get_queryset(self):
         qs = super().get_queryset()
-        # Prefetch subcategories to avoid N+1 queries
-        children_qs = Category.objects.filter(deleted_at__isnull=True)
-        qs = qs.prefetch_related(
-            Prefetch('subcategories', queryset=children_qs)
+
+        if (
+            self.action == "list"
+            and self.request.query_params.get("is_parent") == "true"
+        ):
+            return qs
+
+        children_qs = Category.objects.filter(
+            deleted_at__isnull=True
         )
-        return qs
+
+        return qs.prefetch_related(
+            Prefetch(
+                "subcategories",
+                queryset=children_qs,
+            )
+        )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -63,6 +83,78 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return CategoryDetailsSerializer
 
         return CategorySerializer
+
+    def _build_category_tree(self, roots):
+        """
+        Build the complete category hierarchy in memory for the parent-category
+        tree endpoint, avoiding recursive database queries during
+        serialization.
+        """
+        categories = list(
+            Category.objects.filter(
+                deleted_at__isnull=True,
+            ).only(
+                "id",
+                "slug",
+                "name",
+                "parent_id",
+                "order",
+            )
+        )
+
+        children_map = {}
+
+        for category in categories:
+            children_map.setdefault(category.parent_id, []).append(category)
+
+        for children in children_map.values():
+            children.sort(
+                key=lambda category: (
+                    category.order,
+                    category.name,
+                    category.id,
+                )
+            )
+
+        def attach_children(category):
+            children = children_map.get(category.id, [])
+            category._tree_children = children
+
+            for child in children:
+                attach_children(child)
+
+        for root in roots:
+            attach_children(root)
+
+        return roots
+
+    def list(self, request, *args, **kwargs):
+        if request.query_params.get("is_parent") != "true":
+            return super().list(request, *args, **kwargs)
+
+        # The parent-category endpoint returns the complete nested hierarchy.
+        # Build the tree in memory to avoid recursive N+1 queries.
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            roots = list(page)
+        else:
+            roots = list(queryset)
+
+        roots = self._build_category_tree(roots)
+
+        serializer = CategoryTreeListSerializer(
+            roots,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+
+        return Response(serializer.data)
 
     @extend_schema(tags=["Categories"])
     @action(detail=False, methods=['post'], url_path='edit-by-slug')
