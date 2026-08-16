@@ -229,62 +229,6 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @extend_schema(tags=["Categories"])
-    @action(detail=False, methods=['post'], url_path='edit-by-slug')
-    def edit_by_slug(self, request):
-        """
-        Edit a category by slug.
-        Expected payload: {
-            "slug": "category-slug",
-            "name": "New Name",
-            "description": "New description",
-            ...
-        }
-        """
-        slug = request.data.get('slug')
-
-        if not slug:
-            return Response(
-                {'error': 'slug is required in payload'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            category = Category.objects.get(
-                slug=slug,
-                deleted_at__isnull=True
-            )
-        except Category.DoesNotExist:
-            error_msg = f'Category with slug "{slug}" not found'
-            return Response(
-                {'error': error_msg},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Create a copy of request data without the slug for
-        # serializer validation
-        update_data = request.data.copy()
-        # Remove slug from update data to avoid validation issues
-        update_data.pop('slug', None)
-
-        serializer = self.get_serializer(
-            category,
-            data=update_data,
-            partial=True
-        )
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
     def _set_show_in_menu(self, category, show_in_menu):
         if category.show_in_menu != show_in_menu:
             category.show_in_menu = show_in_menu
