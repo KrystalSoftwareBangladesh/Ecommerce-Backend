@@ -1,3 +1,4 @@
+# category_api/filters.py
 import django_filters
 from category_api.models import Category
 
@@ -14,7 +15,7 @@ class CategoryFilter(django_filters.FilterSet):
 
     class Meta:
         model = Category
-        fields = ['parent', 'is_active']
+        fields = ['parent', 'is_active', 'show_in_menu']
 
     @staticmethod
     def filter_is_parent(queryset, name, value):
