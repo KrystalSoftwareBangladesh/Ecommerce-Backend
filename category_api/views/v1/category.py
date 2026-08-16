@@ -8,6 +8,7 @@ from drf_spectacular.utils import (
 from django.db.models import Prefetch, Exists, OuterRef
 
 from rest_framework import viewsets, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -25,6 +26,11 @@ from category_api.filters import CategoryFilter
 
 @extend_schema(tags=["Categories"])
 class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    public_actions = PublicReadPermissionMixin.public_actions + [
+        "roots",
+        "children",
+    ]
     serializer_class = CategorySerializer
     queryset = Category.objects.filter(
         deleted_at__isnull=True
