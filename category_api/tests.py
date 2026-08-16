@@ -32,6 +32,48 @@ class CategoryApiTests(APITestCase):
         self.assertEqual(category.slug, 'electronics')
         self.assertEqual(response.data['slug'], 'electronics')
 
+    def test_summary_returns_category_statistics(self):
+        root_in_menu = Category.objects.create(
+            name='Electronics',
+            show_in_menu=True,
+        )
+        root_not_in_menu = Category.objects.create(name='Books')
+        Category.objects.create(
+            name='Phones',
+            parent=root_in_menu,
+            show_in_menu=True,
+        )
+        # Inactive categories are still counted; only deleted ones are not.
+        Category.objects.create(
+            name='Laptops',
+            parent=root_in_menu,
+            is_active=False,
+        )
+        deleted_child = Category.objects.create(
+            name='Tablets',
+            parent=root_not_in_menu,
+            show_in_menu=True,
+        )
+        deleted_child.soft_delete()
+
+        response = self.client.get('/api/v1/categories/summary/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {
+            'total_categories': 4,
+            'root_categories': 2,
+            'sub_categories': 2,
+            'menu_categories': 1,
+            'sub_menu_categories': 1,
+        })
+
+    def test_summary_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get('/api/v1/categories/summary/')
+
+        self.assertEqual(response.status_code, 401)
+
     def test_create_category_without_slug_generates_slug(self):
         response = self.client.post(
             '/api/v1/categories/',

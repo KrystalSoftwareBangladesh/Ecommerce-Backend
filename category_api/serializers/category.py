@@ -129,6 +129,14 @@ class CategorySummarySerializer(serializers.ModelSerializer):
         ]
 
 
+class CategoryStatisticsSerializer(serializers.Serializer):
+    total_categories = serializers.IntegerField()
+    root_categories = serializers.IntegerField()
+    sub_categories = serializers.IntegerField()
+    menu_categories = serializers.IntegerField()
+    sub_menu_categories = serializers.IntegerField()
+
+
 class CategoryTreeListSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
 
