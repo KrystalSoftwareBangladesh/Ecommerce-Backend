@@ -2,7 +2,7 @@
 from .category import (
     CategorySerializer, CategoryDetailsSerializer, CategorySummarySerializer,
     CategoryListSerializer, CategoryTreeListSerializer,
-    CategoryNavigationSerializer,
+    CategoryNavigationSerializer, CategoryStatisticsSerializer,
 )
 from .category_import import (
     CategoryJsonImportSerializer,
@@ -16,6 +16,7 @@ __all__ = [
     "CategorySerializer", "CategoryDetailsSerializer",
     "CategorySummarySerializer", "CategoryListSerializer",
     "CategoryTreeListSerializer", "CategoryNavigationSerializer",
+    "CategoryStatisticsSerializer",
     "CategoryJsonImportSerializer",
     "CategoryCsvImportSerializer",
     "CategoryXlsxImportSerializer",

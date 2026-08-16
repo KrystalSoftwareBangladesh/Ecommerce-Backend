@@ -5,7 +5,7 @@ from drf_spectacular.utils import (
     OpenApiTypes,
     extend_schema,
 )
-from django.db.models import Prefetch, Exists, OuterRef
+from django.db.models import Prefetch, Exists, OuterRef, Count, Q
 
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
@@ -20,6 +20,7 @@ from category_api.models import Category
 from category_api.serializers import (
     CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
     CategoryTreeListSerializer, CategoryNavigationSerializer,
+    CategoryStatisticsSerializer,
 )
 from category_api.filters import CategoryFilter
 
@@ -332,6 +333,47 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     )
     def remove_from_menu(self, request, slug=None):
         return self._set_show_in_menu(self.get_object(), False)
+
+    @extend_schema(
+        tags=["Categories"],
+        summary="Category summary",
+        filters=False,
+        responses={200: CategoryStatisticsSerializer},
+        description=(
+            "Category counts grouped by hierarchy and menu visibility."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="summary",
+    )
+    def summary(self, request):
+        statistics = Category.objects.filter(
+            deleted_at__isnull=True,
+        ).aggregate(
+            total_categories=Count("id"),
+            root_categories=Count(
+                "id",
+                filter=Q(parent__isnull=True),
+            ),
+            sub_categories=Count(
+                "id",
+                filter=Q(parent__isnull=False),
+            ),
+            menu_categories=Count(
+                "id",
+                filter=Q(show_in_menu=True, parent__isnull=True),
+            ),
+            sub_menu_categories=Count(
+                "id",
+                filter=Q(show_in_menu=True, parent__isnull=False),
+            ),
+        )
+
+        serializer = CategoryStatisticsSerializer(statistics)
+
+        return Response(serializer.data)
 
     @extend_schema(
         tags=["Categories"],
