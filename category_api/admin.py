@@ -1,3 +1,4 @@
+# category_api/admin.py
 from django.contrib import admin
 
 from category_api.models import Category
@@ -9,11 +10,13 @@ class CategoryAdmin(admin.ModelAdmin):
         "name",
         "parent",
         "is_active",
+        "show_in_menu",
         "created_at",
     )
 
     list_filter = (
         "is_active",
+        "show_in_menu",
     )
 
     search_fields = (
@@ -51,6 +54,7 @@ class CategoryAdmin(admin.ModelAdmin):
         ("Status", {
             "fields": (
                 "is_active",
+                "show_in_menu",
             )
         }),
         ("Audit", {

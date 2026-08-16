@@ -14,6 +14,7 @@ class CategoryListSerializer(serializers.ModelSerializer):
             "id",
             "slug",
             "name",
+            "show_in_menu",
             "children",
         ]
 
@@ -47,6 +48,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "slug",
             "description",
             "order",
+            "show_in_menu",
             "parent",
             "children",
             "created_at",
@@ -106,6 +108,7 @@ class CategoryDetailsSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "show_in_menu",
             "created_at",
             "updated_at",
         ]
@@ -135,6 +138,7 @@ class CategoryTreeListSerializer(serializers.ModelSerializer):
             "id",
             "slug",
             "name",
+            "show_in_menu",
             "children",
         ]
 
@@ -156,5 +160,6 @@ class CategoryNavigationSerializer(serializers.ModelSerializer):
             "id",
             "slug",
             "name",
+            "show_in_menu",
             "has_children",
         ]

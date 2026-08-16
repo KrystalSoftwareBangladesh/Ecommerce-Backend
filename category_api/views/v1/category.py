@@ -89,7 +89,12 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
 
-        if self.action in ["roots", "children"]:
+        if self.action in [
+            "roots",
+            "children",
+            "mark_as_menu",
+            "remove_from_menu",
+        ]:
             return qs
 
         if (
@@ -132,6 +137,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 "name",
                 "parent_id",
                 "order",
+                "show_in_menu",
             )
         )
 
@@ -277,6 +283,55 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    def _set_show_in_menu(self, category, show_in_menu):
+        if category.show_in_menu != show_in_menu:
+            category.show_in_menu = show_in_menu
+            category.updated_by = self.request.user
+
+            category.save(update_fields=[
+                "show_in_menu",
+                "updated_by",
+                "updated_at",
+            ])
+
+        serializer = CategoryDetailsSerializer(
+            category,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=["Categories"],
+        request=None,
+        responses={200: CategoryDetailsSerializer},
+        description="Mark a category to be shown in the navigation menu.",
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="mark-as-menu",
+    )
+    def mark_as_menu(self, request, slug=None):
+        return self._set_show_in_menu(self.get_object(), True)
+
+    @extend_schema(
+        tags=["Categories"],
+        request=None,
+        responses={200: CategoryDetailsSerializer},
+        description="Remove a category from the navigation menu.",
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="remove-from-menu",
+    )
+    def remove_from_menu(self, request, slug=None):
+        return self._set_show_in_menu(self.get_object(), False)
 
     @extend_schema(
         tags=["Categories"],

@@ -28,6 +28,11 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         default=0,
         help_text='Display order for this category'
     )
+    show_in_menu = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text='Show this category in the storefront navigation menu'
+    )
 
     class Meta:
         db_table = 'categories'
