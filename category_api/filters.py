@@ -12,6 +12,10 @@ class CategoryFilter(django_filters.FilterSet):
         method='filter_is_parent',
         help_text='Filter categories by whether they are parent (root) or not'
     )
+    is_menu = django_filters.BooleanFilter(
+        field_name="show_in_menu",
+        help_text="Filter categories by whether they are shown in the storefront menu", # noqa
+    )
 
     class Meta:
         model = Category
