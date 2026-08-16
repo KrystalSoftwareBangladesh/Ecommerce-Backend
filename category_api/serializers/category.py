@@ -6,7 +6,7 @@ from category_api.models import Category
 
 
 class CategoryListSerializer(serializers.ModelSerializer):
-    children = serializers.SerializerMethodField()
+    # children = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -15,20 +15,20 @@ class CategoryListSerializer(serializers.ModelSerializer):
             "slug",
             "name",
             "show_in_menu",
-            "children",
+            # "children",
         ]
 
-    @extend_schema_field(serializers.ListField())
-    def get_children(self, obj):
-        children = obj.subcategories.filter(
-            deleted_at__isnull=True
-        )
+    # @extend_schema_field(serializers.ListField())
+    # def get_children(self, obj):
+    #     children = obj.subcategories.filter(
+    #         deleted_at__isnull=True
+    #     )
 
-        return CategoryListSerializer(
-            children,
-            many=True,
-            read_only=True,
-        ).data
+    #     return CategoryListSerializer(
+    #         children,
+    #         many=True,
+    #         read_only=True,
+    #     ).data
 
 
 class CategorySerializer(serializers.ModelSerializer):

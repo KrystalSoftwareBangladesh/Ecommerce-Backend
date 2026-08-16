@@ -19,8 +19,7 @@ from EcommerceBackend.core.permission import PublicReadPermissionMixin
 from category_api.models import Category
 from category_api.serializers import (
     CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
-    CategoryTreeListSerializer, CategoryNavigationSerializer,
-    CategoryStatisticsSerializer,
+    CategoryNavigationSerializer, CategoryStatisticsSerializer,
 )
 from category_api.filters import CategoryFilter
 
@@ -60,33 +59,6 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     ordering = ["order", "name", "id"]
 
-    # def get_queryset(self):
-    #     qs = super().get_queryset()
-    #     # Prefetch subcategories to avoid N+1 queries
-    #     children_qs = Category.objects.filter(deleted_at__isnull=True)
-    #     qs = qs.prefetch_related(
-    #         Prefetch('subcategories', queryset=children_qs)
-    #     )
-    #     return qs
-    # def get_queryset(self):
-    #     qs = super().get_queryset()
-
-    #     if (
-    #         self.action == "list"
-    #         and self.request.query_params.get("is_parent") == "true"
-    #     ):
-    #         return qs
-
-    #     children_qs = Category.objects.filter(
-    #         deleted_at__isnull=True
-    #     )
-
-    #     return qs.prefetch_related(
-    #         Prefetch(
-    #             "subcategories",
-    #             queryset=children_qs,
-    #         )
-    #     )
     def get_queryset(self):
         qs = super().get_queryset()
 
@@ -201,33 +173,56 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         return category_ids
 
+    # def list(self, request, *args, **kwargs):
+    #     if request.query_params.get("is_parent") != "true":
+    #         return super().list(request, *args, **kwargs)
+
+    #     # The parent-category endpoint returns the complete nested hierarchy.
+    #     # Build the tree in memory to avoid recursive N+1 queries.
+    #     queryset = self.filter_queryset(self.get_queryset())
+
+    #     page = self.paginate_queryset(queryset)
+
+    #     if page is not None:
+    #         roots = list(page)
+    #     else:
+    #         roots = list(queryset)
+
+    #     roots = self._build_category_tree(roots)
+
+    #     serializer = CategoryTreeListSerializer(
+    #         roots,
+    #         many=True,
+    #         context=self.get_serializer_context(),
+    #     )
+
+    #     if page is not None:
+    #         return self.get_paginated_response(serializer.data)
+
+    #     return Response(serializer.data)
     def list(self, request, *args, **kwargs):
-        if request.query_params.get("is_parent") != "true":
-            return super().list(request, *args, **kwargs)
+        if request.query_params.get("is_parent") == "true":
+            queryset = self.filter_queryset(
+                self.get_queryset().filter(parent__isnull=True)
+            )
 
-        # The parent-category endpoint returns the complete nested hierarchy.
-        # Build the tree in memory to avoid recursive N+1 queries.
-        queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
 
-        page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(
+                    page,
+                    many=True,
+                )
+                return self.get_paginated_response(serializer.data)
 
-        if page is not None:
-            roots = list(page)
-        else:
-            roots = list(queryset)
+            serializer = self.get_serializer(
+                queryset,
+                many=True,
+            )
 
-        roots = self._build_category_tree(roots)
+            return Response(serializer.data)
 
-        serializer = CategoryTreeListSerializer(
-            roots,
-            many=True,
-            context=self.get_serializer_context(),
-        )
-
-        if page is not None:
-            return self.get_paginated_response(serializer.data)
-
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
     def _set_show_in_menu(self, category, show_in_menu):
         if category.show_in_menu != show_in_menu:
