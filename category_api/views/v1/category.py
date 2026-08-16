@@ -61,31 +61,19 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-
-        if self.action in [
-            "roots",
-            "children",
-            "mark_as_menu",
-            "remove_from_menu",
-        ]:
-            return qs
-
-        if (
-            self.action == "list"
-            and self.request.query_params.get("is_parent") == "true"
-        ):
-            return qs
-
-        children_qs = Category.objects.filter(
-            deleted_at__isnull=True
-        )
-
-        return qs.prefetch_related(
-            Prefetch(
-                "subcategories",
-                queryset=children_qs,
+        if self.action == "retrieve":
+            children_qs = Category.objects.filter(
+                deleted_at__isnull=True
             )
-        )
+
+            return qs.prefetch_related(
+                Prefetch(
+                    "subcategories",
+                    queryset=children_qs,
+                )
+            )
+
+        return qs
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -94,51 +82,6 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return CategoryDetailsSerializer
 
         return CategorySerializer
-
-    def _build_category_tree(self, roots):
-        """
-        Build the complete category hierarchy in memory for the parent-category
-        tree endpoint, avoiding recursive database queries during
-        serialization.
-        """
-        categories = list(
-            Category.objects.filter(
-                deleted_at__isnull=True,
-            ).only(
-                "id",
-                "slug",
-                "name",
-                "parent_id",
-                "order",
-                "show_in_menu",
-            )
-        )
-
-        children_map = {}
-
-        for category in categories:
-            children_map.setdefault(category.parent_id, []).append(category)
-
-        for children in children_map.values():
-            children.sort(
-                key=lambda category: (
-                    category.order,
-                    category.name,
-                    category.id,
-                )
-            )
-
-        def attach_children(category):
-            children = children_map.get(category.id, [])
-            category._tree_children = children
-
-            for child in children:
-                attach_children(child)
-
-        for root in roots:
-            attach_children(root)
-
-        return roots
 
     def _get_category_ids_from_params(self, queryset):
         ids = self.request.query_params.get("ids")
@@ -173,55 +116,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         return category_ids
 
-    # def list(self, request, *args, **kwargs):
-    #     if request.query_params.get("is_parent") != "true":
-    #         return super().list(request, *args, **kwargs)
-
-    #     # The parent-category endpoint returns the complete nested hierarchy.
-    #     # Build the tree in memory to avoid recursive N+1 queries.
-    #     queryset = self.filter_queryset(self.get_queryset())
-
-    #     page = self.paginate_queryset(queryset)
-
-    #     if page is not None:
-    #         roots = list(page)
-    #     else:
-    #         roots = list(queryset)
-
-    #     roots = self._build_category_tree(roots)
-
-    #     serializer = CategoryTreeListSerializer(
-    #         roots,
-    #         many=True,
-    #         context=self.get_serializer_context(),
-    #     )
-
-    #     if page is not None:
-    #         return self.get_paginated_response(serializer.data)
-
-    #     return Response(serializer.data)
     def list(self, request, *args, **kwargs):
-        if request.query_params.get("is_parent") == "true":
-            queryset = self.filter_queryset(
-                self.get_queryset().filter(parent__isnull=True)
-            )
-
-            page = self.paginate_queryset(queryset)
-
-            if page is not None:
-                serializer = self.get_serializer(
-                    page,
-                    many=True,
-                )
-                return self.get_paginated_response(serializer.data)
-
-            serializer = self.get_serializer(
-                queryset,
-                many=True,
-            )
-
-            return Response(serializer.data)
-
         return super().list(request, *args, **kwargs)
 
     def _set_show_in_menu(self, category, show_in_menu):
@@ -339,10 +234,6 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         url_path="roots",
     )
     def roots(self, request):
-        # queryset = Category.objects.filter(
-        #     deleted_at__isnull=True,
-        #     parent__isnull=True,
-        # )
         children_exists = Category.objects.filter(
             parent_id=OuterRef("pk"),
             deleted_at__isnull=True,
@@ -411,28 +302,6 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         url_path="children",
     )
     def children(self, request):
-        # parent_queryset = Category.objects.filter(
-        #     deleted_at__isnull=True,
-        # )
-
-        # parent_ids = self._get_category_ids_from_params(
-        #     parent_queryset
-        # )
-
-        # if not parent_ids:
-        #     raise ValidationError({
-        #         "detail": "At least one category ID or slug is required."
-        #     })
-
-        # queryset = Category.objects.filter(
-        #     deleted_at__isnull=True,
-        #     parent_id__in=parent_ids,
-        # ).order_by(
-        #     "parent_id",
-        #     "order",
-        #     "name",
-        #     "id",
-        # )
         parent_queryset = Category.objects.filter(
             deleted_at__isnull=True,
         )
