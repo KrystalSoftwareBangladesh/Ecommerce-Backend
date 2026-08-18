@@ -226,6 +226,13 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 required=False,
                 description="Comma-separated category slugs.",
             ),
+            OpenApiParameter(
+                name="is_menu",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter categories by storefront menu visibility.",
+            ),
         ],
     )
     @action(
@@ -248,10 +255,15 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         ids = request.query_params.get("ids")
         slugs = request.query_params.get("slugs")
-
         if ids or slugs:
             category_ids = self._get_category_ids_from_params(queryset)
             queryset = queryset.filter(id__in=category_ids)
+
+        is_menu = request.query_params.get("is_menu")
+        if is_menu == "true":
+            queryset = queryset.filter(show_in_menu=True)
+        elif is_menu == "false":
+            queryset = queryset.filter(show_in_menu=False)
 
         queryset = queryset.order_by(
             "order",
@@ -294,6 +306,13 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 required=False,
                 description="Comma-separated parent category slugs.",
             ),
+            OpenApiParameter(
+                name="is_menu",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter categories by storefront menu visibility.",
+            ),
         ],
     )
     @action(
@@ -331,6 +350,12 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             "name",
             "id",
         )
+
+        is_menu = request.query_params.get("is_menu")
+        if is_menu == "true":
+            queryset = queryset.filter(show_in_menu=True)
+        elif is_menu == "false":
+            queryset = queryset.filter(show_in_menu=False)
 
         serializer = CategoryNavigationSerializer(
             queryset,
