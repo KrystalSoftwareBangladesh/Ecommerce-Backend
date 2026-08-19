@@ -184,12 +184,27 @@ class CategoryBulkMenuUpdateSerializer(serializers.Serializer):
         required=False,
         allow_empty=False,
     )
+    select_all = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+    filters = serializers.DictField(
+        required=False,
+    )
     show_in_menu = serializers.BooleanField()
 
     def validate(self, attrs):
-        if not attrs.get("ids") and not attrs.get("slugs"):
+        ids = attrs.get("ids")
+        slugs = attrs.get("slugs")
+        select_all = attrs.get("select_all", False)
+
+        if select_all and (ids or slugs):
             raise serializers.ValidationError(
-                "At least one of ids or slugs is required."
+                "select_all cannot be used with ids or slugs."
+            )
+        if not select_all and not ids and not slugs:
+            raise serializers.ValidationError(
+                "At least one of ids, slugs, or select_all=true is required."
             )
 
         return attrs
