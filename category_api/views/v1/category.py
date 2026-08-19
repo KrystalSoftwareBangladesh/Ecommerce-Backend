@@ -366,6 +366,33 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    def _apply_bulk_filters(self, queryset, filters):
+        is_parent = filters.get("is_parent")
+        is_menu = filters.get("is_menu")
+        is_active = filters.get("is_active")
+        search = filters.get("search")
+
+        if is_parent is True:
+            queryset = queryset.filter(parent__isnull=True)
+        elif is_parent is False:
+            queryset = queryset.filter(parent__isnull=False)
+
+        if is_menu is True:
+            queryset = queryset.filter(show_in_menu=True)
+        elif is_menu is False:
+            queryset = queryset.filter(show_in_menu=False)
+
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active)
+
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(description__icontains=search)
+            )
+
+        return queryset
+
     @extend_schema(
         tags=["Categories"],
         request=CategoryBulkMenuUpdateSerializer,
@@ -390,21 +417,29 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         ids = serializer.validated_data.get("ids", [])
         slugs = serializer.validated_data.get("slugs", [])
+        select_all = serializer.validated_data.get("select_all", False)
+        filters = serializer.validated_data.get("filters", {})
         show_in_menu = serializer.validated_data["show_in_menu"]
 
         queryset = Category.objects.filter(
             deleted_at__isnull=True,
         )
 
-        filters = Q()
+        if select_all:
+            # Update all categories matching the provided filters.
+            queryset = self._apply_bulk_filters(
+                queryset,
+                filters,
+            )
+        else:
+            # Update only explicitly selected categories.
+            selection_filter = Q()
+            if ids:
+                selection_filter |= Q(id__in=ids)
+            if slugs:
+                selection_filter |= Q(slug__in=slugs)
 
-        if ids:
-            filters |= Q(id__in=ids)
-
-        if slugs:
-            filters |= Q(slug__in=slugs)
-
-        queryset = queryset.filter(filters)
+            queryset = queryset.filter(selection_filter)
 
         updated_count = queryset.update(
             show_in_menu=show_in_menu,
