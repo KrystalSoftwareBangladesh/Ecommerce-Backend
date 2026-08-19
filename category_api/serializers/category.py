@@ -171,3 +171,30 @@ class CategoryNavigationSerializer(serializers.ModelSerializer):
             "show_in_menu",
             "has_children",
         ]
+
+
+class CategoryBulkMenuUpdateSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=False,
+    )
+    slugs = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=False,
+    )
+    show_in_menu = serializers.BooleanField()
+
+    def validate(self, attrs):
+        if not attrs.get("ids") and not attrs.get("slugs"):
+            raise serializers.ValidationError(
+                "At least one of ids or slugs is required."
+            )
+
+        return attrs
+
+
+class CategoryBulkMenuUpdateResponseSerializer(serializers.Serializer):
+    updated_count = serializers.IntegerField()
+    show_in_menu = serializers.BooleanField()

@@ -20,6 +20,7 @@ from category_api.models import Category
 from category_api.serializers import (
     CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
     CategoryNavigationSerializer, CategoryStatisticsSerializer,
+    CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
 )
 from category_api.filters import CategoryFilter
 
@@ -364,3 +365,60 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         )
 
         return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Categories"],
+        request=CategoryBulkMenuUpdateSerializer,
+        responses={
+            200: CategoryBulkMenuUpdateResponseSerializer,
+        },
+        description=(
+            "Bulk update storefront menu visibility for multiple categories. "
+            "Categories can be identified by IDs, slugs, or both."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="bulk-menu-update",
+    )
+    def bulk_menu_update(self, request):
+        serializer = CategoryBulkMenuUpdateSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        ids = serializer.validated_data.get("ids", [])
+        slugs = serializer.validated_data.get("slugs", [])
+        show_in_menu = serializer.validated_data["show_in_menu"]
+
+        queryset = Category.objects.filter(
+            deleted_at__isnull=True,
+        )
+
+        filters = Q()
+
+        if ids:
+            filters |= Q(id__in=ids)
+
+        if slugs:
+            filters |= Q(slug__in=slugs)
+
+        queryset = queryset.filter(filters)
+
+        updated_count = queryset.update(
+            show_in_menu=show_in_menu,
+            updated_by=request.user,
+        )
+
+        response_data = {
+            "updated_count": updated_count,
+            "show_in_menu": show_in_menu,
+        }
+
+        return Response(
+            CategoryBulkMenuUpdateResponseSerializer(
+                response_data,
+            ).data,
+            status=status.HTTP_200_OK,
+        )
