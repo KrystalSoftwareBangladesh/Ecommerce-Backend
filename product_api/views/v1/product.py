@@ -57,7 +57,7 @@ class ProductFilter(django_filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ['category', 'categories']
+        fields = ['categories']
 
 
 @extend_schema(tags=["Products"])
