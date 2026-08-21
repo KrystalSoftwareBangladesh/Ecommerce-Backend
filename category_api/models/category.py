@@ -24,7 +24,7 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         blank=True,
         related_name='subcategories'
     )
-    order = models.PositiveIntegerField(
+    display_order = models.PositiveIntegerField(
         default=0,
         help_text='Display order for this category'
     )
@@ -38,7 +38,7 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         db_table = 'categories'
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
-        ordering = ['order', 'name']
+        ordering = ['display_order', 'name']
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'parent'],
