@@ -50,10 +50,6 @@ PRODUCT_LOOKUP_PARAMETER = OpenApiParameter(
 
 
 class ProductFilter(django_filters.FilterSet):
-    category = django_filters.BaseInFilter(
-        field_name='categories__id',
-        lookup_expr='in',
-    )
     categories = django_filters.BaseInFilter(
         field_name='categories__id',
         lookup_expr='in',
