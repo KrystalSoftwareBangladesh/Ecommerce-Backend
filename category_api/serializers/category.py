@@ -47,7 +47,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
-            "order",
+            "display_order",
             "show_in_menu",
             "parent",
             "children",

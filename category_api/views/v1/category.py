@@ -5,7 +5,8 @@ from drf_spectacular.utils import (
     OpenApiTypes,
     extend_schema,
 )
-from django.db.models import Prefetch, Exists, OuterRef, Count, Q
+from django.db import transaction
+from django.db.models import Prefetch, Exists, OuterRef, Count, Q, F
 
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
@@ -50,15 +51,11 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         "name",
         "description",
     ]
-
     ordering_fields = [
+        "display_order",
         "name",
-        "created_at",
-        "order",
-        "id",
     ]
-
-    ordering = ["order", "name", "id"]
+    ordering = ["display_order", "name"]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -267,7 +264,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(show_in_menu=False)
 
         queryset = queryset.order_by(
-            "order",
+            "display_order",
             "name",
             "id",
         )
@@ -347,7 +344,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             has_children=Exists(children_exists)
         ).order_by(
             "parent_id",
-            "order",
+            "display_order",
             "name",
             "id",
         )
@@ -454,6 +451,102 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return Response(
             CategoryBulkMenuUpdateResponseSerializer(
                 response_data,
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=["Categories"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "display_order": {
+                        "type": "integer",
+                        "minimum": 1,
+                    },
+                },
+                "required": ["display_order"],
+            }
+        },
+        responses={200: CategoryDetailsSerializer},
+        description="Update the display order of a category.",
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="reorder",
+    )
+    def reorder(self, request, slug=None):
+        category = self.get_object()
+
+        try:
+            new_order = int(request.data.get("display_order"))
+        except (TypeError, ValueError):
+            raise ValidationError({
+                "display_order": "Display order must be an integer."
+            })
+
+        if new_order < 1:
+            raise ValidationError({
+                "display_order": "Display order must be greater than 0."
+            })
+
+        with transaction.atomic():
+            siblings = Category.objects.filter(
+                deleted_at__isnull=True,
+                parent_id=category.parent_id,
+            )
+
+            sibling_count = siblings.exclude(
+                pk=category.pk,
+            ).count() + 1
+
+            if new_order > sibling_count:
+                new_order = sibling_count
+
+            current_order = category.display_order
+
+            if current_order == new_order:
+                return Response(
+                    CategoryDetailsSerializer(
+                        category,
+                        context=self.get_serializer_context(),
+                    ).data,
+                    status=status.HTTP_200_OK,
+                )
+
+            if new_order < current_order:
+                siblings.filter(
+                    display_order__gte=new_order,
+                    display_order__lt=current_order,
+                ).update(
+                    display_order=F("display_order") + 1,
+                )
+
+            else:
+                siblings.filter(
+                    display_order__gt=current_order,
+                    display_order__lte=new_order,
+                ).update(
+                    display_order=F("display_order") - 1,
+                )
+
+            category.display_order = new_order
+            category.updated_by = request.user
+
+            category.save(
+                update_fields=[
+                    "display_order",
+                    "updated_by",
+                    "updated_at",
+                ]
+            )
+
+        return Response(
+            CategoryDetailsSerializer(
+                category,
+                context=self.get_serializer_context(),
             ).data,
             status=status.HTTP_200_OK,
         )
