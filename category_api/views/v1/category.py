@@ -4,7 +4,9 @@ from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
     extend_schema,
+    extend_schema_view,
 )
+from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Prefetch, Exists, OuterRef, Count, Q, F
 
@@ -26,7 +28,20 @@ from category_api.serializers import (
 from category_api.filters import CategoryFilter
 
 
+CATEGORY_LOOKUP_PARAMETER = OpenApiParameter(
+    name="id",
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.PATH,
+    description="Category ID or slug",
+)
+
+
 @extend_schema(tags=["Categories"])
+@extend_schema_view(
+    retrieve=extend_schema(
+        parameters=[CATEGORY_LOOKUP_PARAMETER],
+    )
+)
 class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     public_actions = PublicReadPermissionMixin.public_actions + [
@@ -45,7 +60,10 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     ]
 
     filterset_class = CategoryFilter
-    lookup_field = "slug"
+    # lookup_field = "slug"
+    lookup_field = "id"
+    lookup_url_kwarg = "id"
+    lookup_value_regex = r"[^/]+"
 
     search_fields = [
         "name",
@@ -56,6 +74,28 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         "name",
     ]
     ordering = ["display_order", "name"]
+
+    def get_object(self):
+        lookup_value = self.kwargs[
+            self.lookup_url_kwarg or self.lookup_field
+        ]
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if lookup_value.isdigit():
+            obj = get_object_or_404(
+                queryset,
+                pk=int(lookup_value),
+            )
+        else:
+            obj = get_object_or_404(
+                queryset,
+                slug=lookup_value,
+            )
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -140,6 +180,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         tags=["Categories"],
+        parameters=[CATEGORY_LOOKUP_PARAMETER],
         request=None,
         responses={200: CategoryDetailsSerializer},
         description="Mark a category to be shown in the navigation menu.",
@@ -149,11 +190,12 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         methods=["post"],
         url_path="mark-as-menu",
     )
-    def mark_as_menu(self, request, slug=None):
+    def mark_as_menu(self, request, id=None):
         return self._set_show_in_menu(self.get_object(), True)
 
     @extend_schema(
         tags=["Categories"],
+        parameters=[CATEGORY_LOOKUP_PARAMETER],
         request=None,
         responses={200: CategoryDetailsSerializer},
         description="Remove a category from the navigation menu.",
@@ -163,7 +205,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         methods=["post"],
         url_path="remove-from-menu",
     )
-    def remove_from_menu(self, request, slug=None):
+    def remove_from_menu(self, request, id=None):
         return self._set_show_in_menu(self.get_object(), False)
 
     @extend_schema(
@@ -457,6 +499,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         tags=["Categories"],
+        parameters=[CATEGORY_LOOKUP_PARAMETER],
         request={
             "application/json": {
                 "type": "object",
@@ -477,7 +520,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         methods=["post"],
         url_path="reorder",
     )
-    def reorder(self, request, slug=None):
+    def reorder(self, request, id=None):
         category = self.get_object()
 
         try:
