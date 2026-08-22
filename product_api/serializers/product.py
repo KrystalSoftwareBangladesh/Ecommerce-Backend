@@ -59,8 +59,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'current_selling_price', 'default_image', 'origin',
-            "average_rating", "total_reviews", "wishlist", "in_cart",
+            'id', 'name', 'slug', 'current_selling_price', 'default_image',
+            'origin', "average_rating", "total_reviews", "wishlist", "in_cart",
         ]
 
     @extend_schema_field(ProductDefaultImageSerializer)
