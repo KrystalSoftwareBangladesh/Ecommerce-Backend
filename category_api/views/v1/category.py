@@ -15,7 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
@@ -24,6 +24,7 @@ from category_api.serializers import (
     CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
     CategoryNavigationSerializer, CategoryStatisticsSerializer,
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
+    CategoryPathSerializer, CategoryPathResponseSerializer,
 )
 from category_api.filters import CategoryFilter
 
@@ -47,6 +48,7 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     public_actions = PublicReadPermissionMixin.public_actions + [
         "roots",
         "children",
+        "path",
     ]
     serializer_class = CategorySerializer
     queryset = Category.objects.filter(
@@ -593,3 +595,97 @@ class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             ).data,
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        tags=["Categories"],
+        summary="Get category path",
+        filters=False,
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Category ID.",
+            ),
+            OpenApiParameter(
+                name="slug",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Category slug.",
+            ),
+        ],
+        responses={
+            200: CategoryPathResponseSerializer,
+        },
+        description=(
+            "Return the complete category hierarchy path from the root "
+            "category to the requested category."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="path",
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def path(self, request):
+        category_id = request.query_params.get("id")
+        slug = request.query_params.get("slug")
+
+        if not category_id and not slug:
+            raise ValidationError({
+                "detail": "Either id or slug is required."
+            })
+
+        if category_id and slug:
+            raise ValidationError({
+                "detail": "Provide either id or slug, not both."
+            })
+
+        queryset = Category.objects.filter(
+            deleted_at__isnull=True,
+        )
+
+        if category_id:
+            try:
+                category = queryset.get(id=category_id)
+            except Category.DoesNotExist:
+                raise NotFound("Category not found.")
+        else:
+            categories = queryset.filter(slug=slug)
+
+            if not categories.exists():
+                raise NotFound("Category not found.")
+
+            if categories.count() > 1:
+                raise ValidationError({
+                    "slug": (
+                        "This slug matches multiple categories. "
+                        "Use the category ID instead."
+                    )
+                })
+
+            category = categories.first()
+
+        path = []
+
+        current = category
+
+        while current:
+            path.append(current)
+            current = current.parent
+
+        path.reverse()
+
+        serializer = CategoryPathSerializer(
+            path,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response({
+            "path": serializer.data,
+        })
