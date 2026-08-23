@@ -1,5 +1,10 @@
 # Business Rules
 
+Describes the **current implementation**, verified against the code.
+Entities are in [domain-model.md](domain-model.md); coding conventions are in
+[conventions.md](conventions.md).
+
+
 ## Products
 
 ### Product Images
@@ -29,7 +34,7 @@ Brand represents a product manufacturer or brand name.
 
 ## Authentication
 
-Public registration endpoint (`POST /auth/register/`) allows website customers to sign up.
+Public registration endpoint (`POST /api/v1/auth/register/`) allows website customers to sign up.
 
 Registration creates:
 - User account with email and hashed password

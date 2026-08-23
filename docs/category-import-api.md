@@ -4,9 +4,9 @@
 
 The Category Import API provides three endpoints for bulk importing categories from different file formats:
 
-1. **JSON Import** - `POST /categories/import-json/`
-2. **CSV Import** - `POST /categories/import-csv/`
-3. **XLSX Import** - `POST /categories/import-xlsx/`
+1. **JSON Import** - `POST /api/v1/categories/import-json/`
+2. **CSV Import** - `POST /api/v1/categories/import-csv/`
+3. **XLSX Import** - `POST /api/v1/categories/import-xlsx/`
 
 ## Supported File Formats
 
@@ -84,11 +84,11 @@ Same as CSV format
 
 ### 1. JSON Import
 
-**Endpoint:** `POST /categories/import-json/`
+**Endpoint:** `POST /api/v1/categories/import-json/`
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/categories/import-json/ \
+curl -X POST http://localhost:8000/api/v1/categories/import-json/ \
   -F "file=@categories.json"
 ```
 
@@ -115,11 +115,11 @@ curl -X POST http://localhost:8000/categories/import-json/ \
 
 ### 2. CSV Import
 
-**Endpoint:** `POST /categories/import-csv/`
+**Endpoint:** `POST /api/v1/categories/import-csv/`
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/categories/import-csv/ \
+curl -X POST http://localhost:8000/api/v1/categories/import-csv/ \
   -F "file=@categories.csv"
 ```
 
@@ -127,11 +127,11 @@ curl -X POST http://localhost:8000/categories/import-csv/ \
 
 ### 3. XLSX Import
 
-**Endpoint:** `POST /categories/import-xlsx/`
+**Endpoint:** `POST /api/v1/categories/import-xlsx/`
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/categories/import-xlsx/ \
+curl -X POST http://localhost:8000/api/v1/categories/import-xlsx/ \
   -F "file=@categories.xlsx"
 ```
 
@@ -224,7 +224,7 @@ pip install openpyxl pandas
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/categories/import-json/ \
+curl -X POST http://localhost:8000/api/v1/categories/import-json/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -F "file=@categories.json"
 ```
@@ -242,7 +242,7 @@ Children's,Children's clothing,1
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/categories/import-csv/ \
+curl -X POST http://localhost:8000/api/v1/categories/import-csv/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -F "file=@categories.csv"
 ```
@@ -251,7 +251,7 @@ curl -X POST http://localhost:8000/categories/import-csv/ \
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8000/categories/import-xlsx/ \
+curl -X POST http://localhost:8000/api/v1/categories/import-xlsx/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -F "file=@categories.xlsx"
 ```
