@@ -101,3 +101,27 @@ Customer balances must reflect:
 Protected endpoints require authentication.
 
 Existing permission patterns should be reused.
+
+### Custom model permissions
+
+Some actions require a dedicated permission on top of authentication.
+
+User (`user_api.User`):
+
+- `change_user_email`
+- `change_user_username`
+- `change_user_password`
+- `assign_user_role`
+- `remove_user_role`
+
+Category (`category_api.Category`):
+
+- `mark_category_as_menu` - required by `POST /api/v1/categories/{id}/mark-as-menu/`
+- `remove_category_from_menu` - required by `POST /api/v1/categories/{id}/remove-from-menu/`
+
+Menu visibility of a single category can only be changed by a user holding
+the matching permission. Holding one of the two permissions does not grant
+the other. Superusers hold every permission implicitly.
+
+The remaining category endpoints, including `bulk-menu-update`, keep
+requiring authentication only.

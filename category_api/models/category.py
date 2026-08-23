@@ -39,6 +39,10 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         ordering = ['display_order', 'name']
+        permissions = [
+            ('mark_category_as_menu', 'Can mark category as menu'),
+            ('remove_category_from_menu', 'Can remove category from menu'),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'parent'],
