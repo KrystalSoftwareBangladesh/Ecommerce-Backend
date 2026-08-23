@@ -17,7 +17,10 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import ValidationError, NotFound
 
-from EcommerceBackend.core.permission import PublicReadPermissionMixin
+from EcommerceBackend.core.permission import (
+    CustomPermissionAccessMixin,
+    PublicReadPermissionMixin,
+)
 
 from category_api.models import Category
 from category_api.serializers import (
@@ -43,13 +46,21 @@ CATEGORY_LOOKUP_PARAMETER = OpenApiParameter(
         parameters=[CATEGORY_LOOKUP_PARAMETER],
     )
 )
-class CategoryViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
+class CategoryViewSet(
+    CustomPermissionAccessMixin,
+    PublicReadPermissionMixin,
+    viewsets.ModelViewSet,
+):
     permission_classes = [IsAuthenticated]
     public_actions = PublicReadPermissionMixin.public_actions + [
         "roots",
         "children",
         "path",
     ]
+    custom_permissions = {
+        "mark_as_menu": "mark_category_as_menu",
+        "remove_from_menu": "remove_category_from_menu",
+    }
     serializer_class = CategorySerializer
     queryset = Category.objects.filter(
         deleted_at__isnull=True

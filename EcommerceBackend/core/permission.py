@@ -57,3 +57,28 @@ class ModelPermissionAccess(permissions.DjangoModelPermissions):
             )
 
         return super().has_permission(request, view)
+
+
+class CustomPermissionAccessMixin:
+    """
+    Applies `ModelPermissionAccess` only to the actions declared in the
+    ViewSet `custom_permissions` mapping.
+
+    Every other action keeps the permission classes already configured
+    on the ViewSet, so adding a custom permission to a single action
+    never changes how the remaining endpoints are protected.
+
+    Example:
+
+        custom_permissions = {
+            "mark_as_menu": "mark_category_as_menu",
+        }
+    """
+
+    custom_permissions = {}
+
+    def get_permissions(self):
+        if self.action in self.custom_permissions:
+            return [ModelPermissionAccess()]
+
+        return super().get_permissions()

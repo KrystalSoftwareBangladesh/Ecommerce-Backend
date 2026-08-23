@@ -272,7 +272,7 @@ Location:
 
 EcommerceBackend/core/permission.py
 
-Class:
+Classes:
 
 PublicReadPermissionMixin
 
@@ -283,5 +283,42 @@ By default, `list` and `retrieve` actions are public.
 To make additional custom actions public, extend `public_actions`:
 
     public_actions = PublicReadPermissionMixin.public_actions + ["my_custom_action"]
+
+ModelPermissionAccess
+
+Enforces Django model permissions for authenticated requests.
+
+Standard actions map to the `view` / `add` / `change` / `delete` model
+permissions. A ViewSet can also guard its custom `@action` endpoints by
+declaring a `custom_permissions` mapping of `action name -> permission
+codename`. The codename is resolved against the app label of the
+ViewSet queryset model, for example `category_api.mark_category_as_menu`.
+
+Use this class when the whole ViewSet should be permission driven, as in
+`UserViewSet` and `GroupViewSet`.
+
+CustomPermissionAccessMixin
+
+Applies `ModelPermissionAccess` to the actions listed in
+`custom_permissions` only. Every other action keeps the permission
+classes already declared on the ViewSet.
+
+Use this mixin when only a few custom actions need a dedicated
+permission and the remaining endpoints must keep their current
+protection, as in `CategoryViewSet`:
+
+    class CategoryViewSet(
+        CustomPermissionAccessMixin,
+        PublicReadPermissionMixin,
+        viewsets.ModelViewSet,
+    ):
+        permission_classes = [IsAuthenticated]
+        custom_permissions = {
+            "mark_as_menu": "mark_category_as_menu",
+            "remove_from_menu": "remove_category_from_menu",
+        }
+
+Custom permission codenames must be declared on the model `Meta.permissions`
+and shipped with a migration.
 
 Reuse existing permission patterns before creating new permission classes.
