@@ -59,70 +59,6 @@ class Command(BaseCommand):
         except Exception as e:
             raise CommandError(f'Error importing categories: {e}')
 
-    # def _import_categories(self, categories_data, parent=None, order=0):
-    #     """
-    #     Recursively import categories from data structure.
-
-    #     Args:
-    #         categories_data: List of category dictionaries
-    #         parent: Parent category instance (None for root categories)
-    #         order: Display order starting value
-
-    #     Returns:
-    #         Total number of categories created
-    #     """
-    #     created_count = 0
-
-    #     for index, cat_data in enumerate(categories_data):
-    #         name = cat_data.get('name')
-    #         slug = cat_data.get('slug')
-    #         description = cat_data.get('description', '')
-    #         children = cat_data.get('children', [])
-
-    #         if not name:
-    #             self.stdout.write(
-    #                 self.style.WARNING('Skipping category with no name')
-    #             )
-    #             continue
-
-    #         # Check if category already exists
-    #         existing = Category.objects.filter(
-    #             name=name,
-    #             parent=parent
-    #         ).first()
-
-    #         if existing:
-    #             self.stdout.write(
-    #                 self.style.WARNING(
-    #                     f'Category "{name}" (parent: {parent}) already exists'    # noqa
-    #                 )
-    #             )
-    #             category = existing
-    #         else:
-    #             # Create new category
-    #             category = Category.objects.create(
-    #                 name=name,
-    #                 slug=slug or '',  # Will be generated if not provided
-    #                 legacy_id=cat_data.get("legacy_id"),
-    #                 description=description,
-    #                 parent=parent,
-    #                 order=order + index
-    #             )
-    #             created_count += 1
-    #             self.stdout.write(
-    #                 self.style.SUCCESS(f'Created: {name}')
-    #             )
-
-    #         # Recursively import children
-    #         if children:
-    #             children_count = self._import_categories(
-    #                 children,
-    #                 parent=category,
-    #                 order=0
-    #             )
-    #             created_count += children_count
-
-    #     return created_count
     def _import_categories(self, categories_data):
         categories_by_legacy_id = {}
 
@@ -136,7 +72,7 @@ class Command(BaseCommand):
                 slug=item["slug"],
                 description=item.get("description") or "",
                 legacy_id=item["legacy_id"],
-                order=index,
+                display_order=index,
             )
 
             categories_by_legacy_id[item["legacy_id"]] = category
