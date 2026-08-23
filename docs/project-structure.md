@@ -1,51 +1,215 @@
 # Project Structure
 
-```text
-krystalsoftwarebangladesh-ecommerce-backend/
+Mirrors the actual repository. Last verified 2026-08-23.
 
-├── account_api/
-├── category_api/
-├── customer_api/
-├── inventory_api/
-├── origin_api/
-│   ├── models/
-│   │   └── origin.py
-│   ├── serializers/
-│   ├── views/
-│   │   └── v1/
-│   ├── urls/
-│   └── admin.py
-├── product_api/
-│   ├── models/
-│   │   ├── product.py
-│   │   ├── product_image.py
-│   │   └── brand.py
-│   ├── serializers/
-│   ├── views/
-│   │   └── v1/
-│   ├── services.py
-│   └── tests.py
-├── purchase_api/
-├── sale_api/
-├── supplier_api/
-├── transaction_api/
-├── user_api/
-├── EcommerceBackend/
-├── .github/
+```text
+ZayrahLife-Backend/
+├── AGENTS.md
+├── README.md
 ├── manage.py
 ├── requirements.txt
-└── README.md
+├── .env.example                     # copied to EcommerceBackend/env.py
+├── .flake8
+├── test_nested_import.py            # manage.py shell script, not a test module
+│
+├── .claude/
+│   └── skills/
+│       ├── accounting-operation/SKILL.md
+│       ├── add-viewset-action/SKILL.md
+│       ├── create-api/SKILL.md
+│       └── create-model/SKILL.md
+│
+├── .github/
+│   └── workflows/
+│       ├── linter.yml
+│       ├── deploy_bestcomputerhub_dev.yml
+│       ├── deploy_zayrahlife_dev.yml.disable
+│       └── deploy_bikkhato_dev.yml.disable
+│
+├── docs/
+│   ├── architecture.md
+│   ├── api-conventions.md
+│   ├── business-rules.md
+│   ├── category-import-api.md
+│   ├── conventions.md
+│   ├── domain-model.md
+│   ├── project-structure.md
+│   └── testing.md
+│
+├── EcommerceBackend/
+│   ├── settings.py
+│   ├── test_settings.py
+│   ├── env.py                       # gitignored
+│   ├── urls.py
+│   ├── all_urls.py
+│   ├── asgi.py
+│   ├── wsgi.py
+│   └── core/
+│       ├── choices.py
+│       ├── exceptions.py
+│       ├── filter.py                # empty
+│       ├── models.py
+│       ├── pagination.py
+│       └── permission.py
+│
+├── account_api/
+│   ├── models/chart_of_account.py
+│   ├── serializers/chart_of_account.py
+│   ├── views/v1/chart_of_account.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── filters.py
+│   ├── services.py
+│   ├── admin.py
+│   └── tests.py
+│
+├── cart_api/
+│   ├── models/{cart.py,cart_item.py}
+│   ├── serializers/{cart.py,cart_item.py}
+│   ├── services/{cart.py,cart_item.py}
+│   ├── views/v1/{cart.py,cart_item.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── category_api/
+│   ├── models/category.py
+│   ├── serializers/{category.py,category_import.py,import.py}
+│   ├── views/v1/{category.py,category_import.py,import.py}
+│   ├── management/commands/{import_categories.py,clean_category_html_entities.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── filters.py
+│   ├── services.py
+│   ├── admin.py
+│   └── tests.py
+│
+├── customer_api/
+│   ├── models.py                    # flat module, not a package
+│   ├── serializers/customer_profile.py
+│   ├── views/v1/customer_profile.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── inventory_api/
+│   ├── models/inventory.py
+│   ├── serializers/inventory.py
+│   ├── views/v1/inventory.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── meta_api/
+│   ├── models.py                    # no models defined
+│   ├── serializers/moderation_status.py
+│   ├── services/moderation_status.py
+│   ├── views/v1/moderation_status.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── origin_api/
+│   ├── models/origin.py
+│   ├── serializers/origin.py
+│   ├── views/v1/origin.py
+│   ├── urls/{__init__.py,v1.py}
+│   └── admin.py                     # no tests.py
+│
+├── product_api/
+│   ├── models/{product.py,product_image.py,brand.py}
+│   ├── serializers/{product.py,product_image.py,brand.py}
+│   ├── services/{product.py,brand.py}
+│   ├── views/v1/{product.py,product_image.py,brand.py}
+│   ├── management/commands/{import_products.py,import_product_categories.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── purchase_api/
+│   ├── models/purchase.py
+│   ├── serializers/purchase.py
+│   ├── views/v1/purchase.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── services.py
+│   ├── admin.py
+│   └── tests.py
+│
+├── review_api/
+│   ├── models/review.py
+│   ├── serializers/review.py
+│   ├── services/review.py
+│   ├── views/v1/review.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── sale_api/
+│   ├── models/{sale.py,payment_method.py}
+│   ├── serializers/{sale.py,payment_method.py}
+│   ├── views/v1/{sale.py,payment_method.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── services.py
+│   ├── admin.py
+│   └── tests.py
+│
+├── supplier_api/
+│   ├── models/supplier.py
+│   ├── serializers/supplier.py
+│   ├── views/v1/supplier.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── transaction_api/
+│   ├── models/transaction.py
+│   ├── serializers/transaction.py
+│   ├── views/v1/transaction.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── services.py
+│   ├── admin.py
+│   └── tests.py
+│
+├── user_api/
+│   ├── models/user.py
+│   ├── serializers/{user.py,auth.py,group.py,permission.py}
+│   ├── views/v1/{user.py,auth.py,group.py,permission.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── backends.py                  # EmailOrUsernameBackend
+│   ├── admin.py
+│   └── tests.py
+│
+├── wishlist_api/
+│   ├── models/wishlist.py
+│   ├── serializers/wishlist.py
+│   ├── services/wishlist.py
+│   ├── views/v1/wishlist.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
+├── scripts/                         # WooCommerce export, run outside Django
+│   ├── export_woocommerce_categories.py
+│   ├── export_woocommerce_products.py
+│   └── export_woocommerce_product_categories.py
+│
+├── resources/                       # seed data consumed by management commands
+│   ├── categories.json
+│   ├── products.json
+│   └── product_categories.json
+│
+├── media/                           # gitignored upload root
+└── env/                             # gitignored virtualenv
 ```
 
-## Rules
+Every app also has `apps.py`, `migrations/` and package `__init__.py` files,
+omitted above for brevity.
 
-Whenever a file or folder is:
+## Notes
 
-- created
-- deleted
-- renamed
-- moved
+- `category_api/serializers/import.py` and `category_api/views/v1/import.py`
+  are near-duplicates of the `category_import.py` modules. They are not
+  imported by any `__init__.py` and not routed.
 
-this document must be updated.
+## Rule
 
-This document should always match the actual repository structure.
+Whenever a file or folder is created, deleted, renamed or moved, update this
+document in the same change.

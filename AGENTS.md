@@ -1,221 +1,178 @@
 # AGENTS.md
 
-## Project Overview
+Primary entry point for coding agents. Read this before starting any task.
 
-This is a Django + Django REST Framework based e-commerce backend.
+## Project identity
 
-Current domains:
+Reusable, business-agnostic Django + Django REST Framework e-commerce backend.
+One codebase serves several storefronts (Zayrah Life, Best Computer Hub,
+bikkhato). Deployments differ by configuration, never by code.
 
-- Users
-- Products
-- Categories
-- Inventory
-- Suppliers
-- Purchases
-- Sales
-- Customers
-- Accounting
-- Transactions
+**Do not introduce store-specific logic.**
 
-The system must remain reusable and business-agnostic.
+## Stack
 
-Do not introduce store-specific logic.
+Django 5.2.5 · DRF 3.16.1 · SimpleJWT · drf-spectacular · django-filter ·
+PostgreSQL · gunicorn. Full list in `requirements.txt`.
 
----
+## Architecture at a glance
 
-## Documentation
+- 15 domain apps, all named `*_api`, registered in `LOCAL_APPS`
+  (`EcommerceBackend/settings.py`).
+- Shared components live in `EcommerceBackend/core/`
+  (`models.py`, `pagination.py`, `permission.py`, `choices.py`,
+  `exceptions.py`). Reuse them before writing new ones.
+- Routing: `EcommerceBackend/urls.py` → `api/` →
+  `EcommerceBackend/all_urls.py` → each app's `urls/__init__.py` → `urls/v1.py`.
+  Every endpoint is served under **`/api/v1/`**.
+- Settings read from `EcommerceBackend/env.py`, which is gitignored and
+  created from `.env.example`.
 
-Before making changes, review:
+Details: [docs/architecture.md](docs/architecture.md) ·
+[docs/domain-model.md](docs/domain-model.md)
 
-- docs/api-conventions.md
-- docs/architecture.md
-- docs/business-rules.md
-- docs/project-structure.md
+## Standard app layout
 
-These files are considered project source-of-truth documentation.
-
----
-
-## Existing Architecture
-
-Each business domain is implemented as a separate Django app.
-
-Examples:
-
-- product_api
-- category_api
-- inventory_api
-- sale_api
-- purchase_api
-- supplier_api
-- customer_api
-- account_api
-- transaction_api
-- user_api
-
-Reuse existing patterns before creating new ones.
-
----
-
-## Application Structure
-
-Each app should follow:
-
-app_name/
-
-├── models/
+```text
+<name>_api/
+├── models/          # package; customer_api and meta_api use a flat models.py
 ├── serializers/
-├── views/
-│   └── v1/
-├── urls/
+├── services.py      # or services/ package — see docs/conventions.md
+├── views/v1/
+├── urls/            # __init__.py mounts v1/, v1.py registers the router
 ├── migrations/
+├── filters.py       # only where a FilterSet class is needed
 ├── admin.py
 ├── apps.py
 └── tests.py
+```
 
-Keep consistency with neighboring apps.
+## Repository rules
 
----
+- **Never edit an applied migration.** Create a new one and review it before
+  committing.
+- **flake8 is the source of truth for linting.** Run `flake8` (or
+  `flake8 path/to/file.py`) before finishing; the repo is currently clean and
+  CI blocks on it. Do not add `# noqa` without a reason.
+- Search before creating. Before adding a model, serializer, view, service,
+  filter, permission or utility, look for an existing one and prefer
+  extending it.
+- Avoid N+1 queries — use `select_related()` / `prefetch_related()` /
+  `Prefetch`.
+- Do not commit `EcommerceBackend/env.py`, `media/`, or secrets.
+- Branches are named `<issue-number>-<kebab-slug>`; commits read
+  `done:` / `fixed:` / `updt:` + `issue#NNN - description`; PRs target `dev`.
 
-## Development Rules
+## Agent behaviour rules
 
-### Models
+These are approved project rules, not suggestions.
 
-- Place models inside models/
-- Add indexes where appropriate
-- Use meaningful related_name values
+1. **Inspect before modifying.** Read the file you are changing *and* the
+   equivalent file in a neighbouring app before writing code. Conventions in
+   this repo are not uniform — match the local pattern.
+2. **Ask when a business rule is ambiguous.** Especially for accounting,
+   inventory, pricing and permissions. Do not infer a rule from a single
+   example. See [docs/business-rules.md](docs/business-rules.md).
+3. **Report pre-existing breakage; do not fix it unasked.** If you find a
+   broken import, failing test or dead module unrelated to your task, name it
+   in your summary and leave it alone.
+4. **Conventions marked "Preferred direction" in
+   [docs/conventions.md](docs/conventions.md) apply to new code only.** Do not
+   retrofit existing apps to them.
 
-### Serializers
+## Implementation workflow
 
-- Validation belongs in serializers
-- Reuse serializer patterns
+**Mandatory for new features** (approved 2026-08-23). Existing apps are
+grandfathered and are not retrofitted.
 
-### Views
+```text
+Models → Services → Serializers → APIs/ViewSets → Permissions → Admin → Tests
+```
 
-- Keep views thin
-- Avoid business logic in views
-- Move complex logic into services.py
+1. **Models** — inherit the relevant abstract bases from
+   `EcommerceBackend/core/models.py`; add indexes, constraints and
+   `related_name`; generate the migration.
+2. **Services** — put the domain operation in the app's service module, wrap
+   state changes in `transaction.atomic`, raise
+   `rest_framework.exceptions.ValidationError` for rule violations.
+3. **Serializers** — separate list / detail / write serializers; field-level
+   and cross-field input validation lives here.
+4. **APIs/ViewSets** — keep thin; select the serializer in
+   `get_serializer_class()` on `self.action`; register in `urls/v1.py`; tag
+   with `@extend_schema(tags=[...])`.
+5. **Permissions** — see [docs/conventions.md](docs/conventions.md#permissions).
+6. **Admin** — register with `@admin.register(Model)`.
+7. **Tests** — see below.
 
-### URLs
+## Coding conventions
 
-- Register endpoints in urls/v1.py
-- Maintain API versioning
+Short version: 4-space indent, ≤79 columns (flake8 default), absolute imports,
+stdlib → Django → third-party → `EcommerceBackend.core` → local app. No type
+annotations are used in the codebase today.
 
-### Services
+Everything else — models, services, serializers, views, permissions, soft
+delete, filtering, naming, migrations, OpenAPI — is in
+[docs/conventions.md](docs/conventions.md). Read the relevant section before
+implementing.
 
-Business logic belongs in services.py.
+## Testing expectations
 
-Examples:
+Tests are **best effort**, not a hard gate (approved 2026-08-23). Add tests
+where the change warrants them; prefer API tests through `/api/v1/`.
 
-- Sale processing
-- Purchase processing
-- Inventory updates
-- Accounting operations
+Current state, for accuracy: 84 tests exist, 7 of 15 apps have placeholder
+`tests.py`, `origin_api` has none, 22 currently fail, and CI does not run
+them. Do not treat a failing suite as evidence your change broke something —
+check [docs/testing.md](docs/testing.md) first.
 
----
+## Commands
 
-## Database Rules
-
-- Never edit applied migrations
-- Create new migrations
-- Review generated migrations before committing
-
----
-
-## Query Optimization
-
-Avoid N+1 queries.
-
-Use:
-
-- select_related()
-- prefetch_related()
-
----
-
-## Testing
-
-Every new feature should include tests.
-
-At minimum:
-
-- API tests
-- Serializer tests
-- Permission tests
-
----
-
-## Documentation Maintenance
-
-Documentation is part of development.
-
-Whenever creating, deleting, renaming, or moving files:
-
-1. Update docs/project-structure.md
-2. Update docs/architecture.md if architecture changes
-3. Update docs/business-rules.md if business rules change
-
-A task is not complete until documentation is updated.
-
----
-
-## Completion Checklist
-
-Before finishing any task:
-
-- [ ] Code implemented
-- [ ] Tests updated
-- [ ] Migrations created if needed
-- [ ] URLs registered
-- [ ] Admin updated if needed
-- [ ] Documentation updated
-- [ ] Project structure updated
-
----
-
-## Search Before Creating
-
-Before creating any new:
-
-- model
-- serializer
-- view
-- service
-- filter
-- permission
-- utility
-
-the agent must search the repository for an existing implementation.
-
-Prefer extending existing code over creating duplicate functionality.
-
-## Existing Shared Components
-
-Before implementing models, filters, permissions, or pagination, review:
-
-- EcommerceBackend/core/models.py
-- EcommerceBackend/core/filter.py
-- EcommerceBackend/core/pagination.py
-- EcommerceBackend/core/permission.py
-
-Prefer existing shared components over creating new implementations.
-
-## Code Quality
-
-flake8 is the project's source of truth for linting.
-
-Before completing any code change:
-
-1. Run flake8 on modified files.
-2. Fix all reported issues.
-3. Do not ignore linting errors unless explicitly approved.
-4. Ensure newly added code follows existing project style conventions.
-
-Example:
 ```bash
+source env/bin/activate
+
+python manage.py migrate
+python manage.py runserver
+python manage.py test --settings=EcommerceBackend.test_settings
+python manage.py test <app> --settings=EcommerceBackend.test_settings
+python manage.py makemigrations <app>
 flake8
 ```
-or
-```bash
-flake8 path/to/modified_file.py
-```
+
+Swagger UI at `/docs/`, ReDoc at `/redoc/`, raw schema at `/schema/`.
+
+## Documentation maintenance
+
+Documentation is part of development:
+
+1. Update [docs/project-structure.md](docs/project-structure.md) when files or
+   folders are created, deleted, renamed or moved.
+2. Update [docs/architecture.md](docs/architecture.md) if architecture changes.
+3. Update [docs/business-rules.md](docs/business-rules.md) if business rules
+   change.
+4. Update [docs/domain-model.md](docs/domain-model.md) if models or their
+   relationships change.
+
+## Completion checklist
+
+- [ ] Code implemented, matching the neighbouring app's pattern
+- [ ] Migrations created and reviewed (never edited in place)
+- [ ] URLs registered under `urls/v1.py`
+- [ ] `@extend_schema(tags=[...])` applied
+- [ ] Admin updated if needed
+- [ ] Tests added where warranted
+- [ ] `flake8` clean
+- [ ] Documentation updated (see above)
+- [ ] Pre-existing problems found along the way reported, not silently fixed
+
+## Decisions log
+
+Approved project decisions. Append new entries here.
+
+| Date | Decision |
+|---|---|
+| 2026-08-23 | Models → Services → Serializers → APIs/ViewSets → Permissions → Admin → Tests is mandatory for new features; existing apps are grandfathered. |
+| 2026-08-23 | Where the repo is inconsistent, docs describe all existing patterns and mark a preferred direction for new code only. |
+| 2026-08-23 | Preferred soft delete for new code: `SoftDeleteModel.soft_delete()`. |
+| 2026-08-23 | Preferred permissions for new endpoints: `PublicReadPermissionMixin` for storefront-readable resources, `IsAuthenticated` otherwise, `CustomPermissionAccessMixin` for actions needing a dedicated permission. |
+| 2026-08-23 | Testing is best effort; no hard coverage gate. |
+| 2026-08-23 | Agents report pre-existing breakage rather than fixing it unasked. |
