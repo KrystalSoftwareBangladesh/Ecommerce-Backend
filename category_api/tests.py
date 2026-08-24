@@ -1,6 +1,7 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from category_api.models import Category
@@ -91,6 +92,183 @@ class CategoryApiTests(APITestCase):
         self.assertEqual(category.name, 'Home Appliances')
         self.assertEqual(category.slug, 'home-appliances')
         self.assertEqual(response.data['slug'], 'home-appliances')
+
+
+class CategoryWriteSerializerTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='category-writer',
+            email='category-writer@example.com',
+            password='test-pass-123',
+            role='STAFF',
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_create_uses_create_serializer(self):
+        response = self.client.post(
+            '/api/v1/categories/',
+            {'name': 'Electronics'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('slug', response.data)
+        self.assertNotIn('children', response.data)
+
+    def test_update_uses_update_serializer(self):
+        category = Category.objects.create(name='Electronics')
+
+        response = self.client.patch(
+            f'/api/v1/categories/{category.pk}/',
+            {'name': 'Consumer Electronics'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('slug', response.data)
+        self.assertNotIn('children', response.data)
+
+    def test_put_without_slug_keeps_existing_slug(self):
+        category = Category.objects.create(name='Electronics')
+
+        response = self.client.put(
+            f'/api/v1/categories/{category.pk}/',
+            {'name': 'Electronics'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        category.refresh_from_db()
+        self.assertEqual(category.slug, 'electronics')
+
+    def test_put_without_parent_keeps_existing_parent(self):
+        root = Category.objects.create(name='Root')
+        child = Category.objects.create(name='Child', parent=root)
+
+        response = self.client.put(
+            f'/api/v1/categories/{child.pk}/',
+            {'name': 'Child'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        child.refresh_from_db()
+        self.assertEqual(child.parent_id, root.pk)
+
+    def test_blank_slug_on_update_keeps_existing_slug(self):
+        category = Category.objects.create(name='Electronics')
+
+        response = self.client.patch(
+            f'/api/v1/categories/{category.pk}/',
+            {'slug': ''},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        category.refresh_from_db()
+        self.assertEqual(category.slug, 'electronics')
+
+    def test_slug_can_still_be_changed_on_update(self):
+        category = Category.objects.create(name='Electronics')
+
+        response = self.client.patch(
+            f'/api/v1/categories/{category.pk}/',
+            {'slug': 'gadgets'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        category.refresh_from_db()
+        self.assertEqual(category.slug, 'gadgets')
+
+    def test_parent_can_still_be_cleared_explicitly(self):
+        root = Category.objects.create(name='Root')
+        child = Category.objects.create(name='Child', parent=root)
+
+        response = self.client.patch(
+            f'/api/v1/categories/{child.pk}/',
+            {'parent': None},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        child.refresh_from_db()
+        self.assertIsNone(child.parent_id)
+
+    def test_category_cannot_be_its_own_parent(self):
+        category = Category.objects.create(name='Electronics')
+
+        response = self.client.patch(
+            f'/api/v1/categories/{category.pk}/',
+            {'parent': category.pk},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('parent', response.data['errors'])
+        category.refresh_from_db()
+        self.assertIsNone(category.parent_id)
+
+    def test_category_cannot_be_moved_under_its_own_subcategory(self):
+        root = Category.objects.create(name='Root')
+        child = Category.objects.create(name='Child', parent=root)
+        grandchild = Category.objects.create(name='Grandchild', parent=child)
+
+        response = self.client.patch(
+            f'/api/v1/categories/{root.pk}/',
+            {'parent': grandchild.pk},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('parent', response.data['errors'])
+        root.refresh_from_db()
+        self.assertIsNone(root.parent_id)
+
+    def test_category_can_be_moved_under_an_unrelated_category(self):
+        root = Category.objects.create(name='Root')
+        other = Category.objects.create(name='Other')
+
+        response = self.client.patch(
+            f'/api/v1/categories/{root.pk}/',
+            {'parent': other.pk},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        root.refresh_from_db()
+        self.assertEqual(root.parent_id, other.pk)
+
+    def test_soft_deleted_category_is_rejected_as_parent_on_create(self):
+        deleted = Category.objects.create(
+            name='Archived',
+            deleted_at=timezone.now(),
+        )
+
+        response = self.client.post(
+            '/api/v1/categories/',
+            {'name': 'Electronics', 'parent': deleted.pk},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('parent', response.data['errors'])
+
+    def test_soft_deleted_category_is_rejected_as_parent_on_update(self):
+        deleted = Category.objects.create(
+            name='Archived',
+            deleted_at=timezone.now(),
+        )
+        category = Category.objects.create(name='Electronics')
+
+        response = self.client.patch(
+            f'/api/v1/categories/{category.pk}/',
+            {'parent': deleted.pk},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('parent', response.data['errors'])
 
 
 class CategoryMenuPermissionTests(APITestCase):

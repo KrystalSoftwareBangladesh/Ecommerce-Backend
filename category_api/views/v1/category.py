@@ -24,7 +24,8 @@ from EcommerceBackend.core.permission import (
 
 from category_api.models import Category
 from category_api.serializers import (
-    CategorySerializer, CategoryDetailsSerializer, CategoryListSerializer,
+    CategorySerializer, CategoryCreateSerializer, CategoryUpdateSerializer,
+    CategoryDetailsSerializer, CategoryListSerializer,
     CategoryNavigationSerializer, CategoryStatisticsSerializer,
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
     CategoryPathSerializer, CategoryPathResponseSerializer,
@@ -131,6 +132,10 @@ class CategoryViewSet(
             return CategoryListSerializer
         if self.action == "retrieve":
             return CategoryDetailsSerializer
+        if self.action == "create":
+            return CategoryCreateSerializer
+        if self.action in ["update", "partial_update"]:
+            return CategoryUpdateSerializer
 
         return CategorySerializer
 

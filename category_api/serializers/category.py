@@ -78,6 +78,133 @@ class CategorySerializer(serializers.ModelSerializer):
         ).data
 
 
+class CategoryCreateSerializer(serializers.ModelSerializer):
+    """
+    Create a category. A blank or omitted slug is generated from the name.
+    """
+
+    # `slug` and `parent` both take part in the model's unique constraints,
+    # and UniqueTogetherValidator requires every constrained field to be
+    # present when there is no instance, so both need an explicit default.
+    slug = serializers.SlugField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        default=None,
+    )
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(deleted_at__isnull=True),
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "description",
+            "display_order",
+            "show_in_menu",
+            "parent",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+        ]
+
+    def create(self, validated_data):
+        if not validated_data.get("slug"):
+            validated_data.pop("slug", None)
+
+        return super().create(validated_data)
+
+
+class CategoryUpdateSerializer(serializers.ModelSerializer):
+    """
+    Update a category. Omitting a field leaves its stored value untouched,
+    and a category cannot be moved inside its own subtree.
+    """
+
+    # Unlike the create serializer, `slug` and `parent` must NOT declare
+    # `default=None`. On an update UniqueTogetherValidator backfills missing
+    # fields from the instance, so a default would only serve to null out a
+    # stored value whenever a PUT omits the field.
+    slug = serializers.SlugField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(deleted_at__isnull=True),
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "description",
+            "display_order",
+            "show_in_menu",
+            "parent",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate_parent(self, parent):
+        """
+        Reject moves that would put a category inside its own subtree.
+
+        A cycle detaches the whole subtree from the roots endpoint and makes
+        the recursive readers (`path`, `children`) run forever.
+        """
+        if parent is None:
+            return parent
+
+        if parent.pk == self.instance.pk:
+            raise serializers.ValidationError(
+                "A category cannot be its own parent."
+            )
+
+        seen = {parent.pk}
+        ancestor = parent.parent
+
+        while ancestor is not None:
+            if ancestor.pk == self.instance.pk:
+                raise serializers.ValidationError(
+                    "A category cannot be moved under one of its own "
+                    "subcategories."
+                )
+
+            if ancestor.pk in seen:
+                break
+
+            seen.add(ancestor.pk)
+            ancestor = ancestor.parent
+
+        return parent
+
+    def update(self, instance, validated_data):
+        if "slug" in validated_data and not validated_data["slug"]:
+            validated_data.pop("slug")
+
+        return super().update(instance, validated_data)
+
+
 class CategoryDetailsSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
         required=False,
