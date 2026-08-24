@@ -30,6 +30,8 @@ from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
     ProductCreateUpdateSerializer,
+    ProductCreateSerializer,
+    ProductUpdateSerializer,
     ProductVariantListSerializer,
     ProductVariantDetailSerializer,
     ProductVariantCreateUpdateSerializer,
@@ -166,6 +168,10 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return ProductListSerializer
         if self.action == 'retrieve':
             return ProductDetailSerializer
+        if self.action == 'create':
+            return ProductCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return ProductUpdateSerializer
         return ProductCreateUpdateSerializer
 
     def destroy(self, request, *args, **kwargs):
