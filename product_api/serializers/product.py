@@ -1,4 +1,6 @@
 # product_api/serializers/product.py
+from django.db import transaction
+
 from drf_spectacular.utils import extend_schema_field
 
 from rest_framework import serializers
@@ -176,6 +178,167 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             ).data
 
         return representation
+
+
+class ProductWriteSerializer(serializers.ModelSerializer):
+    """
+    Shared configuration for the product write serializers.
+
+    Not used directly - see ProductCreateSerializer and
+    ProductUpdateSerializer.
+    """
+
+    categories = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(is_active=True),
+        many=True,
+        required=False
+    )
+    origin = serializers.PrimaryKeyRelatedField(
+        queryset=Origin.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'categories', 'origin', 'current_selling_price',
+        ]
+        extra_kwargs = {
+            'id': {'read_only': True}
+        }
+
+    def validate_name(self, value):
+        qs = Product.objects.filter(name__iexact=value, is_active=True)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "A product with this name already exists.")
+        return value
+
+    def to_representation(self, instance):
+        """Customize the output representation"""
+        representation = super().to_representation(instance)
+
+        # Include only active variants in the response
+        if instance.pk:
+            active_variants = instance.variants.filter(is_active=True)
+            representation['variants'] = ProductVariantSerializer(
+                active_variants, many=True
+            ).data
+
+        return representation
+
+
+class ProductCreateSerializer(ProductWriteSerializer):
+    """
+    Create a product, optionally with its initial set of variants.
+    """
+
+    variants = ProductVariantSerializer(many=True, required=False)
+
+    class Meta(ProductWriteSerializer.Meta):
+        fields = ProductWriteSerializer.Meta.fields + ['variants']
+
+    def validate_variants(self, variants):
+        """
+        Reject duplicate SKUs inside a single payload.
+
+        Each nested variant validates its SKU against the database, but
+        nothing compares the incoming variants against each other.
+        """
+        seen = set()
+        duplicates = set()
+
+        for variant in variants:
+            sku = variant.get('sku')
+            if not sku:
+                continue
+
+            key = sku.lower()
+            if key in seen:
+                duplicates.add(sku)
+
+            seen.add(key)
+
+        if duplicates:
+            raise serializers.ValidationError(
+                "Duplicate SKUs in this request: "
+                f"{', '.join(sorted(duplicates))}."
+            )
+
+        return variants
+
+    @transaction.atomic
+    def create(self, validated_data):
+        variants_data = validated_data.pop('variants', [])
+        categories = validated_data.pop('categories', [])
+        product = Product.objects.create(**validated_data)
+
+        if categories:
+            product.categories.set(categories)
+
+        ProductPriceHistory.objects.create(
+            product=product,
+            price=product.current_selling_price,
+            changed_by=self.context['request'].user
+        )
+
+        if variants_data:
+            variants_to_create = []
+            for variant_data in variants_data:
+                variants_to_create.append(
+                    ProductVariant(product=product, **variant_data)
+                )
+            ProductVariant.objects.bulk_create(variants_to_create)
+
+        return product
+
+
+class ProductUpdateSerializer(ProductWriteSerializer):
+    """
+    Update a product. Variants are read-only here and are managed through
+    the product-variants endpoint.
+    """
+
+    # Read-only: `ModelSerializer.update()` refuses writable nested fields,
+    # so accepting variants here raised an AssertionError instead of
+    # updating anything. Variants have their own CRUD endpoint.
+    variants = ProductVariantSerializer(many=True, read_only=True)
+
+    class Meta(ProductWriteSerializer.Meta):
+        fields = ProductWriteSerializer.Meta.fields + ['variants']
+
+    def validate(self, attrs):
+        if 'variants' in getattr(self, 'initial_data', {}):
+            raise serializers.ValidationError({
+                'variants': (
+                    "Variants cannot be changed through this endpoint. "
+                    "Use /api/v1/product-variants/ instead."
+                )
+            })
+
+        return attrs
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        old_price = instance.current_selling_price
+        categories = validated_data.pop('categories', None)
+        instance = super().update(instance, validated_data)
+
+        if categories is not None:
+            instance.categories.set(categories)
+
+        new_price = instance.current_selling_price
+        if old_price != new_price:
+            ProductPriceHistory.objects.create(
+                product=instance,
+                price=new_price,
+                changed_by=self.context['request'].user
+            )
+
+        return instance
 
 
 class ProductVariantListSerializer(serializers.ModelSerializer):

@@ -114,6 +114,200 @@ class ProductVariantApiTests(TestCase):
         self.assertEqual(response.data['results'][0]['name'], 'Filtered Product')
 
 
+class ProductWriteSerializerTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='writer@example.com',
+            username='writer',
+            password='secret123',
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def _create_product(self, name='Widget', price='10.00'):
+        return Product.objects.create(
+            name=name,
+            current_selling_price=price,
+            slug=name.lower(),
+        )
+
+    def test_create_accepts_variants(self):
+        response = self.client.post(
+            '/api/v1/products/',
+            {
+                'name': 'Widget',
+                'current_selling_price': '10.00',
+                'variants': [{'sku': 'W-1'}, {'sku': 'W-2'}],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        product = Product.objects.get(name='Widget')
+        self.assertEqual(product.variants.count(), 2)
+        self.assertEqual(len(response.data['variants']), 2)
+
+    def test_create_records_initial_price_history(self):
+        response = self.client.post(
+            '/api/v1/products/',
+            {'name': 'Widget', 'current_selling_price': '10.00'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        product = Product.objects.get(name='Widget')
+        self.assertEqual(product.price_histories.count(), 1)
+
+    def test_create_rejects_duplicate_skus_in_one_payload(self):
+        response = self.client.post(
+            '/api/v1/products/',
+            {
+                'name': 'Widget',
+                'current_selling_price': '10.00',
+                'variants': [{'sku': 'SAME'}, {'sku': 'SAME'}],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('variants', response.data['errors'])
+        self.assertFalse(Product.objects.filter(name='Widget').exists())
+        self.assertEqual(ProductVariant.objects.filter(sku='SAME').count(), 0)
+
+    def test_create_rejects_duplicate_skus_case_insensitively(self):
+        response = self.client.post(
+            '/api/v1/products/',
+            {
+                'name': 'Widget',
+                'current_selling_price': '10.00',
+                'variants': [{'sku': 'same'}, {'sku': 'SAME'}],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('variants', response.data['errors'])
+
+    def test_update_with_variants_is_rejected_not_a_server_error(self):
+        product = self._create_product()
+        ProductVariant.objects.create(product=product, sku='W-1')
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'variants': [{'sku': 'W-2'}]},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('variants', response.data['errors'])
+        self.assertEqual(product.variants.count(), 1)
+
+    def test_update_returns_variants_read_only(self):
+        product = self._create_product()
+        ProductVariant.objects.create(product=product, sku='W-1')
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'name': 'Renamed Widget'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['variants']), 1)
+        self.assertEqual(response.data['variants'][0]['sku'], 'W-1')
+
+    def test_update_excludes_inactive_variants_from_response(self):
+        product = self._create_product()
+        ProductVariant.objects.create(product=product, sku='W-1')
+        ProductVariant.objects.create(
+            product=product, sku='W-2', is_active=False)
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'name': 'Renamed Widget'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['variants']), 1)
+
+    def test_update_records_price_history_on_change(self):
+        product = self._create_product()
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'current_selling_price': '20.00'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(product.price_histories.count(), 1)
+        self.assertEqual(
+            str(product.price_histories.first().price), '20.00')
+
+    def test_update_skips_price_history_when_price_unchanged(self):
+        product = self._create_product()
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'name': 'Renamed Widget'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(product.price_histories.count(), 0)
+
+    def test_update_sets_categories(self):
+        product = self._create_product()
+        category = Category.objects.create(name='Gadgets')
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'categories': [category.pk]},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(list(product.categories.all()), [category])
+
+    def test_update_leaves_categories_untouched_when_omitted(self):
+        product = self._create_product()
+        category = Category.objects.create(name='Gadgets')
+        product.categories.set([category])
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'name': 'Renamed Widget'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(list(product.categories.all()), [category])
+
+    def test_duplicate_name_is_rejected_on_create(self):
+        self._create_product(name='Widget')
+
+        response = self.client.post(
+            '/api/v1/products/',
+            {'name': 'widget', 'current_selling_price': '10.00'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('name', response.data['errors'])
+
+    def test_product_can_keep_its_own_name_on_update(self):
+        product = self._create_product(name='Widget')
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'name': 'Widget', 'current_selling_price': '11.00'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
 class ProductImageApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
