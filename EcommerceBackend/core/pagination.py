@@ -9,7 +9,8 @@ from collections import OrderedDict
 class Pagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
-    max_page_size = 100
+    max_page_size = 1000                    # controls how many records can get
+    max_page_number = 1000                  # controls how far can access
 
     def get_page_size(self, request):
         """
