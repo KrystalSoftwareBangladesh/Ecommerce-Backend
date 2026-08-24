@@ -284,6 +284,98 @@ class ProductWriteSerializerTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(list(product.categories.all()), [category])
 
+    def test_create_accepts_description_fields(self):
+        response = self.client.post(
+            '/api/v1/products/',
+            {
+                'name': 'Widget',
+                'current_selling_price': '10.00',
+                'description': 'A long description.',
+                'short_description': 'A short one.',
+                'specifications': 'Weight: 1kg',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        product = Product.objects.get(name='Widget')
+        self.assertEqual(product.description, 'A long description.')
+        self.assertEqual(product.short_description, 'A short one.')
+        self.assertEqual(product.specifications, 'Weight: 1kg')
+        self.assertEqual(response.data['description'], 'A long description.')
+        self.assertEqual(response.data['short_description'], 'A short one.')
+        self.assertEqual(response.data['specifications'], 'Weight: 1kg')
+
+    def test_description_fields_are_optional_on_create(self):
+        response = self.client.post(
+            '/api/v1/products/',
+            {'name': 'Widget', 'current_selling_price': '10.00'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        product = Product.objects.get(name='Widget')
+        self.assertEqual(product.description, '')
+        self.assertEqual(product.short_description, '')
+        self.assertEqual(product.specifications, '')
+
+    def test_update_changes_description_fields(self):
+        product = self._create_product()
+        product.description = 'Old description.'
+        product.short_description = 'Old short.'
+        product.specifications = 'Old specs.'
+        product.save()
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {
+                'description': 'New description.',
+                'short_description': 'New short.',
+                'specifications': 'New specs.',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        product.refresh_from_db()
+        self.assertEqual(product.description, 'New description.')
+        self.assertEqual(product.short_description, 'New short.')
+        self.assertEqual(product.specifications, 'New specs.')
+
+    def test_update_leaves_description_fields_untouched_when_omitted(self):
+        product = self._create_product()
+        product.description = 'Keep me.'
+        product.short_description = 'Keep me too.'
+        product.specifications = 'And me.'
+        product.save()
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'name': 'Renamed Widget'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        product.refresh_from_db()
+        self.assertEqual(product.description, 'Keep me.')
+        self.assertEqual(product.short_description, 'Keep me too.')
+        self.assertEqual(product.specifications, 'And me.')
+
+    def test_description_fields_can_be_cleared_with_blank_string(self):
+        product = self._create_product()
+        product.description = 'Remove me.'
+        product.save()
+
+        response = self.client.patch(
+            f'/api/v1/products/{product.pk}/',
+            {'description': ''},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        product.refresh_from_db()
+        self.assertEqual(product.description, '')
+
     def test_duplicate_name_is_rejected_on_create(self):
         self._create_product(name='Widget')
 

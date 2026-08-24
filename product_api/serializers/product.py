@@ -202,7 +202,9 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'categories', 'origin', 'current_selling_price',
+            'id', 'name', 'description', 'short_description',
+            'specifications', 'categories', 'origin',
+            'current_selling_price',
         ]
         extra_kwargs = {
             'id': {'read_only': True}
