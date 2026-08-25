@@ -29,17 +29,27 @@ which run outside Django.
 
 ### Application structure
 
-Each business domain is a separate Django app named `<domain>_api`. The 15
+Each business domain is a separate Django app named `<domain>_api`. The 16
 apps registered in `LOCAL_APPS` are:
 
 `user_api`, `customer_api`, `account_api`, `transaction_api`, `category_api`,
 `supplier_api`, `product_api`, `inventory_api`, `purchase_api`, `sale_api`,
-`origin_api`, `review_api`, `meta_api`, `wishlist_api`, `cart_api`.
+`origin_api`, `review_api`, `meta_api`, `wishlist_api`, `cart_api`,
+`content_security_api`.
 
 Responsibilities are listed in [domain-model.md](domain-model.md).
 
 `meta_api` is the only app with no models — it exposes choice/enum lookups
 (currently moderation statuses) to clients.
+
+`content_security_api` is the only cross-cutting app: it owns no business
+domain of its own and instead reads content belonging to other apps. It
+reaches them one way only — through
+`content_security_api/services/content_sources.py`, which maps a content
+type onto a model, the fields to scan and a queryset. No other module in the
+scanner imports `Product` or `Category`, and the scanner never writes to
+them, so a new content type is one registry entry rather than a change to
+the detection engine.
 
 ### Request flow
 

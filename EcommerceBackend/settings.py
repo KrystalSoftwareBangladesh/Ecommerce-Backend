@@ -72,6 +72,7 @@ LOCAL_APPS = [
     'meta_api',
     'wishlist_api',
     'cart_api',
+    'content_security_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -124,6 +125,14 @@ SPECTACULAR_SETTINGS = {
         "TransactionStatusEnum": "transaction_api.models.transaction.TransactionStatus.choices",  # noqa
         "TransactionTypeEnum": "transaction_api.models.transaction.TransactionType.choices",  # noqa
         "ModerationStatus": "EcommerceBackend.core.choices.ModerationStatus",
+        "ScanContentTypeEnum": "content_security_api.models.choices.ScanContentType.choices",  # noqa
+        "DetectorTypeEnum": "content_security_api.models.choices.DetectorType.choices",  # noqa
+        "RuleCategoryEnum": "content_security_api.models.choices.RuleCategory.choices",  # noqa
+        "RuleSeverityEnum": "content_security_api.models.choices.RuleSeverity.choices",  # noqa
+        "ScanStatusEnum": "content_security_api.models.choices.ScanStatus.choices",  # noqa
+        "FindingReviewStatusEnum": "content_security_api.models.choices.FindingReviewStatus.choices",  # noqa
+        "KeywordMatchTypeEnum": "content_security_api.models.choices.KeywordMatchType.choices",  # noqa
+        "DomainMatchTypeEnum": "content_security_api.models.choices.DomainMatchType.choices",  # noqa
     },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,

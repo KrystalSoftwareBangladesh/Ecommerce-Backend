@@ -25,6 +25,7 @@ repository. Business rules that govern these entities are in
 | `wishlist_api` | Per-user product wishlist | `Wishlist` |
 | `cart_api` | Shopping cart and cart lines | `Cart`, `CartItem` |
 | `meta_api` | Choice/enum lookups for clients (currently moderation statuses) | *(none)* |
+| `content_security_api` | Content Security Scanner: configurable detection rules, scan results and findings for migrated content | `KeywordRule`, `DomainRule`, `HtmlTagRule`, `HtmlAttributeRule`, `RedirectRule`, `HiddenContentRule`, `ObfuscationRule`, `ContentScan`, `ContentScanFinding` |
 
 There is **no `Order` model** — a completed customer purchase is a `Sale`.
 There is **no blog** and **no SEO/meta model**; `meta_api` is a choice-lookup
@@ -80,6 +81,15 @@ are not currently associated with a brand in the database.
 **Note on ownership:** `Cart` and `Wishlist` have no dedicated `user` field —
 ownership is expressed through `created_by` from `UserStampedModel`.
 
+**Note on scan targets:** `ContentScan` does not use a foreign key to the
+object it scanned. It records `content_type` (a `ScanContentType` choice)
+plus `object_id`, the same loose-reference pattern
+`InventoryMovement.reference_type` / `reference_id` already uses. This keeps
+the scanner decoupled from `Product` and `Category` and lets new content
+types be added without a schema change. `ContentScanFinding` references its
+rule the same way, with `detector` plus `rule_id_value`, because the seven
+rule types are separate models.
+
 ## Key enumerations
 
 | Enum | Location | Values |
@@ -95,6 +105,12 @@ ownership is expressed through `created_by` from `UserStampedModel`.
 | `PaymentType` | `supplier_api/models/supplier.py` | supplier payment terms |
 | `ModerationStatus` | `EcommerceBackend/core/choices.py` | `PENDING`, `APPROVED`, `REJECTED` |
 | `CartStatus` | `EcommerceBackend/core/choices.py` | `ACTIVE`, `CHECKED_OUT`, `ABANDONED` |
+| `ScanContentType` | `content_security_api/models/choices.py` | `PRODUCT`, `CATEGORY` |
+| `DetectorType` | `content_security_api/models/choices.py` | `KEYWORD`, `DOMAIN`, `HTML_TAG`, `HTML_ATTRIBUTE`, `REDIRECT`, `HIDDEN_CONTENT`, `OBFUSCATION` |
+| `RuleCategory` | `content_security_api/models/choices.py` | `GAMBLING`, `ADULT`, `DRUG`, `MALWARE`, `SCAM`, `SPAM`, `PHISHING`, `REDIRECT`, `INJECTION`, `OBFUSCATION`, `HIDDEN_CONTENT` |
+| `RuleSeverity` | `content_security_api/models/choices.py` | `INFO`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
+| `ScanStatus` | `content_security_api/models/choices.py` | `CLEAN`, `LOW_RISK`, `REVIEW`, `HIGH_RISK`, `CRITICAL` |
+| `FindingReviewStatus` | `content_security_api/models/choices.py` | `PENDING`, `FALSE_POSITIVE`, `CONFIRMED`, `RESOLVED` |
 
 Enums surfaced in the OpenAPI schema are named via `ENUM_NAME_OVERRIDES` in
 `EcommerceBackend/settings.py`. Add an entry there when introducing a new
@@ -108,6 +124,9 @@ Declared in `Meta.permissions` and shipped with a migration:
   `change_user_password`, `assign_user_role`, `remove_user_role`
 - `category_api.Category` — `mark_category_as_menu`,
   `remove_category_from_menu`
+- `content_security_api.ContentScan` — `run_content_scan`
+- `content_security_api.ContentScanFinding` —
+  `review_content_scan_finding`, `resolve_content_scan_finding`
 
 See [business-rules.md](business-rules.md#custom-model-permissions) for how
 they are applied.

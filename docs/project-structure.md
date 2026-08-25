@@ -82,6 +82,27 @@ ZayrahLife-Backend/
 │   ├── admin.py
 │   └── tests.py
 │
+├── content_security_api/
+│   ├── constants.py                 # SCANNER_VERSION and scan limits
+│   ├── models/{choices.py,rule.py,scan.py,finding.py}
+│   ├── serializers/{rule.py,scan.py,finding.py}
+│   ├── services/
+│   │   ├── {normalization.py,rules.py,scoring.py,scanner.py}
+│   │   ├── {content_sources.py,review.py}
+│   │   └── detectors/
+│   │       ├── base.py
+│   │       ├── {keyword.py,domain.py,html_tag.py,html_attribute.py}
+│   │       └── {redirect.py,hidden_content.py,obfuscation.py}
+│   ├── views/v1/{scan.py,finding.py,rule.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── management/commands/scan_content.py
+│   ├── filters.py
+│   ├── admin.py
+│   └── tests/                       # package, not a flat tests.py
+│       ├── factories.py
+│       ├── {test_models.py,test_detectors.py,test_scoring.py}
+│       └── {test_scanner.py,test_api.py}
+│
 ├── customer_api/
 │   ├── models.py                    # flat module, not a package
 │   ├── serializers/customer_profile.py
@@ -205,6 +226,12 @@ omitted above for brevity.
 
 ## Notes
 
+- `content_security_api` is the only app whose tests are a package
+  rather than a flat `tests.py`. `.flake8` excludes `tests.py` by name,
+  so this app's test modules **are** linted.
+- `content_security_api/models/choices.py` holds choices shared by
+  several model modules in that app; elsewhere choices sit in the model
+  module itself.
 - `category_api/serializers/import.py` and `category_api/views/v1/import.py`
   are near-duplicates of the `category_import.py` modules. They are not
   imported by any `__init__.py` and not routed.
