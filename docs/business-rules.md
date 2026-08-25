@@ -101,6 +101,101 @@ Customer balances must reflect:
 
 ---
 
+## Content Security
+
+Rules approved 2026-08-25 for the Content Security Scanner
+(`content_security_api`). These are the security-sensitive values the
+scanner depends on; do not change them without a matching decision entry.
+
+### Detection is configurable, not hardcoded
+
+Every detection rule is a database row. Seven rule models back the seven
+detectors. A rule is evaluated only when it is enabled (`is_enabled`),
+active and not soft deleted. `is_enabled` is the administrator's detection
+toggle and is deliberately separate from the `is_active` / `deleted_at`
+pair that records deletion.
+
+Rules are global: a rule applies to every scanned field of every content
+type. There is no content-type scoping column.
+
+Administrators never supply a regular expression. Keyword rules match
+`WORD` (word boundaries) or `SUBSTRING`; domain rules match `EXACT` or
+`SUBDOMAIN`. Patterns are built by the application from the literal rule
+value, so there is no catastrophic-backtracking surface.
+
+### Severity weights and risk score
+
+| Severity | Weight |
+|---|---|
+| `INFO` | 0 |
+| `LOW` | 10 |
+| `MEDIUM` | 25 |
+| `HIGH` | 50 |
+| `CRITICAL` | 80 |
+
+`risk_score` is the sum of the weights of the **distinct** findings, capped
+at 100. Findings are deduplicated by (detector, rule, matched value) before
+scoring, so the same match repeated within one field counts once; the
+repetition count is recorded in the finding's `metadata["occurrences"]`.
+
+### Status thresholds
+
+| Score | Status |
+|---|---|
+| 0 | `CLEAN` |
+| 1 - 24 | `LOW_RISK` |
+| 25 - 49 | `REVIEW` |
+| 50 - 79 | `HIGH_RISK` |
+| 80 - 100 | `CRITICAL` |
+
+### Seeded rule severities
+
+Severity is graded by execution capability. `CRITICAL` is reserved for rules
+that mean arbitrary script execution: the `script` tag, the `javascript:`
+scheme and the `data:text/html` scheme. Remote-content embedding
+(`iframe`, `object`, `embed`), `form`, inline event handlers and every
+redirect mechanism including meta refresh are `HIGH`. Hidden-content
+patterns are `MEDIUM`.
+
+The seed migration installs **no keyword rules and no domain rules**. The
+repository defines no suspicious keyword or domain list, and none is
+invented; those tables start empty and are populated by authorised users.
+
+The `BASE64` obfuscation indicator ships **disabled**, because migrated
+WordPress content commonly carries legitimate `data:` image URIs.
+
+### A finding is not a verdict
+
+A rule match means content warrants a look, not that it is malicious.
+Review states:
+
+```text
+PENDING -> FALSE_POSITIVE            (terminal)
+PENDING -> CONFIRMED -> RESOLVED     (terminal)
+```
+
+Any other transition is rejected with a `ValidationError`. Review never
+changes `risk_score` or `status`: the score states what was detected, not
+what was concluded.
+
+A re-scan replaces a scan's findings but carries forward the review state of
+any finding that reappears identically, matched on (detector, rule, matched
+value), so triage survives a rule change.
+
+### The scanner never modifies content
+
+The scanner detects and reports. It does not delete, rewrite, sanitise,
+strip HTML, replace URLs, unpublish, or deactivate any product or category,
+and it makes no network request for any URL it finds. Domain rules are
+evaluated against locally configured rows only. Sanitisation and
+remediation are a separate future feature.
+
+### Scanner version
+
+`content_security_api.constants.SCANNER_VERSION` (currently `1.0`) is stored
+on every scan. Increment it deliberately when detection behaviour changes,
+so stale results can be identified and re-scanned.
+
 ## Permissions
 
 Protected endpoints require authentication.
@@ -130,3 +225,20 @@ the other. Superusers hold every permission implicitly.
 
 The remaining category endpoints, including `bulk-menu-update`, keep
 requiring authentication only.
+
+Content Security (`content_security_api`):
+
+- `run_content_scan` (on `ContentScan`) - required by
+  `POST /api/v1/content-security/scans/` and
+  `POST /api/v1/content-security/scans/{id}/rescan/`
+- `review_content_scan_finding` (on `ContentScanFinding`) - required by
+  `POST /api/v1/content-security/findings/{id}/review/`
+- `resolve_content_scan_finding` (on `ContentScanFinding`) - required by
+  `POST /api/v1/content-security/findings/{id}/resolve/`
+
+The rule-management endpoints (`keyword-rules`, `domain-rules`,
+`html-tag-rules`, `html-attribute-rules`, `redirect-rules`,
+`hidden-content-rules`, `obfuscation-rules`) are driven entirely by Django
+model permissions through `ModelPermissionAccess`, so a role can be given
+control of one rule type without the others. Reading scans and findings
+requires authentication only. Nothing in this app is publicly readable.

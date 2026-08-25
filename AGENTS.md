@@ -176,3 +176,9 @@ Approved project decisions. Append new entries here.
 | 2026-08-23 | Preferred permissions for new endpoints: `PublicReadPermissionMixin` for storefront-readable resources, `IsAuthenticated` otherwise, `CustomPermissionAccessMixin` for actions needing a dedicated permission. |
 | 2026-08-23 | Testing is best effort; no hard coverage gate. |
 | 2026-08-23 | Agents report pre-existing breakage rather than fixing it unasked. |
+| 2026-08-25 | Content Security Scanner lives in `content_security_api`, a cross-cutting app that reads other apps' content through `services/content_sources.py` only and never writes to them. |
+| 2026-08-25 | Scanner severity weights (INFO 0 / LOW 10 / MEDIUM 25 / HIGH 50 / CRITICAL 80), capped-sum risk score and status thresholds (0 CLEAN, 1-24 LOW_RISK, 25-49 REVIEW, 50-79 HIGH_RISK, 80-100 CRITICAL) approved. See [docs/business-rules.md](docs/business-rules.md#content-security). |
+| 2026-08-25 | The scanner ships no keyword or domain rules. Only deterministic technical rules are seeded; suspicious keyword and domain lists are entered by authorised users. |
+| 2026-08-25 | Detection rules take no user-supplied regular expression; matching modes are fixed (`WORD`/`SUBSTRING`, `EXACT`/`SUBDOMAIN`) and rules are global, not content-type scoped. |
+| 2026-08-25 | Finding review is `PENDING -> FALSE_POSITIVE` or `PENDING -> CONFIRMED -> RESOLVED`; review never changes a scan's risk score or status, and a re-scan carries review state forward for identical findings. |
+| 2026-08-25 | The scanner detects and reports only. It never modifies, sanitises, unpublishes or deactivates scanned content, and makes no external network request. |
