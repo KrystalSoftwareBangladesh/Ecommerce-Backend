@@ -6,6 +6,7 @@ from .finding import (
     ContentScanFindingReviewSerializer,
 )
 from .rule import (
+    DetectionRuleSummarySerializer,
     DomainRuleCreateUpdateSerializer,
     DomainRuleDetailSerializer,
     DomainRuleListSerializer,
@@ -45,6 +46,7 @@ __all__ = [
     'ContentScanFindingReviewSerializer',
     'ContentScanListSerializer',
     'ContentScanRunResultSerializer',
+    'DetectionRuleSummarySerializer',
     'DomainRuleCreateUpdateSerializer',
     'DomainRuleDetailSerializer',
     'DomainRuleListSerializer',

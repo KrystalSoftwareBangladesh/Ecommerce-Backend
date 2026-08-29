@@ -8,7 +8,7 @@ from .content_sources import (
 )
 from .normalization import NormalizedContent, normalize
 from .review import resolve_finding, review_finding
-from .rules import RuleSet, load_rule_set
+from .rules import RuleSet, count_rules_by_type, load_rule_set
 from .scanner import (
     ScanRunResult,
     rescan,
@@ -28,6 +28,7 @@ __all__ = [
     'RuleSet',
     'ScanRunResult',
     'calculate_risk_score',
+    'count_rules_by_type',
     'get_content_source',
     'get_object_label',
     'load_rule_set',

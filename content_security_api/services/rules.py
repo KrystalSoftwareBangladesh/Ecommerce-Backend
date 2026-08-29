@@ -246,3 +246,34 @@ def domain_matches(compiled_rule, host):
         return host == domain
 
     return host == domain or host.endswith(f'.{domain}')
+
+
+RULE_TYPES = {
+    'keyword_rules': KeywordRule,
+    'domain_rules': DomainRule,
+    'hidden_content_rules': HiddenContentRule,
+    'obfuscation_rules': ObfuscationRule,
+    'redirect_rules': RedirectRule,
+    'html_attribute_rules': HtmlAttributeRule,
+    'html_tag_rules': HtmlTagRule,
+}
+
+
+def count_rules_by_type():
+    """
+    How many rules are stored for each rule type, plus their total.
+
+    Counting happens in the database, one `COUNT(*)` per rule type; no
+    rule is loaded into memory. Disabled (`is_enabled=False`) and
+    deactivated (`is_active=False`) rules are counted, because the tab
+    badges show how many rules exist, not how many are evaluated. Soft
+    deleted rules are left out, so the counts match what the rule list
+    endpoints return with no filter applied.
+    """
+    counts = {
+        key: model.objects.filter(deleted_at__isnull=True).count()
+        for key, model in RULE_TYPES.items()
+    }
+    counts['total'] = sum(counts.values())
+
+    return counts

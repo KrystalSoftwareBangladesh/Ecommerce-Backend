@@ -4,7 +4,9 @@ from drf_spectacular.utils import extend_schema
 
 from rest_framework import status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from EcommerceBackend.core.permission import ModelPermissionAccess
 
@@ -18,6 +20,7 @@ from content_security_api.models import (
     RedirectRule,
 )
 from content_security_api.serializers import (
+    DetectionRuleSummarySerializer,
     DomainRuleCreateUpdateSerializer,
     DomainRuleDetailSerializer,
     DomainRuleListSerializer,
@@ -40,6 +43,7 @@ from content_security_api.serializers import (
     RedirectRuleDetailSerializer,
     RedirectRuleListSerializer,
 )
+from content_security_api.services import count_rules_by_type
 
 
 class BaseDetectionRuleViewSet(viewsets.ModelViewSet):
@@ -191,3 +195,26 @@ class ObfuscationRuleViewSet(BaseDetectionRuleViewSet):
     filterset_fields = BaseDetectionRuleViewSet.filterset_fields + [
         "indicator",
     ]
+
+
+@extend_schema(
+    tags=["Content Security - Rules"],
+    summary="Detection rule summary",
+    responses={200: DetectionRuleSummarySerializer},
+    description=(
+        "How many rules exist for each rule type, for the count badges "
+        "beside the Detection Rules tabs. Disabled and deactivated rules "
+        "are counted; the list endpoints' search, filter, ordering and "
+        "pagination parameters are not applied."
+    ),
+)
+class DetectionRuleSummaryAPIView(APIView):
+    """
+    Rule counts only. No rule object is ever returned here.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = DetectionRuleSummarySerializer(count_rules_by_type())
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

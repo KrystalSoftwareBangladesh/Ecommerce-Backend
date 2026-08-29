@@ -307,3 +307,17 @@ class ObfuscationRuleCreateUpdateSerializer(BaseRuleCreateUpdateSerializer):
             'indicator',
             'min_length',
         ]
+
+
+class DetectionRuleSummarySerializer(serializers.Serializer):
+    """
+    Rule counts per rule type, for the Detection Rules tab badges.
+    """
+    keyword_rules = serializers.IntegerField()
+    domain_rules = serializers.IntegerField()
+    hidden_content_rules = serializers.IntegerField()
+    obfuscation_rules = serializers.IntegerField()
+    redirect_rules = serializers.IntegerField()
+    html_attribute_rules = serializers.IntegerField()
+    html_tag_rules = serializers.IntegerField()
+    total = serializers.IntegerField()
