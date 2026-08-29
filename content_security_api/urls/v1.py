@@ -1,4 +1,6 @@
 # content_security_api/urls/v1.py
+from django.urls import path
+
 from rest_framework.routers import DefaultRouter
 
 from content_security_api.views import v1
@@ -52,5 +54,11 @@ router.register(
     basename='content-security-obfuscation-rule',
 )
 
-urlpatterns = []
+urlpatterns = [
+    path(
+        'content-security/detection-rules/summary/',
+        v1.DetectionRuleSummaryAPIView.as_view(),
+        name='content-security-detection-rule-summary',
+    ),
+]
 urlpatterns += router.urls

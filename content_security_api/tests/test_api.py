@@ -11,6 +11,7 @@ from content_security_api.models import (
     ContentScanFinding,
     FindingReviewStatus,
     KeywordRule,
+    ObfuscationIndicator,
     ScanContentType,
     ScanStatus,
 )
@@ -25,6 +26,9 @@ DOMAIN_RULES_URL = '/api/v1/content-security/domain-rules/'
 HTML_TAG_RULES_URL = '/api/v1/content-security/html-tag-rules/'
 HTML_ATTRIBUTE_RULES_URL = (
     '/api/v1/content-security/html-attribute-rules/'
+)
+RULE_SUMMARY_URL = (
+    '/api/v1/content-security/detection-rules/summary/'
 )
 
 
@@ -671,6 +675,138 @@ class RuleApiTests(ContentSecurityApiTestCase):
 
         self.assertEqual(detail.data['pattern'], 'onerror')
         self.assertEqual(detail.data['created_by'], str(self.superuser))
+
+
+class DetectionRuleSummaryApiTests(ContentSecurityApiTestCase):
+    """
+    The count badges beside the Detection Rules tabs.
+    """
+
+    CATEGORY_KEYS = [
+        'keyword_rules',
+        'domain_rules',
+        'hidden_content_rules',
+        'obfuscation_rules',
+        'redirect_rules',
+        'html_attribute_rules',
+        'html_tag_rules',
+    ]
+
+    def setUp(self):
+        super().setUp()
+
+        factories.keyword_rule('casino')
+        factories.domain_rule('spam.example')
+        factories.hidden_content_rule('display:none')
+        factories.hidden_content_rule('visibility:hidden')
+        factories.obfuscation_rule(ObfuscationIndicator.BASE64)
+        factories.obfuscation_rule(ObfuscationIndicator.HTML_ENTITY)
+        factories.obfuscation_rule(ObfuscationIndicator.JS_ESCAPE)
+        factories.redirect_rule('window.location')
+        factories.html_attribute_rule('onclick')
+        factories.html_attribute_rule('onerror')
+        factories.html_tag_rule('script')
+        factories.html_tag_rule('iframe')
+        factories.html_tag_rule('object')
+
+    def test_summary_requires_authentication(self):
+        self.assertEqual(
+            self.client.get(RULE_SUMMARY_URL).status_code,
+            401,
+        )
+
+    def test_summary_needs_no_rule_permission(self):
+        self.authenticate()
+
+        self.assertEqual(
+            self.client.get(RULE_SUMMARY_URL).status_code,
+            200,
+        )
+
+    def test_summary_counts_every_rule_type(self):
+        self.authenticate()
+
+        response = self.client.get(RULE_SUMMARY_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {
+                'keyword_rules': 1,
+                'domain_rules': 1,
+                'hidden_content_rules': 2,
+                'obfuscation_rules': 3,
+                'redirect_rules': 1,
+                'html_attribute_rules': 2,
+                'html_tag_rules': 3,
+                'total': 13,
+            },
+        )
+
+    def test_total_is_the_sum_of_the_category_counts(self):
+        self.authenticate()
+
+        response = self.client.get(RULE_SUMMARY_URL)
+
+        self.assertEqual(
+            response.data['total'],
+            sum(response.data[key] for key in self.CATEGORY_KEYS),
+        )
+
+    def test_disabled_and_deactivated_rules_are_counted(self):
+        factories.keyword_rule('poker', is_enabled=False)
+        factories.keyword_rule('roulette', is_active=False)
+        factories.html_tag_rule('embed', is_enabled=False, is_active=False)
+        self.authenticate()
+
+        response = self.client.get(RULE_SUMMARY_URL)
+
+        self.assertEqual(response.data['keyword_rules'], 3)
+        self.assertEqual(response.data['html_tag_rules'], 4)
+        self.assertEqual(response.data['total'], 16)
+
+    def test_soft_deleted_rules_are_not_counted(self):
+        KeywordRule.objects.get(keyword='casino').soft_delete()
+        self.authenticate()
+
+        response = self.client.get(RULE_SUMMARY_URL)
+
+        self.assertEqual(response.data['keyword_rules'], 0)
+        self.assertEqual(response.data['total'], 12)
+
+    def test_summary_returns_counts_only(self):
+        self.authenticate()
+
+        response = self.client.get(RULE_SUMMARY_URL)
+
+        self.assertEqual(
+            sorted(response.data.keys()),
+            sorted(self.CATEGORY_KEYS + ['total']),
+        )
+        for value in response.data.values():
+            self.assertIsInstance(value, int)
+
+    def test_summary_ignores_request_query_parameters(self):
+        self.authenticate()
+
+        unfiltered = self.client.get(RULE_SUMMARY_URL)
+        filtered = self.client.get(
+            f'{RULE_SUMMARY_URL}?category=GAMBLING&is_enabled=true'
+            '&search=casino&ordering=id&page=1&page_size=1'
+        )
+
+        self.assertEqual(filtered.status_code, 200)
+        self.assertEqual(filtered.data, unfiltered.data)
+
+    def test_summary_is_empty_when_no_rule_exists(self):
+        factories.clear_seeded_rules()
+        self.authenticate()
+
+        response = self.client.get(RULE_SUMMARY_URL)
+
+        self.assertEqual(response.data['total'], 0)
+        for key in self.CATEGORY_KEYS:
+            self.assertEqual(response.data[key], 0, key)
 
 
 class ProductAndCategoryApiRegressionTests(ContentSecurityApiTestCase):
