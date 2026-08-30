@@ -11,6 +11,7 @@ from .choices import (
     RuleSeverity,
     ScanContentType,
     ScanStatus,
+    ScanType,
 )
 from .finding import ContentScanFinding
 from .rule import (
@@ -46,4 +47,5 @@ __all__ = [
     'RuleSeverity',
     'ScanContentType',
     'ScanStatus',
+    'ScanType',
 ]

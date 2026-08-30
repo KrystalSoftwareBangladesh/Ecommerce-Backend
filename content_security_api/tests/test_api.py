@@ -294,6 +294,174 @@ class ScanApiTests(ContentSecurityApiTestCase):
         )
 
 
+class ScanTypeApiTests(ContentSecurityApiTestCase):
+    """
+    The three coverages `POST /scans/` accepts: one object, one whole
+    content type, and everything the scanner supports.
+    """
+
+    def setUp(self):
+        super().setUp()
+        factories.keyword_rule('casino')
+
+        self.flagged_product = factories.product(
+            name='Flagged Product',
+            description='casino night',
+        )
+        self.clean_product = factories.product(
+            name='Clean Product',
+            description='clean copy',
+        )
+        self.category = factories.category(description='casino lounge')
+
+    def run_scan(self, payload):
+        self.authenticate(grant(self.user, ContentScan, 'run_content_scan'))
+
+        return self.client.post(SCANS_URL, payload, format='json')
+
+    def test_the_default_scan_type_is_still_a_single_object(self):
+        response = self.run_scan({
+            'content_type': 'PRODUCT',
+            'object_id': self.flagged_product.pk,
+        })
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['scanned_objects'], 1)
+        self.assertEqual(response.data['scanned_fields'], 3)
+        self.assertEqual(len(response.data['scans']), 3)
+
+    def test_an_object_scan_can_be_requested_explicitly(self):
+        response = self.run_scan({
+            'scan_type': 'OBJECT',
+            'content_type': 'PRODUCT',
+            'object_id': self.flagged_product.pk,
+        })
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['scanned_objects'], 1)
+        self.assertEqual(len(response.data['scans']), 3)
+
+    def test_an_object_scan_still_requires_an_object_id(self):
+        response = self.run_scan({'content_type': 'PRODUCT'})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('object_id', response.data['errors'])
+
+    def test_a_content_type_scan_covers_every_object_of_that_type(self):
+        response = self.run_scan({
+            'scan_type': 'CONTENT_TYPE',
+            'content_type': 'PRODUCT',
+        })
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['scanned_objects'], 2)
+        self.assertEqual(response.data['scanned_fields'], 6)
+        self.assertEqual(response.data['flagged_fields'], 1)
+        self.assertEqual(
+            set(
+                ContentScan.objects.values_list('object_id', flat=True)
+            ),
+            {self.flagged_product.pk, self.clean_product.pk},
+        )
+
+    def test_a_content_type_scan_reports_counters_without_the_rows(self):
+        response = self.run_scan({
+            'scan_type': 'CONTENT_TYPE',
+            'content_type': 'CATEGORY',
+        })
+
+        self.assertEqual(response.data['scans'], [])
+        self.assertEqual(response.data['total_findings'], 1)
+        self.assertEqual(
+            response.data['status_counts'][ScanStatus.HIGH_RISK],
+            1,
+        )
+
+    def test_a_content_type_scan_can_narrow_the_fields(self):
+        response = self.run_scan({
+            'scan_type': 'CONTENT_TYPE',
+            'content_type': 'PRODUCT',
+            'field_names': ['description'],
+        })
+
+        self.assertEqual(response.data['scanned_fields'], 2)
+
+    def test_a_content_type_scan_rejects_an_unsupported_field(self):
+        response = self.run_scan({
+            'scan_type': 'CONTENT_TYPE',
+            'content_type': 'PRODUCT',
+            'field_names': ['name'],
+        })
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_a_content_type_scan_rejects_an_object_id(self):
+        response = self.run_scan({
+            'scan_type': 'CONTENT_TYPE',
+            'content_type': 'PRODUCT',
+            'object_id': self.flagged_product.pk,
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('object_id', response.data['errors'])
+        self.assertFalse(ContentScan.objects.exists())
+
+    def test_a_content_type_scan_requires_a_content_type(self):
+        response = self.run_scan({'scan_type': 'CONTENT_TYPE'})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('content_type', response.data['errors'])
+
+    def test_a_full_scan_covers_every_supported_content_type(self):
+        response = self.run_scan({'scan_type': 'ALL'})
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['scanned_objects'], 3)
+        self.assertEqual(response.data['scanned_fields'], 7)
+        self.assertEqual(response.data['flagged_fields'], 2)
+        self.assertEqual(response.data['scans'], [])
+        self.assertEqual(
+            set(
+                ContentScan.objects.values_list('content_type', flat=True)
+            ),
+            {ScanContentType.PRODUCT, ScanContentType.CATEGORY},
+        )
+
+    def test_a_full_scan_needs_no_content_type_list_from_the_caller(self):
+        for field, value in [
+            ('content_type', 'PRODUCT'),
+            ('object_id', 1),
+            ('field_names', ['description']),
+        ]:
+            with self.subTest(field=field):
+                response = self.run_scan({
+                    'scan_type': 'ALL',
+                    field: value,
+                })
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.data['errors'])
+
+        self.assertFalse(ContentScan.objects.exists())
+
+    def test_an_unknown_scan_type_is_rejected(self):
+        response = self.run_scan({'scan_type': 'EVERYTHING'})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('scan_type', response.data['errors'])
+
+    def test_a_full_scan_requires_the_run_permission(self):
+        self.authenticate()
+
+        response = self.client.post(
+            SCANS_URL,
+            {'scan_type': 'ALL'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+
 class FindingApiTests(ContentSecurityApiTestCase):
     def setUp(self):
         super().setUp()

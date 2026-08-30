@@ -182,6 +182,35 @@ A re-scan replaces a scan's findings but carries forward the review state of
 any finding that reappears identically, matched on (detector, rule, matched
 value), so triage survives a rule change.
 
+### What one scan run covers
+
+`POST /api/v1/content-security/scans/` takes a `scan_type` that selects the
+coverage. It defaults to `OBJECT`, so a request that names only a
+`content_type` and an `object_id` means what it always did.
+
+| `scan_type` | Covers | Required | Rejected |
+|---|---|---|---|
+| `OBJECT` (default) | One object | `content_type`, `object_id` | - |
+| `CONTENT_TYPE` | Every object of one content type | `content_type` | `object_id` |
+| `ALL` | Every supported content type | - | `content_type`, `object_id`, `field_names` |
+
+`field_names` stays optional for `OBJECT` and `CONTENT_TYPE` and narrows the
+scan to a subset of that content type's scannable fields.
+
+The list of supported content types belongs to the backend
+(`services/content_sources.py`); an `ALL` request never sends it, so a
+content type added there is covered without a client change. A field that
+has no meaning for the requested `scan_type` is rejected with a
+`ValidationError` rather than ignored.
+
+An `OBJECT` run embeds its results in the response's `scans`. A
+`CONTENT_TYPE` or `ALL` run is unbounded, so it answers with its counters
+and an empty `scans`; its results are read back from the paginated scan
+list. All three run inside the request; a catalogue large enough to outlast
+a request timeout is still the `scan_content` management command's job.
+Scan records, findings, statuses and re-scan behaviour are identical
+whichever coverage produced them.
+
 ### The scanner never modifies content
 
 The scanner detects and reports. It does not delete, rewrite, sanitise,

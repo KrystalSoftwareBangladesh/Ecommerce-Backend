@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from EcommerceBackend.core.permission import CustomPermissionAccessMixin
 
 from content_security_api.filters import ContentScanFilter
-from content_security_api.models import ContentScan
+from content_security_api.models import ContentScan, ScanType
 from content_security_api.serializers import (
     ContentScanCreateSerializer,
     ContentScanDetailSerializer,
@@ -23,6 +23,8 @@ from content_security_api.serializers import (
 from content_security_api.services import (
     get_content_source,
     rescan,
+    scan_all,
+    scan_content_type,
     scan_object,
 )
 
@@ -92,29 +94,64 @@ class ContentScanViewSet(
         request=ContentScanCreateSerializer,
         responses={201: ContentScanRunResultSerializer},
         description=(
-            "Scan one object. Every scannable field of the object is "
-            "scanned unless `field_names` narrows it. Scanning a whole "
-            "content type is done with the `scan_content` management "
-            "command so no HTTP request is held open for it."
+            "Start a scan. `scan_type` selects the coverage and defaults "
+            "to `OBJECT`.\n\n"
+            "* `OBJECT` - one object, named by `content_type` and "
+            "`object_id`. Every scannable field is scanned unless "
+            "`field_names` narrows it, and the results are embedded in "
+            "`scans`.\n"
+            "* `CONTENT_TYPE` - every object of the given `content_type`.\n"
+            "* `ALL` - every content type the scanner supports. The list "
+            "is the backend's; send no other field.\n\n"
+            "A `CONTENT_TYPE` or `ALL` run answers with its counters and "
+            "an empty `scans`; read the results back from the scan list. "
+            "Both run inside the request, so a catalogue large enough to "
+            "outlast a request timeout is still the `scan_content` "
+            "management command's job."
         ),
     )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        content_type = serializer.validated_data["content_type"]
-        source = get_content_source(content_type)
-        obj = source.get_object(serializer.validated_data["object_id"])
+        data = serializer.validated_data
+        scan_type = data["scan_type"]
 
-        result = scan_object(
-            content_type=content_type,
-            obj=obj,
-            field_names=serializer.validated_data.get("field_names"),
-        )
+        result = self._run_scan(data)
 
         return Response(
-            _run_result_payload(result, self.get_serializer_context()),
+            _run_result_payload(
+                result,
+                self.get_serializer_context(),
+                include_scans=scan_type == ScanType.OBJECT,
+            ),
             status=status.HTTP_201_CREATED,
+        )
+
+    def _run_scan(self, data):
+        """
+        Dispatch a validated request to the matching scanner service.
+        """
+        scan_type = data["scan_type"]
+
+        if scan_type == ScanType.ALL:
+            return scan_all()
+
+        content_type = data["content_type"]
+        field_names = data.get("field_names")
+
+        if scan_type == ScanType.CONTENT_TYPE:
+            return scan_content_type(
+                content_type=content_type,
+                field_names=field_names,
+            )
+
+        source = get_content_source(content_type)
+
+        return scan_object(
+            content_type=content_type,
+            obj=source.get_object(data["object_id"]),
+            field_names=field_names,
         )
 
     @extend_schema(
@@ -147,9 +184,12 @@ class ContentScanViewSet(
         )
 
 
-def _run_result_payload(result, context):
+def _run_result_payload(result, context, include_scans=True):
     """
     Shape a `ScanRunResult` for the API.
+
+    `include_scans` is off for a bulk run, whose scan rows are unbounded
+    and are read back through the paginated scan list instead.
     """
     return {
         "scanned_objects": result.scanned_objects,
@@ -158,7 +198,7 @@ def _run_result_payload(result, context):
         "total_findings": result.total_findings,
         "status_counts": result.status_counts(),
         "scans": ContentScanListSerializer(
-            result.scans,
+            result.scans if include_scans else [],
             many=True,
             context=context,
         ).data,
