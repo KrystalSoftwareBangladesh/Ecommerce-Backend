@@ -26,6 +26,7 @@ repository. Business rules that govern these entities are in
 | `cart_api` | Shopping cart and cart lines | `Cart`, `CartItem` |
 | `meta_api` | Choice/enum lookups for clients (currently moderation statuses) | *(none)* |
 | `content_security_api` | Content Security Scanner: configurable detection rules, scan results and findings for migrated content | `KeywordRule`, `DomainRule`, `HtmlTagRule`, `HtmlAttributeRule`, `RedirectRule`, `HiddenContentRule`, `ObfuscationRule`, `ContentScan`, `ContentScanFinding` |
+| `request_log_api` | API request logging and observability: one immutable record per HTTP request | `RequestLog` |
 
 There is **no `Order` model** — a completed customer purchase is a `Sale`.
 There is **no blog** and **no SEO/meta model**; `meta_api` is a choice-lookup
@@ -54,6 +55,8 @@ Purchase  ──> ChartOfAccount
 Purchase  ──> AccountingTransaction        (accounting_transaction)
 Purchase  ──> AccountingTransaction        (cancellation_transaction)
 Purchase 1──* PurchaseItem ──> ProductVariant
+
+RequestLog ──> User              (FK, nullable, SET_NULL — anonymous ok)
 
 Sale      ──> CustomerProfile
 Sale      ──> PaymentMethod ──> ChartOfAccount (default_account)
@@ -111,6 +114,9 @@ rule types are separate models.
 | `RuleSeverity` | `content_security_api/models/choices.py` | `INFO`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
 | `ScanStatus` | `content_security_api/models/choices.py` | `CLEAN`, `LOW_RISK`, `REVIEW`, `HIGH_RISK`, `CRITICAL` |
 | `FindingReviewStatus` | `content_security_api/models/choices.py` | `PENDING`, `FALSE_POSITIVE`, `CONFIRMED`, `RESOLVED` |
+| `RequestOutcome` | `request_log_api/models/choices.py` | `SUCCESS`, `CLIENT_ERROR`, `SERVER_ERROR`, `EXCEPTION` |
+| `ClientType` | `request_log_api/models/choices.py` | `WEB`, `MOBILE`, `ADMIN`, `EXTERNAL`, `UNKNOWN` |
+| `DeviceType` | `request_log_api/models/choices.py` | `DESKTOP`, `MOBILE`, `TABLET`, `BOT`, `UNKNOWN` |
 
 Enums surfaced in the OpenAPI schema are named via `ENUM_NAME_OVERRIDES` in
 `EcommerceBackend/settings.py`. Add an entry there when introducing a new
@@ -127,6 +133,9 @@ Declared in `Meta.permissions` and shipped with a migration:
 - `content_security_api.ContentScan` — `run_content_scan`
 - `content_security_api.ContentScanFinding` —
   `review_content_scan_finding`, `resolve_content_scan_finding`
+- `request_log_api.RequestLog` — `view_request_log_request_payload`,
+  `view_request_log_response_payload`, `view_request_log_error_details`,
+  `view_request_log_traceback`
 
 See [business-rules.md](business-rules.md#custom-model-permissions) for how
 they are applied.
