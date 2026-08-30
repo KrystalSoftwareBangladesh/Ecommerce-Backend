@@ -73,11 +73,17 @@ LOCAL_APPS = [
     'wishlist_api',
     'cart_api',
     'content_security_api',
+    'request_log_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    # Outermost application middleware, so one request log covers the
+    # whole lifecycle and every response - including 4xx and 5xx - is
+    # observed. CORS stays ahead of it so a preflight is answered without
+    # being logged as an application request.
+    'request_log_api.middleware.RequestLogMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -131,6 +137,9 @@ SPECTACULAR_SETTINGS = {
         "RuleSeverityEnum": "content_security_api.models.choices.RuleSeverity.choices",  # noqa
         "ScanStatusEnum": "content_security_api.models.choices.ScanStatus.choices",  # noqa
         "FindingReviewStatusEnum": "content_security_api.models.choices.FindingReviewStatus.choices",  # noqa
+        "RequestOutcomeEnum": "request_log_api.models.choices.RequestOutcome.choices",  # noqa
+        "RequestClientTypeEnum": "request_log_api.models.choices.ClientType.choices",  # noqa
+        "RequestDeviceTypeEnum": "request_log_api.models.choices.DeviceType.choices",  # noqa
         "KeywordMatchTypeEnum": "content_security_api.models.choices.KeywordMatchType.choices",  # noqa
         "DomainMatchTypeEnum": "content_security_api.models.choices.DomainMatchType.choices",  # noqa
     },
@@ -216,6 +225,17 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    # Read by request_log_api.middleware.RequestLogMiddleware.
+    "x-request-id",
+    "x-anonymous-id",
+    "x-client-type",
+    "x-client-route",
+]
+
+# So a browser client can read back the correlation id the request log
+# stamped on the response.
+CORS_EXPOSE_HEADERS = [
+    "x-request-id",
 ]
 
 CORS_ALLOW_METHODS = [

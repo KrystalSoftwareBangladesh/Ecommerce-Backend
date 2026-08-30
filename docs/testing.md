@@ -31,9 +31,10 @@ in-memory, the MD5 password hasher and filesystem storage. Running without
 
 ## Structure
 
-**Current implementation.** One flat `tests.py` per app — there are no
-`tests/` packages, no `factories.py`, no fixtures and no shared base test
-case.
+**Current implementation.** A flat `tests.py` per app, except
+`content_security_api` and `request_log_api`, which use a `tests/` package.
+There are no fixtures and no shared base test case; `content_security_api`
+is the only app with a `factories.py`.
 
 | App | `tests.py` |
 |---|---|
@@ -46,8 +47,15 @@ case.
 | `user_api` | 234 |
 | `cart_api`, `customer_api`, `inventory_api`, `meta_api`, `review_api`, `supplier_api`, `wishlist_api` | 3-line placeholder |
 | `origin_api` | no `tests.py` at all |
+| `content_security_api`, `request_log_api` | `tests/` package — **linted**, since `.flake8` excludes `tests.py` by name only |
 
-`.flake8` excludes `tests.py` from linting, so test code is not style-checked.
+`request_log_api/tests/` additionally ships `urls.py`, a probe URLconf
+mounted with `override_settings(ROOT_URLCONF=...)` so the middleware can be
+exercised against an upload, an unhandled exception and a payload of secrets
+without touching a real business endpoint.
+
+`.flake8` excludes `tests.py` from linting, so a flat test module is not
+style-checked; a `tests/` package is.
 
 ---
 
@@ -87,9 +95,10 @@ CI does not run tests — `.github/workflows/linter.yml` runs flake8 only.
 
 ## Known state of the suite
 
-As of 2026-08-23, `python manage.py test --settings=EcommerceBackend.test_settings`
-reports **84 tests, 16 failures and 6 errors**. These are pre-existing and
-unrelated to any current work:
+As of 2026-08-30, `python manage.py test --settings=EcommerceBackend.test_settings`
+reports **407 tests, 16 failures and 5 errors**. The failures and errors are
+pre-existing and unrelated to any current work — the count was identical
+before `request_log_api` was added, which contributed 90 passing tests:
 
 | Symptom | Cause |
 |---|---|

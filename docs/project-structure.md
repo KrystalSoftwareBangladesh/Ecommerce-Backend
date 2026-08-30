@@ -1,6 +1,6 @@
 # Project Structure
 
-Mirrors the actual repository. Last verified 2026-08-23.
+Mirrors the actual repository. Last verified 2026-08-30.
 
 ```text
 ZayrahLife-Backend/
@@ -29,8 +29,10 @@ ZayrahLife-Backend/
 ├── docs/
 │   ├── architecture.md
 │   ├── api-conventions.md
+│   ├── api-request-logging-plan.md
 │   ├── business-rules.md
 │   ├── category-import-api.md
+│   ├── content-security-scanner-plan.md
 │   ├── conventions.md
 │   ├── domain-model.md
 │   ├── project-structure.md
@@ -154,6 +156,26 @@ ZayrahLife-Backend/
 │   ├── admin.py
 │   └── tests.py
 │
+├── request_log_api/
+│   ├── constants.py                 # headers, limits, sensitive key lists
+│   ├── middleware.py                # RequestLogMiddleware
+│   ├── models/{choices.py,request_log.py}
+│   ├── serializers/request_log.py
+│   ├── services/
+│   │   ├── config.py                # REQUEST_LOG_* setting overrides
+│   │   ├── sanitizer.py             # centralised recursive redaction
+│   │   ├── client.py                # IP, User-Agent, client type
+│   │   ├── builder.py               # request/response -> log event
+│   │   └── storage.py               # RequestLogStorage abstraction
+│   ├── views/v1/request_log.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── filters.py
+│   ├── admin.py
+│   └── tests/                       # package, not a flat tests.py
+│       ├── urls.py                  # probe endpoints for middleware tests
+│       ├── {test_sanitizer.py,test_client.py}
+│       └── {test_middleware.py,test_api.py}
+│
 ├── review_api/
 │   ├── models/review.py
 │   ├── serializers/review.py
@@ -226,9 +248,12 @@ omitted above for brevity.
 
 ## Notes
 
-- `content_security_api` is the only app whose tests are a package
-  rather than a flat `tests.py`. `.flake8` excludes `tests.py` by name,
-  so this app's test modules **are** linted.
+- `content_security_api` and `request_log_api` are the only apps whose
+  tests are a package rather than a flat `tests.py`. `.flake8` excludes
+  `tests.py` by name, so these apps' test modules **are** linted.
+- `request_log_api` is the only app that registers middleware
+  (`RequestLogMiddleware`, in `MIDDLEWARE` directly after `CorsMiddleware`)
+  and the only one with no create/update/delete route.
 - `content_security_api/models/choices.py` holds choices shared by
   several model modules in that app; elsewhere choices sit in the model
   module itself.

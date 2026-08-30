@@ -225,6 +225,84 @@ remediation are a separate future feature.
 on every scan. Increment it deliberately when detection behaviour changes,
 so stale results can be identified and re-scanned.
 
+## API Request Logging
+
+Owned by `request_log_api`. Full specification:
+[api-request-logging-plan.md](api-request-logging-plan.md).
+
+### Every request is one record
+
+`RequestLogMiddleware` writes exactly one `RequestLog` per HTTP request.
+Requests are never deduplicated: ten calls to the same endpoint produce ten
+records. Successful requests, validation failures, authentication failures,
+permission failures, 404s, 5xx responses and unhandled exceptions are all
+logged.
+
+`REQUEST_LOG_EXCLUDED_PATH_PREFIXES` (default `/static/`, `/media/`) is the
+only exemption, and `REQUEST_LOG_ENABLED=False` switches logging off
+entirely.
+
+### Logging never affects the API
+
+Request logging is a best-effort secondary operation. Capture, build and
+persistence are each wrapped; a failure is written to the
+`request_log_api` logger and swallowed. A logging failure never changes a
+status code, a response body or a business outcome, and no business logic
+reads a request log.
+
+### Logs are immutable
+
+Records are created by the middleware only. `POST`, `PUT`, `PATCH` and
+`DELETE` on `/api/v1/request-logs/` answer 405, and the Django admin
+disables add, change and delete. Retention and cleanup are a controlled
+operational process, not an API action.
+
+### Sensitive data is never stored
+
+Sanitization is centralised in
+`request_log_api/services/sanitizer.py` and applied automatically to request
+payloads, response payloads, query parameters, multipart form fields,
+captured headers, structured error details and tracebacks. It is recursive,
+so a secret nested inside a list inside an object is still redacted, and a
+redacted value is replaced with `***REDACTED***` rather than removed.
+
+Individual endpoints are never responsible for declaring what is sensitive.
+
+`Authorization`, `Cookie` and API key headers are not on the captured header
+allow-list, so they are never read into a log record at all. Uploaded file
+contents are never stored: a multipart request is recorded by field name,
+filename, content type and size only.
+
+### Request logs and audit logs are separate
+
+API request logs answer "who called which API, with what request, and what
+happened". They are not entity audit logs and do not record before/after
+field values. The two systems stay separate and may later be correlated
+through `request_id`.
+
+### The forwarded address is not trusted by default
+
+`REQUEST_LOG_TRUSTED_PROXY_COUNT` defaults to `0`: `X-Forwarded-For` is
+recorded as reported but `REMOTE_ADDR` is the client address. A deployment
+behind a load balancer or reverse proxy must set the count to the number of
+proxies it actually runs, and the client address is then read that many
+entries from the right of the chain.
+
+### Outcome classification
+
+The HTTP status code is the source of truth; `outcome` is derived from it
+for filtering and aggregation:
+
+| Condition | `outcome` |
+|---|---|
+| status < 400 | `SUCCESS` |
+| 400 ≤ status < 500 | `CLIENT_ERROR` |
+| status ≥ 500 | `SERVER_ERROR` |
+| unhandled exception reached the middleware | `EXCEPTION` |
+
+`EXCEPTION` is narrower than `SERVER_ERROR`: it means an exception type and
+traceback were captured alongside the 500.
+
 ## Permissions
 
 Protected endpoints require authentication.
@@ -264,6 +342,22 @@ Content Security (`content_security_api`):
   `POST /api/v1/content-security/findings/{id}/review/`
 - `resolve_content_scan_finding` (on `ContentScanFinding`) - required by
   `POST /api/v1/content-security/findings/{id}/resolve/`
+
+Request Logs (`request_log_api.RequestLog`):
+
+- `view_requestlog` (Django's own) - required by
+  `GET /api/v1/request-logs/` and `GET /api/v1/request-logs/{id}/`
+- `view_request_log_request_payload` - reveals `request_body` and
+  `form_fields` on the detail response
+- `view_request_log_response_payload` - reveals `response_body`
+- `view_request_log_error_details` - reveals `error_details`
+- `view_request_log_traceback` - reveals `traceback`
+
+The four payload permissions are additive on top of `view_requestlog`.
+Basic access shows the technical picture - endpoint, route pattern, status,
+duration, timestamp, user, error message and exception type - and omits the
+payload fields entirely rather than blanking them, so a withheld payload
+cannot be mistaken for an empty one.
 
 The rule-management endpoints (`keyword-rules`, `domain-rules`,
 `html-tag-rules`, `html-attribute-rules`, `redirect-rules`,

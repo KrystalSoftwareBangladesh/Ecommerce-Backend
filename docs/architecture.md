@@ -29,27 +29,34 @@ which run outside Django.
 
 ### Application structure
 
-Each business domain is a separate Django app named `<domain>_api`. The 16
+Each business domain is a separate Django app named `<domain>_api`. The 17
 apps registered in `LOCAL_APPS` are:
 
 `user_api`, `customer_api`, `account_api`, `transaction_api`, `category_api`,
 `supplier_api`, `product_api`, `inventory_api`, `purchase_api`, `sale_api`,
 `origin_api`, `review_api`, `meta_api`, `wishlist_api`, `cart_api`,
-`content_security_api`.
+`content_security_api`, `request_log_api`.
 
 Responsibilities are listed in [domain-model.md](domain-model.md).
 
 `meta_api` is the only app with no models — it exposes choice/enum lookups
 (currently moderation statuses) to clients.
 
-`content_security_api` is the only cross-cutting app: it owns no business
-domain of its own and instead reads content belonging to other apps. It
+`content_security_api` and `request_log_api` are the two cross-cutting
+apps. `content_security_api` owns no business domain of its own and instead
+reads content belonging to other apps. It
 reaches them one way only — through
 `content_security_api/services/content_sources.py`, which maps a content
 type onto a model, the fields to scan and a queryset. No other module in the
 scanner imports `Product` or `Category`, and the scanner never writes to
 them, so a new content type is one registry entry rather than a change to
 the detection engine.
+
+`request_log_api` observes every HTTP request from middleware and writes one
+immutable `RequestLog` row per request. Nothing in the application reads a
+request log to make a decision, so it is an observability layer around the
+API rather than a dependency of it. See
+[Request logging](#request-logging) below.
 
 ### Request flow
 
@@ -163,6 +170,58 @@ atomic, with row-level error tracking, parent resolution by id or name, slug
 generation and audit stamping. Exposed at
 `POST /api/v1/categories/import-{json,csv,xlsx}/`.
 Full usage: [category-import-api.md](category-import-api.md).
+
+### Request logging
+
+`request_log_api.middleware.RequestLogMiddleware` is registered directly
+after `CorsMiddleware`, so it is the outermost application middleware: one
+record covers the whole lifecycle, every response is observed including 4xx
+and 5xx, and a CORS preflight is answered ahead of it rather than logged.
+
+```text
+Request
+  → RequestLogMiddleware        (request id, timer, request context)
+  → application
+  → RequestLogMiddleware        (status, response, duration, exception)
+  → services/sanitizer.py       (recursive redaction, centralised)
+  → services/builder.py         (one structured event dict)
+  → services/storage.py         (RequestLogStorage -> PostgreSQL)
+```
+
+Properties that matter:
+
+- **Best effort.** Every step is wrapped; a logging failure is written to
+  this module's logger and swallowed. The API response is never affected.
+- **Immutable.** The ViewSet exposes list and retrieve only; create, update
+  and delete are not routed, and the admin disables all three.
+- **Sanitised centrally.** Request payloads, response payloads, query
+  parameters, multipart fields, headers, error details and tracebacks all
+  pass through `services/sanitizer.py`. Individual endpoints never decide
+  what is sensitive. `Authorization` and `Cookie` are not on the captured
+  header allow-list, so they are never read at all.
+- **No file contents.** Multipart uploads are recorded by field name,
+  filename, content type and size only.
+- **Storage is swappable.** The middleware and builder produce a plain dict
+  and hand it to `RequestLogStorage`. Moving to another logging backend is a
+  new subclass plus the `REQUEST_LOG_STORAGE` setting; no queue, worker or
+  external service exists today.
+- **Separate from audit logging.** Request logs answer "who called what and
+  what happened", not "which field changed from what to what".
+
+Defaults live in `request_log_api/constants.py` and every one of them is
+overridable with a `REQUEST_LOG_*` setting, read through
+`request_log_api/services/config.py`: `REQUEST_LOG_ENABLED`,
+`REQUEST_LOG_EXCLUDED_PATH_PREFIXES`, `REQUEST_LOG_TRUSTED_PROXY_COUNT`,
+`REQUEST_LOG_MAX_REQUEST_BODY_BYTES`, `REQUEST_LOG_MAX_RESPONSE_BODY_BYTES`,
+`REQUEST_LOG_MAX_TRACEBACK_LENGTH`, `REQUEST_LOG_SENSITIVE_EXACT_KEYS`,
+`REQUEST_LOG_SENSITIVE_KEY_FRAGMENTS`, `REQUEST_LOG_STORAGE`.
+
+`REQUEST_LOG_TRUSTED_PROXY_COUNT` defaults to `0`, which means
+`X-Forwarded-For` is recorded but never trusted and `REMOTE_ADDR` is the
+client. A deployment behind a load balancer must set it to the number of
+proxies it actually runs.
+
+Full specification: [api-request-logging-plan.md](api-request-logging-plan.md).
 
 ### Background jobs, caching, email, signals
 

@@ -22,6 +22,19 @@ inconsistent, the pattern to follow for new code is in
   `path()`; `user_api` uses both (`auth/*`, `users/me/*`, `permissions/`,
   `users/verify/` are explicit paths).
 
+## Correlation
+
+Every response carries an `X-Request-ID` header, stamped by
+`request_log_api.middleware.RequestLogMiddleware` and stored on the matching
+request log. A client may supply its own `X-Request-ID`; a valid UUID is
+reused, anything else is replaced. The header is in `CORS_ALLOW_HEADERS` and
+`CORS_EXPOSE_HEADERS`, so a browser client can both send and read it.
+
+Three further optional client headers are recorded when present:
+`X-Anonymous-ID` (a client-generated visitor identifier), `X-Client-Type`
+(`WEB`, `MOBILE`, `ADMIN`, `EXTERNAL`) and `X-Client-Route` (the frontend
+route that issued the call). None of them affects request handling.
+
 ## Authentication
 
 - JWT via `rest_framework_simplejwt.authentication.JWTAuthentication`, set as
@@ -123,10 +136,11 @@ preferred direction for new endpoints.
 - **Every** view module in the repository applies
   `@extend_schema(tags=["..."])` at class level. Keep this at 100%.
 - Existing tags: `Accounts`, `Authentication`, `Brands`, `Cart`,
-  `Categories`, `Categories - Import`, `Customers`, `Inventory Movement`,
-  `Meta`, `Origins`, `Permissions & Groups`, `Products`, `Purchases`,
-  `Reviews`, `Sale Payment Methods`, `Sales`, `Suppliers`, `Transactions`,
-  `Users`, `Wishlists`.
+  `Categories`, `Categories - Import`, `Content Security`, `Customers`,
+  `Inventory Movement`, `Meta`, `Origins`, `Permissions & Groups`,
+  `Products`, `Purchases`, `Request Logs`, `Reviews`,
+  `Sale Payment Methods`, `Sales`, `Suppliers`, `Transactions`, `Users`,
+  `Wishlists`.
 - Custom `@action` endpoints declare `request`, `responses` and
   `description`, and repeat `tags` when the class-level decorator does not
   carry through.
