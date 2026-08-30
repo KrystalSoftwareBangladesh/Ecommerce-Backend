@@ -74,7 +74,11 @@ Import products
 ```bash
 python manage.py import_products resources/products.json
 ```
-Map products and categories
+Export products and categories mapping
+```bash
+python scripts/export_woocommerce_product_categories.py
+```
+Import or map products and categories
 ```bash
 python manage.py import_product_categories resources/product_categories.json
 ```
