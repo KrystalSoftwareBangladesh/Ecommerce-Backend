@@ -13,6 +13,21 @@ class ScanContentType(models.TextChoices):
     CATEGORY = 'CATEGORY', 'Category'
 
 
+class ScanType(models.TextChoices):
+    """
+    What one scan request covers.
+
+    `OBJECT` is the default, so a request that names a `content_type` and
+    an `object_id` and nothing else keeps the meaning it has always had.
+    `ALL` covers every content type registered in
+    `content_security_api.services.content_sources`; the caller never
+    sends that list.
+    """
+    OBJECT = 'OBJECT', 'Single Object'
+    CONTENT_TYPE = 'CONTENT_TYPE', 'Entire Content Type'
+    ALL = 'ALL', 'All Supported Content Types'
+
+
 class DetectorType(models.TextChoices):
     KEYWORD = 'KEYWORD', 'Keyword'
     DOMAIN = 'DOMAIN', 'Domain'
