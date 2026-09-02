@@ -31,7 +31,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_categories',
                     'current_selling_price', 'is_active']
     list_display_links = ['name',]
-    list_filter = ['is_active', 'categories']
+    list_filter = ['is_active',]
     search_fields = ['name']
 
     def get_categories(self, obj):
@@ -66,7 +66,7 @@ class ProductVariantAdmin(admin.ModelAdmin):
 class ProductImageAdmin(admin.ModelAdmin):
     list_display = [
         'product', 'image', 'display_order', 'is_default', 'is_active']
-    list_filter = ['is_active', 'is_default', 'product']
+    list_filter = ['is_active', 'is_default',]
     search_fields = ['product__name', 'alt_text']
     readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
 
