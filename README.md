@@ -82,6 +82,14 @@ Import or map products and categories
 ```bash
 python manage.py import_product_categories resources/product_categories.json
 ```
+Import product images
+```bash
+python manage.py import_product_images \
+    resources/product_images.json \
+    --workers 25
+```
+You can adjust number of worker.
+
 Clean category name, description
 ```bash
 python manage.py clean_category_html_entities

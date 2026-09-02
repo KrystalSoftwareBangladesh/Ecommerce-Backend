@@ -14,3 +14,4 @@ openpyxl
 pandas
 Pillow
 PyMySQL==1.2.0
+requests
