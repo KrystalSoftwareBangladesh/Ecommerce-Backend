@@ -2,6 +2,9 @@
 from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
+from EcommerceBackend.core.serializers.fields import (
+    AbsoluteImageField,
+)
 from product_api.models import Product, ProductImage
 from product_api.services.product import set_product_image_default
 
@@ -9,7 +12,7 @@ from product_api.services.product import set_product_image_default
 class ProductDefaultImageSerializer(serializers.Serializer):
     """Lightweight serializer for a product's default image."""
     id = serializers.IntegerField(read_only=True)
-    image = serializers.ImageField(read_only=True)
+    image = AbsoluteImageField(read_only=True)
     alt_text = serializers.CharField(read_only=True)
     display_order = serializers.IntegerField(read_only=True)
     is_default = serializers.BooleanField(read_only=True)
@@ -23,6 +26,7 @@ class ProductDefaultImageSerializer(serializers.Serializer):
 
 class ProductImageListSerializer(serializers.ModelSerializer):
     """Serializer for listing product images."""
+    image = AbsoluteImageField(read_only=True)
 
     class Meta:
         model = ProductImage
@@ -40,6 +44,7 @@ class ProductImageListSerializer(serializers.ModelSerializer):
 class ProductImageDetailSerializer(serializers.ModelSerializer):
     """Serializer for full product image details."""
     product = serializers.StringRelatedField(read_only=True)
+    image = AbsoluteImageField(read_only=True)
     created_by = serializers.StringRelatedField(read_only=True)
     updated_by = serializers.StringRelatedField(read_only=True)
 
