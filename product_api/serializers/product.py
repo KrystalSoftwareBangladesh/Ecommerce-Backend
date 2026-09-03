@@ -70,7 +70,9 @@ class ProductListSerializer(serializers.ModelSerializer):
         default_images = getattr(obj, '_default_images', [])
         if not default_images:
             return None
-        return ProductDefaultImageSerializer(default_images[0]).data
+        return ProductDefaultImageSerializer(
+            default_images[0],
+            context=self.context).data
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):

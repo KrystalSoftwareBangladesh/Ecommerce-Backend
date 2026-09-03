@@ -223,10 +223,18 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = ProductImageListSerializer(page, many=True)
+            serializer = ProductImageListSerializer(
+                page,
+                many=True,
+                context=self.get_serializer_context(),
+            )
             return self.get_paginated_response(serializer.data)
 
-        serializer = ProductImageListSerializer(queryset, many=True)
+        serializer = ProductImageListSerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
         return Response(serializer.data)
 
     @extend_schema(
