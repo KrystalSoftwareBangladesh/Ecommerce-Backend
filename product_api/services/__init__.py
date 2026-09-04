@@ -6,6 +6,7 @@ from .product import (
     set_product_image_default,
     reorder_product_images,
     soft_delete_product_image,
+    bulk_upload_product_images,
 )
 
 
@@ -16,4 +17,5 @@ __all__ = [
     'set_product_image_default',
     'reorder_product_images',
     'soft_delete_product_image',
+    'bulk_upload_product_images',
 ]
