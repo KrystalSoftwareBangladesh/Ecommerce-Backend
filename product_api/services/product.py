@@ -119,13 +119,17 @@ def reorder_product_images(
     new_display_order,
     updated_by=None,
 ):
-    """Reorder product images and maintain sequential display_order values."""
+    """Reorder product images using zero-based display order."""
     if product is None:
         raise ValidationError('A product is required to reorder images.')
+
     if new_display_order is None:
         raise ValidationError('A new display order is required.')
-    if new_display_order < 1:
-        raise ValidationError('Display order must start at 1.')
+
+    if new_display_order < 0:
+        raise ValidationError(
+            'Display order must be greater than or equal to 0.'
+        )
 
     with transaction.atomic():
         images = list(
@@ -139,18 +143,28 @@ def reorder_product_images(
             (image for image in images if image.pk == image_id),
             None,
         )
+
         if target_image is None:
             raise ValidationError('The requested image was not found.')
 
         images.remove(target_image)
-        new_position = min(max(new_display_order, 1), len(images) + 1)
-        images.insert(new_position - 1, target_image)
 
-        for index, image in enumerate(images, start=1):
+        new_position = min(
+            max(new_display_order, 0),
+            len(images),
+        )
+
+        images.insert(new_position, target_image)
+
+        for index, image in enumerate(images):
             image.display_order = index
             image.updated_by = updated_by
             image.save(
-                update_fields=['display_order', 'updated_by', 'updated_at']
+                update_fields=[
+                    'display_order',
+                    'updated_by',
+                    'updated_at',
+                ]
             )
 
         return images
