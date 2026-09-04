@@ -144,3 +144,55 @@ class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
             )
             validated_data.pop('is_default')
         return super().update(instance, validated_data)
+
+
+class BulkProductImageItemSerializer(serializers.Serializer):
+    image = serializers.ImageField()
+    alt_text = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=255,
+    )
+    display_order = serializers.IntegerField(
+        required=False,
+        min_value=0,
+    )
+    is_default = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+
+    def validate_image(self, value):
+        return ProductImageCreateUpdateSerializer().validate_image(value)
+
+
+class BulkProductImageUploadSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(is_active=True),
+    )
+
+    images = BulkProductImageItemSerializer(
+        many=True,
+        min_length=1,
+        max_length=10,
+    )
+
+    def validate(self, attrs):
+        images = attrs["images"]
+
+        default_count = sum(
+            1
+            for image in images
+            if image.get("is_default", False)
+        )
+
+        if default_count > 1:
+            raise serializers.ValidationError(
+                {
+                    "images": (
+                        "Only one image can be marked as the default."
+                    )
+                }
+            )
+
+        return attrs

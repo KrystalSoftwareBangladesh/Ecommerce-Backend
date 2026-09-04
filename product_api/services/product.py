@@ -210,3 +210,127 @@ def soft_delete_product_image(image_instance, deleted_by=None):
         _reindex_display_order(image_instance.product)
 
         return image_instance
+
+
+def bulk_upload_product_images(
+    product,
+    images_data,
+    created_by=None,
+    updated_by=None,
+):
+    """Create multiple product images atomically."""
+    if product is None:
+        raise ValidationError(
+            'A product is required to upload images.'
+        )
+
+    if not images_data:
+        raise ValidationError(
+            'At least one image is required.'
+        )
+
+    with transaction.atomic():
+        existing_images = list(
+            ProductImage.objects.select_for_update().filter(
+                product=product,
+                is_active=True,
+            ).order_by(
+                'display_order',
+                'created_at',
+                'id',
+            )
+        )
+
+        has_existing_default = any(
+            image.is_default
+            for image in existing_images
+        )
+
+        next_display_order = (
+            max(
+                (
+                    image.display_order
+                    for image in existing_images
+                ),
+                default=-1,
+            )
+            + 1
+        )
+
+        created_images = []
+
+        explicitly_default = next(
+            (
+                item
+                for item in images_data
+                if item.get('is_default', False)
+            ),
+            None,
+        )
+
+        for index, item in enumerate(images_data):
+            display_order = item.get('display_order')
+
+            if display_order is None:
+                display_order = next_display_order + index
+
+            alt_text = item.get('alt_text') or product.name
+
+            image = ProductImage.objects.create(
+                product=product,
+                image=item['image'],
+                alt_text=alt_text,
+                display_order=display_order,
+                is_default=False,
+                created_by=created_by,
+                updated_by=updated_by,
+            )
+
+            created_images.append(image)
+
+        #
+        # Explicit default image.
+        #
+        if explicitly_default is not None:
+            default_index = images_data.index(explicitly_default)
+
+            default_image = created_images[default_index]
+
+            ProductImage.objects.filter(
+                product=product,
+                is_active=True,
+                is_default=True,
+            ).exclude(
+                pk=default_image.pk,
+            ).update(
+                is_default=False,
+                updated_by=updated_by,
+            )
+
+            default_image.is_default = True
+            default_image.updated_by = updated_by
+            default_image.save(
+                update_fields=[
+                    'is_default',
+                    'updated_by',
+                    'updated_at',
+                ]
+            )
+
+        #
+        # No explicit default.
+        #
+        elif not has_existing_default:
+            first_image = created_images[0]
+
+            first_image.is_default = True
+            first_image.updated_by = updated_by
+            first_image.save(
+                update_fields=[
+                    'is_default',
+                    'updated_by',
+                    'updated_at',
+                ]
+            )
+
+        return created_images

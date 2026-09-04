@@ -11,6 +11,7 @@ from product_api.serializers import (
     ProductImageCreateUpdateSerializer,
     ProductImageDetailSerializer,
     ProductImageListSerializer,
+    BulkProductImageUploadSerializer,
 )
 from product_api.services.product import (
     replace_product_image,
@@ -18,6 +19,7 @@ from product_api.services.product import (
     set_product_image_default,
     soft_delete_product_image,
     upload_product_image,
+    bulk_upload_product_images,
 )
 
 
@@ -72,6 +74,42 @@ class ProductImageViewSet(
         image = self.get_object()
         soft_delete_product_image(image, deleted_by=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        summary="Bulk upload product images",
+        request=BulkProductImageUploadSerializer,
+        responses=ProductImageDetailSerializer(many=True),
+    )
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='bulk-upload',
+    )
+    def bulk_upload(self, request):
+        serializer = BulkProductImageUploadSerializer(
+            data=request.data,
+            context=self.get_serializer_context(),
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        images = bulk_upload_product_images(
+            product=serializer.validated_data['product'],
+            images_data=serializer.validated_data['images'],
+            created_by=request.user,
+            updated_by=request.user,
+        )
+
+        response_serializer = ProductImageDetailSerializer(
+            images,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=['post'], url_path='replace-image')
     def replace_image(self, request, pk=None):
