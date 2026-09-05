@@ -23,11 +23,10 @@ from product_api.services.product import (
 )
 
 
-def _parse_bulk_image_data(data):
-    """Convert bracketed multipart fields into nested image data."""
+def _parse_bulk_image_data(data, files):
     images = {}
 
-    for key, value in data.items():
+    for key, values in data.lists():
         if not key.startswith("images["):
             continue
 
@@ -37,7 +36,19 @@ def _parse_bulk_image_data(data):
         except (IndexError, ValueError):
             continue
 
-        images.setdefault(index, {})[field] = value
+        images.setdefault(index, {})[field] = values[-1]
+
+    for key, values in files.lists():
+        if not key.startswith("images["):
+            continue
+
+        try:
+            index = int(key.split("[", 1)[1].split("]", 1)[0])
+            field = key.split("][", 1)[1].rstrip("]")
+        except (IndexError, ValueError):
+            continue
+
+        images.setdefault(index, {})[field] = values[-1]
 
     return [
         images[index]
@@ -114,8 +125,13 @@ class ProductImageViewSet(
         url_path='bulk-upload',
     )
     def bulk_upload(self, request):
-        data = request.data.copy()
-        data["images"] = _parse_bulk_image_data(request.data)
+        data = {
+            "product": request.data.get("product"),
+            "images": _parse_bulk_image_data(
+                request.data,
+                request.FILES,
+            ),
+        }
         serializer = BulkProductImageUploadSerializer(
             data=data,
             context=self.get_serializer_context(),
