@@ -5,7 +5,9 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from EcommerceBackend.core.permission import PublicReadPermissionMixin
+from EcommerceBackend.core.permission import (
+    PublicReadPermissionMixin, ModelPermissionAccess,
+)
 from product_api.models import ProductImage
 from product_api.serializers import (
     ProductImageCreateUpdateSerializer,
@@ -61,7 +63,12 @@ class ProductImageViewSet(
     PublicReadPermissionMixin,
     viewsets.ModelViewSet,
 ):
-    """ViewSet for product image CRUD and image-specific actions."""
+    permission_classes = [ModelPermissionAccess]
+    custom_permissions = {
+        "replace_image": "change_productimage",
+        "set_default": "change_productimage",
+        "reorder": "change_productimage",
+    }
     queryset = ProductImage.objects.filter(
         is_active=True,
         deleted_at__isnull=True,
@@ -92,7 +99,10 @@ class ProductImageViewSet(
             created_by=request.user,
             updated_by=request.user,
         )
-        response_serializer = ProductImageDetailSerializer(image)
+        response_serializer = ProductImageDetailSerializer(
+            image,
+            context=self.get_serializer_context(),
+        )
         headers = self.get_success_headers(response_serializer.data)
         return Response(
             response_serializer.data,
@@ -168,14 +178,20 @@ class ProductImageViewSet(
             )
 
         replace_product_image(image, image_file, updated_by=request.user)
-        serializer = ProductImageDetailSerializer(image)
+        serializer = ProductImageDetailSerializer(
+            image,
+            context=self.get_serializer_context(),
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='set-default')
     def set_default(self, request, pk=None):
         image = self.get_object()
         set_product_image_default(image, updated_by=request.user)
-        serializer = ProductImageDetailSerializer(image)
+        serializer = ProductImageDetailSerializer(
+            image,
+            context=self.get_serializer_context(),
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='reorder')
@@ -196,5 +212,9 @@ class ProductImageViewSet(
                 updated_by=request.user,
             )
 
-        serializer = ProductImageListSerializer(reordered_images, many=True)
+        serializer = ProductImageListSerializer(
+            reordered_images,
+            many=True,
+            context=self.get_serializer_context(),
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
