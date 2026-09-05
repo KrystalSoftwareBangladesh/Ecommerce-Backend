@@ -23,26 +23,6 @@ from product_api.services.product import (
 )
 
 
-# def _parse_bulk_image_data(data):
-#     """Convert bracketed multipart fields into nested image data."""
-#     images = {}
-
-#     for key, value in data.items():
-#         if not key.startswith("images["):
-#             continue
-
-#         try:
-#             index = int(key.split("[", 1)[1].split("]", 1)[0])
-#             field = key.split("][", 1)[1].rstrip("]")
-#         except (IndexError, ValueError):
-#             continue
-
-#         images.setdefault(index, {})[field] = value
-
-#     return [
-#         images[index]
-#         for index in sorted(images)
-#     ]
 def _parse_bulk_image_data(data, files):
     images = {}
 
