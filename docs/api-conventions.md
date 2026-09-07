@@ -15,6 +15,10 @@ inconsistent, the pattern to follow for new code is in
 - Resource paths are plural and kebab-cased:
   `/api/v1/chart-of-accounts/`, `/api/v1/inventory-movements/`,
   `/api/v1/payment-methods/`, `/api/v1/product-images/`.
+- Two apps group their resources under a shared prefix rather than
+  registering at the root: `content_security_api`
+  (`/api/v1/content-security/scans/`, `.../findings/`, …) and `blog_api`
+  (`/api/v1/blog/posts/`, `/api/v1/blog/tags/`).
 - Custom actions use kebab-cased `url_path`:
   `/api/v1/categories/{id}/mark-as-menu/`,
   `/api/v1/purchases/{id}/confirm/`, `/api/v1/transactions/{id}/post/`.
@@ -119,8 +123,8 @@ in the error dict. Raise
 ## Detail lookup
 
 - Default is `pk`.
-- `category_api` and `product_api` accept **either a numeric id or a slug** on
-  detail routes, using
+- `category_api`, `product_api` and `blog_api` blog posts accept **either a
+  numeric id or a slug** on detail routes, using
   `lookup_field = "id"`, `lookup_url_kwarg = "id"`,
   `lookup_value_regex = r"[^/]+"` and a `get_object()` override that branches
   on `lookup_value.isdigit()`.
@@ -135,7 +139,7 @@ preferred direction for new endpoints.
 - Schema at `/schema/`, Swagger UI at `/docs/`, ReDoc at `/redoc/`.
 - **Every** view module in the repository applies
   `@extend_schema(tags=["..."])` at class level. Keep this at 100%.
-- Existing tags: `Accounts`, `Authentication`, `Brands`, `Cart`,
+- Existing tags: `Accounts`, `Authentication`, `Blog`, `Brands`, `Cart`,
   `Categories`, `Categories - Import`, `Content Security`, `Customers`,
   `Inventory Movement`, `Meta`, `Origins`, `Permissions & Groups`,
   `Products`, `Purchases`, `Request Logs`, `Reviews`,

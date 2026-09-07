@@ -1,6 +1,6 @@
 # Project Structure
 
-Mirrors the actual repository. Last verified 2026-08-30.
+Mirrors the actual repository. Last verified 2026-09-07.
 
 ```text
 ZayrahLife-Backend/
@@ -52,7 +52,21 @@ ZayrahLife-Backend/
 │       ├── filter.py                # empty
 │       ├── models.py
 │       ├── pagination.py
-│       └── permission.py
+│       ├── permission.py
+│       └── serializers/fields.py    # AbsoluteImageField
+│
+├── blog_api/
+│   ├── models/{choices.py,blog_post.py,blog_tag.py}
+│   ├── serializers/{blog_post.py,blog_tag.py}
+│   ├── services/{blog_post.py,blog_tag.py}
+│   ├── views/v1/{blog_post.py,blog_tag.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── filters.py
+│   ├── admin.py
+│   └── tests/                       # package, not a flat tests.py
+│       ├── factories.py
+│       ├── {test_models.py,test_services.py}
+│       └── {test_api_blog_post.py,test_api_blog_tag.py}
 │
 ├── account_api/
 │   ├── models/chart_of_account.py
@@ -248,8 +262,8 @@ omitted above for brevity.
 
 ## Notes
 
-- `content_security_api` and `request_log_api` are the only apps whose
-  tests are a package rather than a flat `tests.py`. `.flake8` excludes
+- `blog_api`, `content_security_api` and `request_log_api` are the only apps
+  whose tests are a package rather than a flat `tests.py`. `.flake8` excludes
   `tests.py` by name, so these apps' test modules **are** linted.
 - `request_log_api` is the only app that registers middleware
   (`RequestLogMiddleware`, in `MIDDLEWARE` directly after `CorsMiddleware`)

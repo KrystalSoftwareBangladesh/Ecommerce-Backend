@@ -303,6 +303,57 @@ for filtering and aggregation:
 `EXCEPTION` is narrower than `SERVER_ERROR`: it means an exception type and
 traceback were captured alongside the 500.
 
+---
+
+## Blog
+
+### Publication lifecycle
+
+- A blog post is **always created as `DRAFT`**, whatever the request body
+  says. `status` and `published_at` are not writable through the create or
+  update serializers.
+- Going live is a domain operation, not a field write:
+  `POST /api/v1/blog/posts/{id}/publish/` sets `status` to `PUBLISHED` and
+  stamps `published_at`; `POST /api/v1/blog/posts/{id}/unpublish/` returns
+  the post to `DRAFT` and clears `published_at`. Republishing stamps a new
+  date.
+- Publishing an already-published post, or unpublishing a draft, is
+  rejected with a 400.
+- Editing a post never changes its publication state — a published post
+  stays published and keeps its original `published_at`.
+- A database check constraint keeps the two fields consistent: `PUBLISHED`
+  implies a `published_at`, `DRAFT` implies none.
+
+### Public visibility
+
+Blog reading is public. An anonymous caller — and any authenticated caller
+without `blog_api.view_blogpost` — sees **published, non-deleted posts
+only**, on both list and detail. The restriction is applied to the queryset
+before filtering, so `?status=DRAFT` and every other filter search within
+the published set and can never surface a draft or a soft-deleted post.
+
+### Content
+
+- `content` holds HTML and is stored verbatim; the blog owns no markup
+  format.
+- The slug is generated from the title on creation and is immutable
+  afterwards, matching `Product`, `Category` and `Brand` (SEO safety). A
+  client-supplied slug is ignored.
+- The featured image is optional.
+- SEO metadata (`seo_title`, `seo_description`, `seo_focus_keyword`,
+  `seo_noindex`, `seo_nofollow`) lives on the post; there is no separate
+  SEO record.
+- Categories reuse the shared `Category` tree; a post may have several
+  categories and several tags.
+- Deleting a post or a tag is a soft delete.
+
+### Blog tags
+
+- A tag name is unique, case-insensitively, across tags.
+- The slug is generated from the name on creation and immutable
+  afterwards; renaming a tag does not move its slug.
+- `legacy_id` is migration-owned and is not accepted by the API.
+
 ## Permissions
 
 Protected endpoints require authentication.
@@ -358,6 +409,23 @@ Basic access shows the technical picture - endpoint, route pattern, status,
 duration, timestamp, user, error message and exception type - and omits the
 payload fields entirely rather than blanking them, so a withheld payload
 cannot be mistaken for an empty one.
+
+Blog (`blog_api.BlogPost`):
+
+- `publish_blog_post` - required by
+  `POST /api/v1/blog/posts/{id}/publish/`
+- `unpublish_blog_post` - required by
+  `POST /api/v1/blog/posts/{id}/unpublish/`
+
+The blog is driven by Django model permissions through
+`ModelPermissionAccess`, so view, add, change and delete are granted
+independently, and the two publication permissions are independent of all of
+them and of each other. A user holding `add_blogpost` can therefore write
+posts without being able to put them live — which is why creating always
+produces a draft. Publishing does not require `view_blogpost`: a publisher
+reaches the draft through the publish endpoint itself, while `view_blogpost`
+is what lets a caller *browse* drafts. Reading published posts and blog tags
+needs no permission at all.
 
 The rule-management endpoints (`keyword-rules`, `domain-rules`,
 `html-tag-rules`, `html-attribute-rules`, `redirect-rules`,

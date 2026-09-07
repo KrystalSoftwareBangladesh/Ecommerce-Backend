@@ -29,13 +29,13 @@ which run outside Django.
 
 ### Application structure
 
-Each business domain is a separate Django app named `<domain>_api`. The 17
+Each business domain is a separate Django app named `<domain>_api`. The 18
 apps registered in `LOCAL_APPS` are:
 
 `user_api`, `customer_api`, `account_api`, `transaction_api`, `category_api`,
 `supplier_api`, `product_api`, `inventory_api`, `purchase_api`, `sale_api`,
 `origin_api`, `review_api`, `meta_api`, `wishlist_api`, `cart_api`,
-`content_security_api`, `request_log_api`.
+`content_security_api`, `request_log_api`, `blog_api`.
 
 Responsibilities are listed in [domain-model.md](domain-model.md).
 
