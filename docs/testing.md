@@ -31,10 +31,10 @@ in-memory, the MD5 password hasher and filesystem storage. Running without
 
 ## Structure
 
-**Current implementation.** A flat `tests.py` per app, except
+**Current implementation.** A flat `tests.py` per app, except `blog_api`,
 `content_security_api` and `request_log_api`, which use a `tests/` package.
 There are no fixtures and no shared base test case; `content_security_api`
-is the only app with a `factories.py`.
+and `blog_api` are the two apps with a `factories.py`.
 
 | App | `tests.py` |
 |---|---|
@@ -47,7 +47,7 @@ is the only app with a `factories.py`.
 | `user_api` | 234 |
 | `cart_api`, `customer_api`, `inventory_api`, `meta_api`, `review_api`, `supplier_api`, `wishlist_api` | 3-line placeholder |
 | `origin_api` | no `tests.py` at all |
-| `content_security_api`, `request_log_api` | `tests/` package — **linted**, since `.flake8` excludes `tests.py` by name only |
+| `blog_api`, `content_security_api`, `request_log_api` | `tests/` package — **linted**, since `.flake8` excludes `tests.py` by name only |
 
 `request_log_api/tests/` additionally ships `urls.py`, a probe URLconf
 mounted with `override_settings(ROOT_URLCONF=...)` so the middleware can be
@@ -95,10 +95,13 @@ CI does not run tests — `.github/workflows/linter.yml` runs flake8 only.
 
 ## Known state of the suite
 
-As of 2026-08-30, `python manage.py test --settings=EcommerceBackend.test_settings`
-reports **407 tests, 16 failures and 5 errors**. The failures and errors are
-pre-existing and unrelated to any current work — the count was identical
-before `request_log_api` was added, which contributed 90 passing tests:
+As of 2026-09-07, `python manage.py test --settings=EcommerceBackend.test_settings`
+reports **504 tests, 27 failures and 5 errors**. The failures and errors are
+pre-existing and unrelated to any current work — the same 27/5 are reported
+with `blog_api` removed, and that app contributed 97 passing tests. The
+table below covers the long-standing causes; the `product_api` image
+failures and the extra `user_api` signup failures appeared with later
+product-image work and are **not yet diagnosed**:
 
 | Symptom | Cause |
 |---|---|

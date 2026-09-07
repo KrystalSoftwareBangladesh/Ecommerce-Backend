@@ -27,10 +27,11 @@ repository. Business rules that govern these entities are in
 | `meta_api` | Choice/enum lookups for clients (currently moderation statuses) | *(none)* |
 | `content_security_api` | Content Security Scanner: configurable detection rules, scan results and findings for migrated content | `KeywordRule`, `DomainRule`, `HtmlTagRule`, `HtmlAttributeRule`, `RedirectRule`, `HiddenContentRule`, `ObfuscationRule`, `ContentScan`, `ContentScanFinding` |
 | `request_log_api` | API request logging and observability: one immutable record per HTTP request | `RequestLog` |
+| `blog_api` | Editorial content: posts with their publication lifecycle, blog tags, SEO metadata | `BlogPost`, `BlogTag` |
 
 There is **no `Order` model** — a completed customer purchase is a `Sale`.
-There is **no blog** and **no SEO/meta model**; `meta_api` is a choice-lookup
-app, not SEO metadata.
+There is **no standalone SEO model**: blog SEO fields live on `BlogPost`
+itself, and `meta_api` is a choice-lookup app, not SEO metadata.
 
 ## Relationships
 
@@ -75,6 +76,11 @@ Review   ──> Product   (unique per created_by + product, moderated)
 Wishlist ──> Product   (owner is created_by)
 Cart     ──> (owner is created_by, status ACTIVE/CHECKED_OUT/ABANDONED)
 Cart  1──* CartItem ──> Product
+
+BlogPost  ──> User      (author, FK, nullable, SET_NULL)
+BlogPost *──* Category  (the shared category tree, reused)
+BlogPost *──* BlogTag
+BlogPost     featured_image is an ImageField on the post itself
 ```
 
 **Note on `Brand`:** `Brand` has a full model, serializer set, ViewSet and
@@ -83,6 +89,16 @@ are not currently associated with a brand in the database.
 
 **Note on ownership:** `Cart` and `Wishlist` have no dedicated `user` field —
 ownership is expressed through `created_by` from `UserStampedModel`.
+
+**Note on the blog:** `BlogPost` keeps `author` as a field of its own,
+separate from `created_by`, because the writer credited on a post is not
+always the account that saved it. Categories reuse `category_api.Category`
+rather than a second tree; tags are blog-specific (`BlogTag`). There is no
+generic media entity in the repository — `ProductImage` is bound to a
+product by a foreign key — so the featured image is an `ImageField` on the
+post, the same shape `Brand.logo` uses. `legacy_id` on both blog models
+carries the identifier from the system the content was migrated from and is
+never client input.
 
 **Note on scan targets:** `ContentScan` does not use a foreign key to the
 object it scanned. It records `content_type` (a `ScanContentType` choice)
@@ -117,6 +133,7 @@ rule types are separate models.
 | `RequestOutcome` | `request_log_api/models/choices.py` | `SUCCESS`, `CLIENT_ERROR`, `SERVER_ERROR`, `EXCEPTION` |
 | `ClientType` | `request_log_api/models/choices.py` | `WEB`, `MOBILE`, `ADMIN`, `EXTERNAL`, `UNKNOWN` |
 | `DeviceType` | `request_log_api/models/choices.py` | `DESKTOP`, `MOBILE`, `TABLET`, `BOT`, `UNKNOWN` |
+| `BlogPostStatus` | `blog_api/models/choices.py` | `DRAFT`, `PUBLISHED` |
 
 Enums surfaced in the OpenAPI schema are named via `ENUM_NAME_OVERRIDES` in
 `EcommerceBackend/settings.py`. Add an entry there when introducing a new
@@ -136,6 +153,7 @@ Declared in `Meta.permissions` and shipped with a migration:
 - `request_log_api.RequestLog` — `view_request_log_request_payload`,
   `view_request_log_response_payload`, `view_request_log_error_details`,
   `view_request_log_traceback`
+- `blog_api.BlogPost` — `publish_blog_post`, `unpublish_blog_post`
 
 See [business-rules.md](business-rules.md#custom-model-permissions) for how
 they are applied.

@@ -16,6 +16,7 @@ from wishlist_api import urls as wishlist_urls
 from cart_api import urls as cart_urls
 from content_security_api import urls as content_security_urls
 from request_log_api import urls as request_log_urls
+from blog_api import urls as blog_urls
 
 
 urlpatterns = []
@@ -37,3 +38,4 @@ urlpatterns += wishlist_urls.urlpatterns
 urlpatterns += cart_urls.urlpatterns
 urlpatterns += content_security_urls.urlpatterns
 urlpatterns += request_log_urls.urlpatterns
+urlpatterns += blog_urls.urlpatterns

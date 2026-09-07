@@ -74,6 +74,7 @@ LOCAL_APPS = [
     'cart_api',
     'content_security_api',
     'request_log_api',
+    'blog_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -142,6 +143,7 @@ SPECTACULAR_SETTINGS = {
         "RequestDeviceTypeEnum": "request_log_api.models.choices.DeviceType.choices",  # noqa
         "KeywordMatchTypeEnum": "content_security_api.models.choices.KeywordMatchType.choices",  # noqa
         "DomainMatchTypeEnum": "content_security_api.models.choices.DomainMatchType.choices",  # noqa
+        "BlogPostStatusEnum": "blog_api.models.choices.BlogPostStatus.choices",  # noqa
     },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,

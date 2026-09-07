@@ -17,7 +17,7 @@ PostgreSQL · gunicorn. Full list in `requirements.txt`.
 
 ## Architecture at a glance
 
-- 15 domain apps, all named `*_api`, registered in `LOCAL_APPS`
+- 18 domain apps, all named `*_api`, registered in `LOCAL_APPS`
   (`EcommerceBackend/settings.py`).
 - Shared components live in `EcommerceBackend/core/`
   (`models.py`, `pagination.py`, `permission.py`, `choices.py`,
@@ -188,3 +188,6 @@ Approved project decisions. Append new entries here.
 | 2026-08-30 | Sensitive-data sanitization is centralised in `request_log_api/services/sanitizer.py` and applied recursively to every payload before persistence. Endpoints never declare what is sensitive. Uploaded file contents are never stored. |
 | 2026-08-30 | Request log storage goes through the `RequestLogStorage` abstraction, backed by PostgreSQL today and selected by `REQUEST_LOG_STORAGE`. No queue, worker, ClickHouse or external service is introduced. |
 | 2026-08-30 | Phases 1-7 of [docs/api-request-logging-plan.md](docs/api-request-logging-plan.md) are implemented. Exporting (phase 8), IP/bot enrichment (phase 9) and the analytics storage migration (phase 10) remain future scope, as does the geolocation column set. |
+| 2026-09-07 | Editorial content lives in `blog_api` (`BlogPost`, `BlogTag`). It reuses `user_api.User` for the author and `category_api.Category` for categories; there is no `BlogAuthor`, no `BlogCategory` and no second category tree. |
+| 2026-09-07 | A blog post is always created as a draft. `status` and `published_at` are not writable through the CRUD serializers; publishing is `POST /api/v1/blog/posts/{id}/publish/` and `.../unpublish/`, each behind its own model permission (`publish_blog_post`, `unpublish_blog_post`), so create never implies publish. See [docs/business-rules.md](docs/business-rules.md#blog). |
+| 2026-09-07 | Blog SEO metadata stays on `BlogPost` (`seo_title`, `seo_description`, `seo_focus_keyword`, `seo_noindex`, `seo_nofollow`) — no separate SEO model, and no WordPress/Rank Math internals. The featured image is an `ImageField` on the post; the repository has no generic media entity to reuse (`ProductImage` is bound to a product). |
