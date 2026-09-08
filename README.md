@@ -90,6 +90,30 @@ python manage.py import_product_images \
 ```
 You can adjust number of worker.
 
+Import blog tags
+```bash
+python scripts/export_woocommerce_blog_tags.py
+```
+Export blog tags
+```bash
+python manage.py import_blog_tags resources/blog_tags.json
+```
+Import blog posts
+```bash
+python scripts/export_woocommerce_blog_posts.py
+```
+Export blog posts
+```bash
+python scripts/export_woocommerce_blog_posts.py
+```
+Import blog posts
+```bash
+python manage.py import_blog_posts resources/blog_posts.json
+```
+Export tags and posts mapping
+```bash
+python scripts/export_woocommerce_blog_post_tags.py
+```
 Clean category name, description
 ```bash
 python manage.py clean_category_html_entities
