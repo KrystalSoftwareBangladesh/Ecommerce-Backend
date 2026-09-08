@@ -1,7 +1,7 @@
 # scripts/export_woocommerce_blog_posts.py
-import json
 from pathlib import Path
 
+import json
 import pymysql
 
 
@@ -92,8 +92,19 @@ def parse_seo_robots(value):
     }
 
 
+def normalize_status(status):
+    if status == "publish":
+        return "PUBLISHED"
+
+    if status == "draft":
+        return "DRAFT"
+
+    raise ValueError(f"Unsupported WordPress post status: {status}")
+
+
 def build_blog_post(row):
     seo_robots = parse_seo_robots(row["seo_robots"])
+    is_published = row["status"] == "publish"
 
     return {
         "legacy_id": row["legacy_id"],
@@ -101,10 +112,10 @@ def build_blog_post(row):
         "slug": row["slug"] or "",
         "content": row["content"] or "",
         "author_legacy_id": to_int(row["author_legacy_id"]),
-        "status": row["status"],
+        "status": normalize_status(row["status"]),
         "published_at": (
             row["published_at"].isoformat()
-            if row["published_at"]
+            if is_published and row["published_at"]
             else None
         ),
         "featured_image_legacy_id": to_int(

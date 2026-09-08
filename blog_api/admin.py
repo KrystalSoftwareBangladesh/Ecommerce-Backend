@@ -51,8 +51,6 @@ class BlogPostAdmin(admin.ModelAdmin):
     list_filter = (
         'status',
         'is_active',
-        'categories',
-        'tags',
         'author',
     )
     search_fields = (
