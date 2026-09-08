@@ -70,6 +70,10 @@ Export products
 ```bash
 python scripts/export_woocommerce_products.py
 ```
+Clean category name, description
+```bash
+python manage.py clean_category_html_entities
+```
 Import products
 ```bash
 python manage.py import_products resources/products.json
@@ -118,7 +122,7 @@ Map tags and posts
 ```bash
 python manage.py import_blog_post_tags resources/blog_post_tags.json
 ```
-Clean category name, description
+Export categories and posts mapping
 ```bash
-python manage.py clean_category_html_entities
+python scripts/export_woocommerce_blog_post_categories.py
 ```
