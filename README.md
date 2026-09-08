@@ -110,6 +110,10 @@ Import blog posts
 ```bash
 python manage.py import_blog_posts resources/blog_posts.json
 ```
+Export tags and posts mapping
+```bash
+python scripts/export_woocommerce_blog_post_tags.py
+```
 Clean category name, description
 ```bash
 python manage.py clean_category_html_entities
