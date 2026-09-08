@@ -78,7 +78,7 @@ Export products and categories mapping
 ```bash
 python scripts/export_woocommerce_product_categories.py
 ```
-Import or map products and categories
+Map products and categories
 ```bash
 python manage.py import_product_categories resources/product_categories.json
 ```
@@ -113,6 +113,10 @@ python manage.py import_blog_posts resources/blog_posts.json
 Export tags and posts mapping
 ```bash
 python scripts/export_woocommerce_blog_post_tags.py
+```
+Map tags and posts
+```bash
+python manage.py import_blog_post_tags resources/blog_post_tags.json
 ```
 Clean category name, description
 ```bash
