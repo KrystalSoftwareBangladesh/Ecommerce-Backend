@@ -122,7 +122,19 @@ Map tags and posts
 ```bash
 python manage.py import_blog_post_tags resources/blog_post_tags.json
 ```
+Export blog categories
+```bash
+python scripts/export_woocommerce_blog_categories.py
+```
+Import & reconcile blog categories with product categories
+```bash
+python manage.py import_blog_categories resources/blog_categories.json
+```
 Export categories and posts mapping
 ```bash
 python scripts/export_woocommerce_blog_post_categories.py
+```
+Map blog and categories
+```bash
+python manage.py import_blog_post_categories resources/blog_post_categories.json
 ```
