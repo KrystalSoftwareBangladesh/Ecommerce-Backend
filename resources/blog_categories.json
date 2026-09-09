@@ -1,0 +1,1864 @@
+[
+  {
+    "legacy_id": 1,
+    "name": "Uncategorized",
+    "slug": "uncategorized",
+    "parent": 0,
+    "count": 0
+  },
+  {
+    "legacy_id": 1464,
+    "name": "Processor",
+    "slug": "processor",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 1465,
+    "name": "Desktop Processor",
+    "slug": "desktop-processor",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 2825,
+    "name": "Gaming Headphone",
+    "slug": "gaming-headphone",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 2829,
+    "name": "A4 Tech",
+    "slug": "a4-tech",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 2837,
+    "name": "Mouse &amp; Keyboard",
+    "slug": "mouse-keyboard",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 2862,
+    "name": "Logitech",
+    "slug": "logitech",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 2878,
+    "name": "CPU Cooler",
+    "slug": "cpu-cooler",
+    "parent": 0,
+    "count": 7
+  },
+  {
+    "legacy_id": 2888,
+    "name": "Power Supply",
+    "slug": "power-supply",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 2898,
+    "name": "Portable SSD",
+    "slug": "portable-ssd",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 2908,
+    "name": "Intel Processor",
+    "slug": "intel-processor",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 2933,
+    "name": "AMD Ryzen Processor",
+    "slug": "amd-ryzen-processor",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 2942,
+    "name": "Medical Equipment",
+    "slug": "medical-equipment",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 2961,
+    "name": "Smart Watch",
+    "slug": "smart-watch",
+    "parent": 0,
+    "count": 10
+  },
+  {
+    "legacy_id": 2982,
+    "name": "Ugreen Authorized Products",
+    "slug": "ugreen-authorized-products",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3045,
+    "name": "Dtech HDMI Cable",
+    "slug": "dtech-hdmi-cable",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3054,
+    "name": "Havit Headphone",
+    "slug": "havit-headphone",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3059,
+    "name": "Havit Authentic Products",
+    "slug": "havit-authentic-products",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3070,
+    "name": "Anker",
+    "slug": "anker",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 3071,
+    "name": "Power Bank",
+    "slug": "power-bank",
+    "parent": 0,
+    "count": 7
+  },
+  {
+    "legacy_id": 3085,
+    "name": "Baseus",
+    "slug": "baseus",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 3086,
+    "name": "Adapter",
+    "slug": "adapter",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 3198,
+    "name": "Boya",
+    "slug": "boya",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 3199,
+    "name": "Microphone",
+    "slug": "microphone",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 3224,
+    "name": "Products",
+    "slug": "products",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 3268,
+    "name": "Onu",
+    "slug": "onu",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 3269,
+    "name": "Epon",
+    "slug": "epon",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3310,
+    "name": "MSI",
+    "slug": "msi",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 3311,
+    "name": "Laptop",
+    "slug": "laptop",
+    "parent": 0,
+    "count": 10
+  },
+  {
+    "legacy_id": 3320,
+    "name": "Cisco",
+    "slug": "cisco",
+    "parent": 0,
+    "count": 6
+  },
+  {
+    "legacy_id": 3321,
+    "name": "Router &amp; Switches",
+    "slug": "router-switches",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 3394,
+    "name": "Ram",
+    "slug": "ram",
+    "parent": 0,
+    "count": 9
+  },
+  {
+    "legacy_id": 3395,
+    "name": "Crucial",
+    "slug": "crucial",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 3413,
+    "name": "Desktop",
+    "slug": "desktop",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 3476,
+    "name": "Graphics Cards",
+    "slug": "graphics-cards",
+    "parent": 0,
+    "count": 17
+  },
+  {
+    "legacy_id": 3701,
+    "name": "Deepcool Casing",
+    "slug": "deepcool-casing",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3753,
+    "name": "Apple",
+    "slug": "apple",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 3773,
+    "name": "Panel",
+    "slug": "panel",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 3884,
+    "name": "External HDD",
+    "slug": "external-hdd",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 3906,
+    "name": "Motherboard",
+    "slug": "motherboard",
+    "parent": 0,
+    "count": 6
+  },
+  {
+    "legacy_id": 12196,
+    "name": "Ryzen Processor",
+    "slug": "ryzen-processor",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12201,
+    "name": "Graphics Tablet",
+    "slug": "graphics-tablet",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12212,
+    "name": "Intel motherboard",
+    "slug": "intel-motherboard",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12225,
+    "name": "AMD Motherboard",
+    "slug": "amd-motherboard",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12235,
+    "name": "Desktop RAM",
+    "slug": "desktop-ram",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12236,
+    "name": "Laptop RAM",
+    "slug": "laptop-ram",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12268,
+    "name": "SSD",
+    "slug": "ssd",
+    "parent": 0,
+    "count": 6
+  },
+  {
+    "legacy_id": 12279,
+    "name": "Gaming Casing",
+    "slug": "gaming-casing",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12280,
+    "name": "Computer Casing",
+    "slug": "computer-casing",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12446,
+    "name": "Conference System",
+    "slug": "conference-system",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12449,
+    "name": "PA System",
+    "slug": "pa-system",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12452,
+    "name": "Video Wall",
+    "slug": "video-wall",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12459,
+    "name": "Scanner",
+    "slug": "scanner",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12462,
+    "name": "Gaming Monitor",
+    "slug": "gaming-monitor",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12465,
+    "name": "Cisco Switch",
+    "slug": "cisco-switch",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12474,
+    "name": "Ubiquiti Wireless Access point",
+    "slug": "ubiquiti-wireless-access-point",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12477,
+    "name": "Barcode Scanner",
+    "slug": "barcode-scanner",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12480,
+    "name": "Ubiquiti UniFi Cloud Gateway",
+    "slug": "ubiquiti-unifi-cloud-gateway",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12483,
+    "name": "Mikrotik Router",
+    "slug": "mikrotik-router",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12486,
+    "name": "Cartridge",
+    "slug": "cartridge",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12489,
+    "name": "TP-Link Router",
+    "slug": "tp-link-router",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12492,
+    "name": "Earbuds",
+    "slug": "earbuds",
+    "parent": 0,
+    "count": 7
+  },
+  {
+    "legacy_id": 12495,
+    "name": "Access Control",
+    "slug": "access-control",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12498,
+    "name": "Speaker &amp; Home Theater",
+    "slug": "speaker-home-theater",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12501,
+    "name": "WiFi Camera",
+    "slug": "wifi-camera",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12504,
+    "name": "UTP Cat-6 Cable",
+    "slug": "utp-cat-6-cable",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12507,
+    "name": "Digital Locker and Vault",
+    "slug": "digital-locker-and-vault",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12510,
+    "name": "SFP Transceiver",
+    "slug": "sfp-transceiver",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12513,
+    "name": "Server Rack",
+    "slug": "server-rack",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12516,
+    "name": "Faceplate",
+    "slug": "faceplate",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12519,
+    "name": "Patch Panel",
+    "slug": "patch-panel",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12522,
+    "name": "Modular",
+    "slug": "modular",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12525,
+    "name": "Patch Cord",
+    "slug": "patch-cord",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12527,
+    "name": "NAS Storage",
+    "slug": "nas-storage",
+    "parent": 0,
+    "count": 7
+  },
+  {
+    "legacy_id": 12531,
+    "name": "Microsoft Office",
+    "slug": "microsoft-office",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12534,
+    "name": "Gaming Keyboards",
+    "slug": "gaming-keyboards",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12537,
+    "name": "Gaming Mouse",
+    "slug": "gaming-mouse",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12542,
+    "name": "Apple Store",
+    "slug": "apple-store",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12545,
+    "name": "Webcam",
+    "slug": "webcam",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12548,
+    "name": "HDMI Converter",
+    "slug": "hdmi-converter",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12551,
+    "name": "Server",
+    "slug": "server",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12554,
+    "name": "Power Strip",
+    "slug": "power-strip",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12557,
+    "name": "Gaming Laptop",
+    "slug": "gaming-laptop",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12563,
+    "name": "Gimbal",
+    "slug": "gimbal",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12566,
+    "name": "Printer",
+    "slug": "printer",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12569,
+    "name": "Drone",
+    "slug": "drone",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12572,
+    "name": "Printer Toner",
+    "slug": "printer-toner",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12577,
+    "name": "IP Camera",
+    "slug": "ip-camera",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12584,
+    "name": "Neckband",
+    "slug": "neckband",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12589,
+    "name": "Smart TV",
+    "slug": "smart-tv",
+    "parent": 0,
+    "count": 6
+  },
+  {
+    "legacy_id": 12592,
+    "name": "HDD",
+    "slug": "hdd",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12595,
+    "name": "Gaming Chair",
+    "slug": "gaming-chair",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12598,
+    "name": "UPS",
+    "slug": "ups",
+    "parent": 0,
+    "count": 10
+  },
+  {
+    "legacy_id": 12601,
+    "name": "IP Phone",
+    "slug": "ip-phone",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12604,
+    "name": "Netgear Switch",
+    "slug": "netgear-switch",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12607,
+    "name": "PABX System",
+    "slug": "pabx-system",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12610,
+    "name": "Air Conditioner (AC)",
+    "slug": "air-conditioner-ac",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12613,
+    "name": "Gaming Console",
+    "slug": "gaming-console",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12616,
+    "name": "Studio Equipment",
+    "slug": "studio-equipment",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12619,
+    "name": "Mobile Phone",
+    "slug": "mobile-phone",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 12622,
+    "name": "Firewall",
+    "slug": "firewall",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12625,
+    "name": "Soundbar",
+    "slug": "soundbar",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12628,
+    "name": "Voice Recorder",
+    "slug": "voice-recorder",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12721,
+    "name": "PoE Injector",
+    "slug": "poe-injector",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12724,
+    "name": "Gaming PC",
+    "slug": "gaming-pc",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12727,
+    "name": "Brand PC",
+    "slug": "brand-pc",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12731,
+    "name": "Apple iMac",
+    "slug": "apple-imac",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12734,
+    "name": "Mac Pro",
+    "slug": "mac-pro",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12737,
+    "name": "Mac Mini",
+    "slug": "mac-mini",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12740,
+    "name": "Pen Drive",
+    "slug": "pen-drive",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 12743,
+    "name": "Dash Cam",
+    "slug": "dash-cam",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12746,
+    "name": "Laptop Bag",
+    "slug": "laptop-bag",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12747,
+    "name": "Laser Printer",
+    "slug": "laser-printer",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12749,
+    "name": "Liquid cooler",
+    "slug": "liquid-cooler",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12753,
+    "name": "Raised Floor System",
+    "slug": "raised-floor-system",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12756,
+    "name": "Portable HDD",
+    "slug": "portable-hdd",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12759,
+    "name": "Curved Monitor",
+    "slug": "curved-monitor",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12762,
+    "name": "Tablet",
+    "slug": "tablet",
+    "parent": 0,
+    "count": 6
+  },
+  {
+    "legacy_id": 12765,
+    "name": "Handycam",
+    "slug": "handycam",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12768,
+    "name": "Wireless Router",
+    "slug": "wireless-router",
+    "parent": 0,
+    "count": 7
+  },
+  {
+    "legacy_id": 12792,
+    "name": "IPS",
+    "slug": "ips",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12795,
+    "name": "Online UPS",
+    "slug": "online-ups",
+    "parent": 12598,
+    "count": 1
+  },
+  {
+    "legacy_id": 12798,
+    "name": "Iphone",
+    "slug": "iphone",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12812,
+    "name": "Apple MacBook",
+    "slug": "apple-macbook",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12834,
+    "name": "RJ45 Connector",
+    "slug": "rj45-connector",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12837,
+    "name": "Wireless Charger",
+    "slug": "wireless-charger",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12840,
+    "name": "Charger Cable",
+    "slug": "charger-cable",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12843,
+    "name": "Mouse Pad",
+    "slug": "mouse-pad",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 12846,
+    "name": "Fiber Cable",
+    "slug": "fiber-cable",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12849,
+    "name": "OLT",
+    "slug": "olt",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12854,
+    "name": "Door Lock",
+    "slug": "door-lock",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12857,
+    "name": "Wireless Speaker",
+    "slug": "wireless-speaker",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 12904,
+    "name": "Samsung Smartphone",
+    "slug": "samsung-smartphone",
+    "parent": 0,
+    "count": 7
+  },
+  {
+    "legacy_id": 12927,
+    "name": "Nokia",
+    "slug": "nokia",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12932,
+    "name": "Oppo Smartphone",
+    "slug": "oppo-smartphone",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12935,
+    "name": "Monitor",
+    "slug": "monitor",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 12946,
+    "name": "Realme Smartphone",
+    "slug": "realme-smartphone",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12951,
+    "name": "Redmi Smartphone",
+    "slug": "redmi-smartphone",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 12992,
+    "name": "HP Laptop",
+    "slug": "hp-laptop",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 12997,
+    "name": "Vivo Smartphone",
+    "slug": "vivo-smartphone",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 13000,
+    "name": "Xiaomi Smartphone",
+    "slug": "xiaomi-smartphone",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 13003,
+    "name": "Sony",
+    "slug": "sony",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13006,
+    "name": "Media Converter",
+    "slug": "media-converter",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13009,
+    "name": "Wireless Access Point",
+    "slug": "wireless-access-point",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 13012,
+    "name": "Tenda Wireless Router",
+    "slug": "tenda-wireless-router",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 13015,
+    "name": "TPLink Wireless Router",
+    "slug": "tplink-wireless-router",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 13315,
+    "name": "Scientific Calculator",
+    "slug": "scientific-calculator",
+    "parent": 0,
+    "count": 8
+  },
+  {
+    "legacy_id": 13372,
+    "name": "SAN Storage",
+    "slug": "san-storage",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13427,
+    "name": "Cambium Networks",
+    "slug": "cambium-networks",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13433,
+    "name": "Mikrotik Products",
+    "slug": "mikrotik-products",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13454,
+    "name": "CPU",
+    "slug": "cpu",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 13493,
+    "name": "Microsoft Windows",
+    "slug": "microsoft-windows",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13504,
+    "name": "Xbox Console",
+    "slug": "xbox-console",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 13525,
+    "name": "Converter",
+    "slug": "converter",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 13576,
+    "name": "PC Builder",
+    "slug": "pc-builder",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13583,
+    "name": "Projector",
+    "slug": "projector",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 13589,
+    "name": "Camera",
+    "slug": "camera",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 13600,
+    "name": "Headphone",
+    "slug": "headphone",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 13606,
+    "name": "Speaker",
+    "slug": "speaker",
+    "parent": 0,
+    "count": 6
+  },
+  {
+    "legacy_id": 13618,
+    "name": "Switches",
+    "slug": "switches",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13626,
+    "name": "UTP Cable",
+    "slug": "utp-cable",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 13657,
+    "name": "Portable Hard Disk",
+    "slug": "portable-hard-disk",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13730,
+    "name": "Hikvision",
+    "slug": "hikvision",
+    "parent": 12768,
+    "count": 0
+  },
+  {
+    "legacy_id": 13755,
+    "name": "Casio",
+    "slug": "casio",
+    "parent": 13315,
+    "count": 5
+  },
+  {
+    "legacy_id": 13858,
+    "name": "Digital Locker &amp; Vault",
+    "slug": "digital-locker-vault",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 13859,
+    "name": "Deli",
+    "slug": "deli",
+    "parent": 13858,
+    "count": 1
+  },
+  {
+    "legacy_id": 13954,
+    "name": "MSI",
+    "slug": "msi-graphics-cards",
+    "parent": 3476,
+    "count": 2
+  },
+  {
+    "legacy_id": 14207,
+    "name": "Retail Shop",
+    "slug": "retail-shop",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14208,
+    "name": "Computer",
+    "slug": "computer",
+    "parent": 14207,
+    "count": 2
+  },
+  {
+    "legacy_id": 14218,
+    "name": "keyboard",
+    "slug": "keyboard",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 14228,
+    "name": "Gadgets",
+    "slug": "gadgets",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 14229,
+    "name": "Samsung",
+    "slug": "samsung",
+    "parent": 14228,
+    "count": 1
+  },
+  {
+    "legacy_id": 14239,
+    "name": "Mobile Shop",
+    "slug": "mobile-shop",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14266,
+    "name": "Netis Wireless Router",
+    "slug": "netis-wireless-router",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 14286,
+    "name": "Action Camera",
+    "slug": "action-camera",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 14377,
+    "name": "Infinix Smartphone",
+    "slug": "infinix-smartphone",
+    "parent": 12619,
+    "count": 1
+  },
+  {
+    "legacy_id": 14466,
+    "name": "OnePlus Smartphone",
+    "slug": "oneplus-smartphone",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 14587,
+    "name": "Lenovo Laptop",
+    "slug": "lenovo-laptop",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14589,
+    "name": "ASUS Laptop",
+    "slug": "asus-laptop",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14602,
+    "name": "Techno Mobile",
+    "slug": "techno-mobile",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14616,
+    "name": "Casio Watch",
+    "slug": "casio-watch",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 14634,
+    "name": "Bicycle",
+    "slug": "bicycle",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14643,
+    "name": "Honor Mobile",
+    "slug": "honor-mobile",
+    "parent": 0,
+    "count": 5
+  },
+  {
+    "legacy_id": 14648,
+    "name": "PC Casing",
+    "slug": "pc-casing",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 14659,
+    "name": "Sony Camera",
+    "slug": "sony-camera",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 14675,
+    "name": "Apple PC",
+    "slug": "apple-pc",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 14697,
+    "name": "Charger Fan",
+    "slug": "charger-fan",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 14701,
+    "name": "PC Mouse",
+    "slug": "pc-mouse",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 14706,
+    "name": "CAT6 UTP Cable",
+    "slug": "cat6-utp-cable",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14712,
+    "name": "Smart Phone",
+    "slug": "smart-phone",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14810,
+    "name": "Tecno Smartphone",
+    "slug": "tecno-smartphone",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14815,
+    "name": "E-Bike",
+    "slug": "e-bike",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14872,
+    "name": "JBL PartyBox",
+    "slug": "jbl-partybox",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14877,
+    "name": "Oraimo Necklace",
+    "slug": "oraimo-necklace",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14883,
+    "name": "Transcend",
+    "slug": "transcend",
+    "parent": 12740,
+    "count": 1
+  },
+  {
+    "legacy_id": 14890,
+    "name": "Cat6A Connector",
+    "slug": "cat6a-connector",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14955,
+    "name": "Tenda F9 Router",
+    "slug": "tenda-f9-router",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14958,
+    "name": "Nasal Strips",
+    "slug": "nasal-strips",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14983,
+    "name": "JBL Speaker",
+    "slug": "jbl-speaker",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 14988,
+    "name": "TV Box",
+    "slug": "tv-box",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 15000,
+    "name": "kimio Watch",
+    "slug": "kimio-watch",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 15022,
+    "name": "Honor Smartwatch",
+    "slug": "honor-smartwatch",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 15038,
+    "name": "MSI Motherboard",
+    "slug": "msi-motherboard",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 15077,
+    "name": "Earphones",
+    "slug": "earphones",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 15087,
+    "name": "Security Camera",
+    "slug": "security-camera",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 15121,
+    "name": "Tp Link Router",
+    "slug": "tp-link-router-2",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 15163,
+    "name": "Tab",
+    "slug": "tab",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 15229,
+    "name": "SD Card",
+    "slug": "sd-card",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 15654,
+    "name": "Sapphire",
+    "slug": "sapphire",
+    "parent": 3476,
+    "count": 1
+  },
+  {
+    "legacy_id": 18973,
+    "name": "Broadband Router",
+    "slug": "broadband-router",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19166,
+    "name": "Battery",
+    "slug": "battery",
+    "parent": 12598,
+    "count": 2
+  },
+  {
+    "legacy_id": 19474,
+    "name": "PS4",
+    "slug": "ps4",
+    "parent": 12613,
+    "count": 1
+  },
+  {
+    "legacy_id": 19499,
+    "name": "Sound Box",
+    "slug": "sound-box",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19504,
+    "name": "Cable",
+    "slug": "cable",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19553,
+    "name": "Memory Card",
+    "slug": "memory-card",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 19570,
+    "name": "Charger",
+    "slug": "charger",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 19599,
+    "name": "Laptop Stand",
+    "slug": "laptop-stand",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19615,
+    "name": "Calculator",
+    "slug": "calculator",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19765,
+    "name": "Cudy Wireless Router",
+    "slug": "cudy-wireless-router",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19814,
+    "name": "CCTV Camera",
+    "slug": "cctv-camera",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19845,
+    "name": "Digital Camera",
+    "slug": "digital-camera",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19944,
+    "name": "Multiplug",
+    "slug": "multiplug",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 19961,
+    "name": "Gaming Controller",
+    "slug": "gaming-controller",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 19978,
+    "name": "Mobile Stand",
+    "slug": "mobile-stand",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 20010,
+    "name": "Airpods",
+    "slug": "airpods",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 20020,
+    "name": "Wifi Receiver",
+    "slug": "wifi-receiver",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 20035,
+    "name": "Laptop Battery",
+    "slug": "laptop-battery",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 20042,
+    "name": "Wifi Repeater",
+    "slug": "wifi-repeater",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 20050,
+    "name": "Content Creator Camera",
+    "slug": "content-creator-camera",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 20057,
+    "name": "Smartphone",
+    "slug": "smartphone",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 32091,
+    "name": "Starlink Internet Kit",
+    "slug": "starlink-internet-kit",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 35797,
+    "name": "Earbuds and Earphones",
+    "slug": "earbuds-and-earphones",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 35862,
+    "name": "Battery",
+    "slug": "battery-ips",
+    "parent": 12792,
+    "count": 1
+  },
+  {
+    "legacy_id": 35921,
+    "name": "Watch",
+    "slug": "watch",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 35973,
+    "name": "Desktop PC",
+    "slug": "desktop-pc",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36351,
+    "name": "Rechargable fan",
+    "slug": "rechargable-fan",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36358,
+    "name": "Accessories",
+    "slug": "accessories",
+    "parent": 0,
+    "count": 3
+  },
+  {
+    "legacy_id": 36488,
+    "name": "Tablet PC",
+    "slug": "tablet-pc",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36522,
+    "name": "Power Backup",
+    "slug": "power-backup",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36541,
+    "name": "Networking Equipments",
+    "slug": "networking-equipments",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36567,
+    "name": "IT and Gadget Accessories",
+    "slug": "it-and-gadget-accessories",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36651,
+    "name": "Software",
+    "slug": "software",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36659,
+    "name": "PC",
+    "slug": "pc",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36673,
+    "name": "IT Shop",
+    "slug": "it-shop",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36802,
+    "name": "Air Cooler",
+    "slug": "air-cooler",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 36853,
+    "name": "iPad",
+    "slug": "ipad",
+    "parent": 0,
+    "count": 2
+  },
+  {
+    "legacy_id": 37248,
+    "name": "Others",
+    "slug": "others",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 43474,
+    "name": "Access Point",
+    "slug": "access-point",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 43475,
+    "name": "Ubiquiti",
+    "slug": "ubiquiti",
+    "parent": 43474,
+    "count": 1
+  },
+  {
+    "legacy_id": 43502,
+    "name": "Synology",
+    "slug": "synology",
+    "parent": 12527,
+    "count": 1
+  },
+  {
+    "legacy_id": 43503,
+    "name": "QNAP",
+    "slug": "qnap",
+    "parent": 12527,
+    "count": 1
+  },
+  {
+    "legacy_id": 43833,
+    "name": "Apple Pencil",
+    "slug": "apple-pencil",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 43858,
+    "name": "Apple Magic Keyboard",
+    "slug": "apple-magic-keyboard",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 43871,
+    "name": "E-Reader",
+    "slug": "e-reader",
+    "parent": 0,
+    "count": 4
+  },
+  {
+    "legacy_id": 43872,
+    "name": "Amazon Kindle",
+    "slug": "amazon-kindle",
+    "parent": 43871,
+    "count": 1
+  },
+  {
+    "legacy_id": 43873,
+    "name": "Kobo",
+    "slug": "kobo",
+    "parent": 43871,
+    "count": 1
+  },
+  {
+    "legacy_id": 43912,
+    "name": "BOOX GO",
+    "slug": "boox-go",
+    "parent": 43871,
+    "count": 1
+  },
+  {
+    "legacy_id": 43913,
+    "name": "Amazon Fire",
+    "slug": "amazon-fire",
+    "parent": 43871,
+    "count": 1
+  },
+  {
+    "legacy_id": 43955,
+    "name": "Smart Display with Alexa",
+    "slug": "smart-display-with-alexa",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 43972,
+    "name": "Mesh WiFi Router",
+    "slug": "mesh-wifi-router",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 43973,
+    "name": "Google",
+    "slug": "google",
+    "parent": 43972,
+    "count": 1
+  },
+  {
+    "legacy_id": 44024,
+    "name": "Smart Doorbell",
+    "slug": "smart-doorbell",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 44200,
+    "name": "Portable Power Station",
+    "slug": "portable-power-station",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 44236,
+    "name": "Solar Panel",
+    "slug": "solar-panel",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 44267,
+    "name": "Solar Inverter",
+    "slug": "solar-inverter",
+    "parent": 0,
+    "count": 1
+  },
+  {
+    "legacy_id": 44270,
+    "name": "Printer Toner &amp; Ink Cartridges",
+    "slug": "printer-toner-ink-cartridges",
+    "parent": 0,
+    "count": 1
+  }
+]
