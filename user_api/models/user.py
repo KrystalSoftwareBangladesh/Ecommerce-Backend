@@ -57,6 +57,12 @@ class User(AbstractUser):
         unique=True,
         error_messages={"unique": "A user with that username already exists."},
     )
+    legacy_id = models.BigIntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     is_deleted = models.BooleanField(default=False)
     added_at = models.DateTimeField(_('Added Date Time'), auto_now_add=True,)
     updated_at = models.DateTimeField(_('Updated Date Time'), auto_now=True,)
