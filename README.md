@@ -146,3 +146,9 @@ Export blog post images
 ```bash
 python scripts/export_woocommerce_blog_post_images.py
 ```
+Import blog post images and map
+```bash
+python manage.py import_blog_post_images \
+    resources/blog_post_images.json \
+    --workers 5
+```
