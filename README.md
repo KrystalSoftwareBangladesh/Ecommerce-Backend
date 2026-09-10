@@ -86,7 +86,11 @@ Map products and categories
 ```bash
 python manage.py import_product_categories resources/product_categories.json
 ```
-Import product images
+Export product images
+```bash
+python scripts/export_woocommerce_product_images.py
+```
+Import product images and map
 ```bash
 python manage.py import_product_images \
     resources/product_images.json \
@@ -137,4 +141,14 @@ python scripts/export_woocommerce_blog_post_categories.py
 Map blog posts and categories
 ```bash
 python manage.py import_blog_post_categories resources/blog_post_categories.json
+```
+Export blog post images
+```bash
+python scripts/export_woocommerce_blog_post_images.py
+```
+Import blog post images and map
+```bash
+python manage.py import_blog_post_images \
+    resources/blog_post_images.json \
+    --workers 5
 ```
