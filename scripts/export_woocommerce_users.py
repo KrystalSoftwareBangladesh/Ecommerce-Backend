@@ -41,9 +41,15 @@ LEFT JOIN wpoy_usermeta billing_phone
     ON billing_phone.user_id = u.ID
     AND billing_phone.meta_key = 'billing_phone'
 
-LEFT JOIN wpoy_usermeta capabilities
+LEFT JOIN (
+    SELECT
+        user_id,
+        MAX(meta_value) AS meta_value
+    FROM wpoy_usermeta
+    WHERE meta_key = 'wpoy_capabilities'
+    GROUP BY user_id
+) capabilities
     ON capabilities.user_id = u.ID
-    AND capabilities.meta_key = 'wpoy_capabilities'
 
 ORDER BY u.ID;
 """
