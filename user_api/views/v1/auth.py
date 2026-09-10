@@ -13,7 +13,6 @@ from drf_spectacular.utils import extend_schema
 import logging
 
 from user_api.models import User
-
 from user_api.serializers import TokenSerializer
 from user_api.serializers import ChangePasswordSerializer
 from user_api.serializers import CustomerSignupSerializer

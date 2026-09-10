@@ -346,9 +346,9 @@ class UserExistenceCheckView(APIView):
 
         user = None
         if data.get("email"):
-            user = User.objects.filter(email=data["email"]).first()
+            value = data["email"].strip().lower()
+            user = User.objects.filter(email=value).first()
             field = "email"
-            value = data["email"]
         elif data.get("username"):
             user = User.objects.filter(username=data["username"]).first()
             field = "username"
