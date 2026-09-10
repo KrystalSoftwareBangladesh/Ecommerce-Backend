@@ -160,3 +160,11 @@ Import users & customers
 ```bash
 python manage.py import_users resources/users.json
 ```
+Export map of blog posts and authors
+```bash
+python scripts/export_woocommerce_blog_post_authors.py
+```
+Map blog posts and authors
+```bash
+python manage.py import_blog_post_authors resources/blog_post_authors.json
+```
