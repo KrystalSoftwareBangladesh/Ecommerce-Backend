@@ -14,9 +14,8 @@ class TokenSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        credential = attrs["credential"]
+        credential = attrs["credential"].strip().lower()
         password = attrs["password"]
-        credential = credential.lower()
 
         user = self._get_user(credential, password)
         if not user:
@@ -110,8 +109,11 @@ class CustomerSignupSerializer(serializers.Serializer):
     access = serializers.CharField(read_only=True)
 
     def validate_email(self, value):
-        """Ensure email is unique."""
-        if User.objects.filter(email__iexact=value).exists():
+        """
+            Ensure email is unique.
+        """
+        value = value.strip().lower()
+        if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(
                 "A user with this email already exists."
             )
@@ -132,14 +134,13 @@ class CustomerSignupSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, validated_data):
         """
-        Create User and CustomerProfile atomically.
-        Return customer profile with JWT tokens.
+            Create User and CustomerProfile atomically.
+            Return customer profile with JWT tokens.
         """
         from customer_api.models import CustomerProfile
 
         # Extract data
         email = validated_data.pop('email')
-        email = email.lower()
         password = validated_data.pop('password')
         validated_data.pop('confirm_password')  # Remove confirm_password
 

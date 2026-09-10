@@ -1,6 +1,7 @@
+# user_api/models/user.py
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractUser, BaseUserManager  # noqa
 
 
@@ -49,7 +50,7 @@ class User(AbstractUser):
         _("email address"),
         blank=True,
         null=True,
-        unique=True,
+        # unique=True,
     )
     username = models.CharField(
         max_length=150,
@@ -69,6 +70,11 @@ class User(AbstractUser):
     # REQUIRED_FIELDS = ['email']
     # REQUIRED_FIELDS = []
 
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
+
     @property
     def full_name(self) -> str:
         return " ".join(filter(None, [
@@ -85,6 +91,12 @@ class User(AbstractUser):
             ("change_user_password", "Can change user password"),
             ("assign_user_role", "Can assign user role"),
             ("remove_user_role", "Can remove user role"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                name="unique_user_email_ci",
+            ),
         ]
 
     def __str__(self):

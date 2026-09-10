@@ -169,20 +169,31 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists."
+            )
+        return value
+
     def create(self, validated_data):
         validated_data.pop("confirm_password")
-
         password = validated_data.pop("password")
+        # user = User(**validated_data, role="STAFF",)
+        # user.set_password(password)
+        # user.save()
 
-        user = User(**validated_data, role="STAFF",)
-        user.set_password(password)
-        user.save()
-
-        return user
+        # return user
+        return User.objects.create_user(
+            email=validated_data.pop("email"),
+            password=password,
+            role="STAFF",
+            **validated_data,
+        )
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = [
@@ -195,6 +206,18 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "username",
         ]
         read_only_fields = ["id"]
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+
+        if User.objects.filter(email=value).exclude(
+            pk=self.instance.pk
+        ).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists."
+            )
+
+        return value
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -293,7 +316,7 @@ class ChangeUserEmailSerializer(serializers.ModelSerializer):
         value = value.strip().lower()
 
         if User.objects.filter(
-            email__iexact=value
+            email=value
         ).exclude(
             pk=self.instance.pk
         ).exists():
