@@ -152,3 +152,11 @@ python manage.py import_blog_post_images \
     resources/blog_post_images.json \
     --workers 5
 ```
+Export users
+```bash
+python scripts/export_woocommerce_users.py
+```
+Import users & customers
+```bash
+python manage.py import_users resources/users.json
+```
