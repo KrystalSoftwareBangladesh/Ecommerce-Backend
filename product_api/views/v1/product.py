@@ -29,7 +29,6 @@ from cart_api.models import CartItem
 from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
-    ProductCreateUpdateSerializer,
     ProductCreateSerializer,
     ProductUpdateSerializer,
     ProductVariantListSerializer,
@@ -109,7 +108,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
 
         queryset = (
             Product.objects.filter(is_active=True)
-            .select_related("origin")
+            .select_related("origin", "brand")
             .prefetch_related(
                 "categories",
                 Prefetch(
@@ -172,7 +171,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return ProductCreateSerializer
         if self.action in ['update', 'partial_update']:
             return ProductUpdateSerializer
-        return ProductCreateUpdateSerializer
+        return ProductDetailSerializer
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
