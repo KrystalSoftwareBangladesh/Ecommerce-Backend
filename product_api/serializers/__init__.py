@@ -14,6 +14,7 @@ from .brand import (
     BrandListSerializer,
     BrandDetailSerializer,
     BrandCreateUpdateSerializer,
+    BrandSummarySerializer,
 )
 from .product_image import (
     ProductDefaultImageSerializer,
@@ -38,6 +39,7 @@ __all__ = [
     "BrandListSerializer",
     "BrandDetailSerializer",
     "BrandCreateUpdateSerializer",
+    "BrandSummarySerializer",
     "ProductDefaultImageSerializer",
     "ProductImageListSerializer",
     "ProductImageDetailSerializer",

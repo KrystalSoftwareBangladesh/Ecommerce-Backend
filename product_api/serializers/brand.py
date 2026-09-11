@@ -112,3 +112,11 @@ class BrandCreateUpdateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             user=self.context["request"].user,
         )
+
+
+class BrandSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = [
+            'id', 'name', 'slug',
+        ]
