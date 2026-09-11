@@ -196,3 +196,7 @@ Export brand metadata
 ```bash
 python scripts/export_woocommerce_brand_metadata.py
 ```
+Import and map brand metadata
+```bash
+python manage.py import_brand_metadata resources/brand_metadata.json
+```
