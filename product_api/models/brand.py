@@ -41,6 +41,20 @@ class Brand(TimeStampedModel, UserStampedModel, SoftDeleteModel):
             Identifier of this brand in the system it was migrated from.
         ''',
     )
+    seo_title = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+    )
+    seo_description = models.TextField(
+        blank=True,
+        default="",
+    )
+    seo_focus_keyword = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+    )
 
     class Meta:
         db_table = 'brands'
