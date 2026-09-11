@@ -184,3 +184,11 @@ Map brands and products
 ```bash
 python manage.py import_product_brands resources/product_brands.json
 ```
+Export brand images
+```bash
+python scripts/export_woocommerce_brand_images.py
+```
+Import and map brand images
+```bash
+python manage.py import_brand_images resources/brand_images.json
+```

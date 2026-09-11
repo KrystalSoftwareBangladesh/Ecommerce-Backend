@@ -1,4 +1,4 @@
-# blog_api/management/commands/import_blog_post_images.py
+# product_api/management/commands/import_brand_images.py
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -10,20 +10,20 @@ import requests
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 
-from blog_api.models import BlogPost
+from product_api.models import Brand
 
 
 class Command(BaseCommand):
     help = (
-        "Download and import BlogPost featured images "
-        "from WordPress blog_post_images.json"
+        "Download and import Brand logos "
+        "from WordPress brand_images.json"
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "file_path",
             type=str,
-            help="Path to blog_post_images.json",
+            help="Path to brand_images.json",
         )
 
         parser.add_argument(
@@ -79,52 +79,52 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.NOTICE(
-                f"Loaded {len(images_data)} featured images"
+                f"Loaded {len(images_data)} Brand logos"
             )
         )
 
         #
-        # Preload BlogPosts by legacy ID.
+        # Preload Brands by legacy ID.
         #
-        blog_posts = {
-            blog_post.legacy_id: blog_post
-            for blog_post in BlogPost.objects.only(
+        brands = {
+            brand.legacy_id: brand
+            for brand in Brand.objects.only(
                 "id",
                 "legacy_id",
-                "title",
-                "featured_image",
+                "name",
+                "logo",
             )
-            if blog_post.legacy_id is not None
+            if brand.legacy_id is not None
         }
 
         image_tasks = []
-        missing_blog_posts = set()
+        missing_brands = set()
         skipped_count = 0
 
         for image_data in images_data:
             legacy_id = image_data.get(
-                "blog_post_legacy_id"
+                "brand_legacy_id"
             )
 
-            blog_post = blog_posts.get(legacy_id)
+            brand = brands.get(legacy_id)
 
-            if not blog_post:
-                missing_blog_posts.add(legacy_id)
+            if not brand:
+                missing_brands.add(legacy_id)
                 continue
 
             #
-            # Skip BlogPosts that already have
-            # a featured image.
+            # Skip Brands that already have
+            # a logo.
             #
-            if blog_post.featured_image:
+            if brand.logo:
                 skipped_count += 1
                 continue
 
             image_tasks.append(
                 {
-                    "blog_post_id": blog_post.id,
-                    "blog_post_title": blog_post.title,
-                    "blog_post_legacy_id": legacy_id,
+                    "brand_id": brand.id,
+                    "brand_name": brand.name,
+                    "brand_legacy_id": legacy_id,
                     "image_data": image_data,
                 }
             )
@@ -137,8 +137,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.NOTICE(
-                f"Skipping {skipped_count} existing "
-                "featured images"
+                f"Skipping {skipped_count} existing logos"
             )
         )
 
@@ -178,7 +177,7 @@ class Command(BaseCommand):
                 try:
                     content = future.result()
 
-                    self._save_featured_image(
+                    self._save_logo(
                         task=task,
                         content=content,
                     )
@@ -193,8 +192,8 @@ class Command(BaseCommand):
                     self.stderr.write(
                         self.style.ERROR(
                             "Failed image "
-                            f"blog_post="
-                            f"{task['blog_post_legacy_id']} "
+                            f"brand="
+                            f"{task['brand_legacy_id']} "
                             f"attachment="
                             f"{image_data.get('attachment_id')} "
                             f"url="
@@ -226,8 +225,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.WARNING(
-                f"Missing BlogPosts: "
-                f"{len(missing_blog_posts)}"
+                f"Missing Brands: "
+                f"{len(missing_brands)}"
             )
         )
 
@@ -267,7 +266,7 @@ class Command(BaseCommand):
 
         raise last_error
 
-    def _save_featured_image(
+    def _save_logo(
         self,
         task,
         content,
@@ -282,11 +281,11 @@ class Command(BaseCommand):
             relative_file_path
         ).name
 
-        blog_post = BlogPost.objects.get(
-            id=task["blog_post_id"]
+        brand = Brand.objects.get(
+            id=task["brand_id"]
         )
 
-        blog_post.featured_image.save(
+        brand.logo.save(
             filename,
             ContentFile(content),
             save=True,

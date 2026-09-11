@@ -1,0 +1,2347 @@
+[
+  {
+    "brand_legacy_id": 51,
+    "brand_name": "Apple",
+    "attachment_id": 7690,
+    "relative_file_path": "2024/06/APPLE-2.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/APPLE-2.webp"
+  },
+  {
+    "brand_legacy_id": 52,
+    "brand_name": "Asus",
+    "attachment_id": 7691,
+    "relative_file_path": "2024/06/ASUS-1.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/ASUS-1.webp"
+  },
+  {
+    "brand_legacy_id": 53,
+    "brand_name": "A4tech",
+    "attachment_id": 7684,
+    "relative_file_path": "2024/06/A4TECH-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/A4TECH-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1062,
+    "brand_name": "Acer",
+    "attachment_id": 7686,
+    "relative_file_path": "2024/06/ACER-Best-Computer-Hub-Ltd-1.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/ACER-Best-Computer-Hub-Ltd-1.webp"
+  },
+  {
+    "brand_legacy_id": 1063,
+    "brand_name": "ANKER",
+    "attachment_id": 7687,
+    "relative_file_path": "2024/06/ANKER-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/ANKER-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1064,
+    "brand_name": "BASEUS",
+    "attachment_id": 7692,
+    "relative_file_path": "2024/06/BASEUS-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/BASEUS-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1065,
+    "brand_name": "BDCOM",
+    "attachment_id": 7694,
+    "relative_file_path": "2024/06/BDCOM-Best-Computer-Hub-Ltd-1.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/BDCOM-Best-Computer-Hub-Ltd-1.webp"
+  },
+  {
+    "brand_legacy_id": 1066,
+    "brand_name": "BOYA",
+    "attachment_id": 7695,
+    "relative_file_path": "2024/06/BOYA-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/BOYA-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1067,
+    "brand_name": "CAMBIUM NETWORK",
+    "attachment_id": 7696,
+    "relative_file_path": "2024/06/CAMBIUM-NETWORK-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/CAMBIUM-NETWORK-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1068,
+    "brand_name": "CISCO",
+    "attachment_id": 7697,
+    "relative_file_path": "2024/06/CISCO-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/CISCO-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1069,
+    "brand_name": "Cudy",
+    "attachment_id": 7698,
+    "relative_file_path": "2024/06/CUDY-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/CUDY-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1070,
+    "brand_name": "DAHUA",
+    "attachment_id": 7699,
+    "relative_file_path": "2024/06/DAHUA-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/DAHUA-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1071,
+    "brand_name": "DELL",
+    "attachment_id": 7700,
+    "relative_file_path": "2024/06/DELL-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/DELL-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1072,
+    "brand_name": "DJI",
+    "attachment_id": 7701,
+    "relative_file_path": "2024/06/DJI-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/DJI-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1073,
+    "brand_name": "DLINK",
+    "attachment_id": 7703,
+    "relative_file_path": "2024/06/DLINK-Best-Computer-Hub-Ltd-1.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/DLINK-Best-Computer-Hub-Ltd-1.webp"
+  },
+  {
+    "brand_legacy_id": 1074,
+    "brand_name": "DTECH",
+    "attachment_id": 7704,
+    "relative_file_path": "2024/06/DTECH-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/DTECH-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1075,
+    "brand_name": "EDIFIER",
+    "attachment_id": 7705,
+    "relative_file_path": "2024/06/EDIFIER-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/EDIFIER-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1076,
+    "brand_name": "GOPRO",
+    "attachment_id": 7706,
+    "relative_file_path": "2024/06/GOPRO-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/GOPRO-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1077,
+    "brand_name": "Gudsen",
+    "attachment_id": 7707,
+    "relative_file_path": "2024/06/GUDSON-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/GUDSON-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1078,
+    "brand_name": "HIKVISION",
+    "attachment_id": 7708,
+    "relative_file_path": "2024/06/HIKVISION-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/HIKVISION-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1079,
+    "brand_name": "HOCO",
+    "attachment_id": 7709,
+    "relative_file_path": "2024/06/HOCO-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/HOCO-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1080,
+    "brand_name": "HP",
+    "attachment_id": 7710,
+    "relative_file_path": "2024/06/HP-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/HP-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1081,
+    "brand_name": "HUAWEI",
+    "attachment_id": 7711,
+    "relative_file_path": "2024/06/HUAWEI-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/HUAWEI-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1082,
+    "brand_name": "JBL",
+    "attachment_id": 7712,
+    "relative_file_path": "2024/06/JBL-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/JBL-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1083,
+    "brand_name": "LOGITECH",
+    "attachment_id": 7713,
+    "relative_file_path": "2024/06/LOGITECH-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/LOGITECH-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1084,
+    "brand_name": "MIKROTIK",
+    "attachment_id": 7714,
+    "relative_file_path": "2024/06/MIKROTIK-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/MIKROTIK-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1085,
+    "brand_name": "MSI",
+    "attachment_id": 7715,
+    "relative_file_path": "2024/06/MSI-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/MSI-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1086,
+    "brand_name": "NETGEAR",
+    "attachment_id": 7716,
+    "relative_file_path": "2024/06/NETGEAR-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/NETGEAR-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1087,
+    "brand_name": "NETIS",
+    "attachment_id": 7717,
+    "relative_file_path": "2024/06/NETIS-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/NETIS-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1088,
+    "brand_name": "Oraimo",
+    "attachment_id": 7718,
+    "relative_file_path": "2024/06/ORIMO-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/ORIMO-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1089,
+    "brand_name": "TENDA",
+    "attachment_id": 7719,
+    "relative_file_path": "2024/06/TENDA-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/TENDA-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1090,
+    "brand_name": "TOTEN",
+    "attachment_id": 7720,
+    "relative_file_path": "2024/06/TOTEN-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/TOTEN-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1091,
+    "brand_name": "TP-LINK",
+    "attachment_id": 7722,
+    "relative_file_path": "2024/06/TP-LINK-Best-Computer-Hub-Ltd-1.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/TP-LINK-Best-Computer-Hub-Ltd-1.webp"
+  },
+  {
+    "brand_legacy_id": 1092,
+    "brand_name": "UGREEN",
+    "attachment_id": 7723,
+    "relative_file_path": "2024/06/UGREEN-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/UGREEN-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1093,
+    "brand_name": "V-SOL",
+    "attachment_id": 7724,
+    "relative_file_path": "2024/06/V-SOL-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/V-SOL-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1094,
+    "brand_name": "XGTECH",
+    "attachment_id": 7725,
+    "relative_file_path": "2024/06/XGTECH-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/XGTECH-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 1466,
+    "brand_name": "ZKTeco",
+    "attachment_id": 8220,
+    "relative_file_path": "2024/06/ZKTECO.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/ZKTECO.webp"
+  },
+  {
+    "brand_legacy_id": 1467,
+    "brand_name": "Stata",
+    "attachment_id": 8221,
+    "relative_file_path": "2024/06/Stata.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/Stata.webp"
+  },
+  {
+    "brand_legacy_id": 1468,
+    "brand_name": "Grandstream",
+    "attachment_id": 8222,
+    "relative_file_path": "2024/06/Grandstream.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/Grandstream.webp"
+  },
+  {
+    "brand_legacy_id": 1469,
+    "brand_name": "Deli",
+    "attachment_id": 8223,
+    "relative_file_path": "2024/06/DELI.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/DELI.webp"
+  },
+  {
+    "brand_legacy_id": 1470,
+    "brand_name": "HPE",
+    "attachment_id": 8224,
+    "relative_file_path": "2024/06/HPE.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/HPE.webp"
+  },
+  {
+    "brand_legacy_id": 1471,
+    "brand_name": "Synology",
+    "attachment_id": 8225,
+    "relative_file_path": "2024/06/synology.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/synology.webp"
+  },
+  {
+    "brand_legacy_id": 1472,
+    "brand_name": "Kaspersky",
+    "attachment_id": 8226,
+    "relative_file_path": "2024/06/kaspersky.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/kaspersky.webp"
+  },
+  {
+    "brand_legacy_id": 1473,
+    "brand_name": "Microsoft",
+    "attachment_id": 8227,
+    "relative_file_path": "2024/06/microsoft.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/microsoft.webp"
+  },
+  {
+    "brand_legacy_id": 1474,
+    "brand_name": "ESET",
+    "attachment_id": 8228,
+    "relative_file_path": "2024/06/eset.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/eset.webp"
+  },
+  {
+    "brand_legacy_id": 1475,
+    "brand_name": "Red Hat",
+    "attachment_id": 8229,
+    "relative_file_path": "2024/06/red-hat.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/red-hat.webp"
+  },
+  {
+    "brand_legacy_id": 1476,
+    "brand_name": "Sony",
+    "attachment_id": 8230,
+    "relative_file_path": "2024/06/sony.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/sony.webp"
+  },
+  {
+    "brand_legacy_id": 1477,
+    "brand_name": "Samsung",
+    "attachment_id": 8231,
+    "relative_file_path": "2024/06/SAMSUNG.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/SAMSUNG.webp"
+  },
+  {
+    "brand_legacy_id": 1478,
+    "brand_name": "Haier",
+    "attachment_id": 8232,
+    "relative_file_path": "2024/06/HAIER.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/HAIER.webp"
+  },
+  {
+    "brand_legacy_id": 1479,
+    "brand_name": "Gree",
+    "attachment_id": 8233,
+    "relative_file_path": "2024/06/Gree-logo.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/Gree-logo.webp"
+  },
+  {
+    "brand_legacy_id": 1480,
+    "brand_name": "Orvibo",
+    "attachment_id": 8234,
+    "relative_file_path": "2024/06/Artboard-52.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/Artboard-52.webp"
+  },
+  {
+    "brand_legacy_id": 1481,
+    "brand_name": "SmartX",
+    "attachment_id": 8235,
+    "relative_file_path": "2024/06/Smartx-logo.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2024/06/Smartx-logo.webp"
+  },
+  {
+    "brand_legacy_id": 17920,
+    "brand_name": "Realme",
+    "attachment_id": 28853,
+    "relative_file_path": "2025/03/Realme_logo.svg.png",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/03/Realme_logo.svg.png"
+  },
+  {
+    "brand_legacy_id": 19131,
+    "brand_name": "Steam Deck",
+    "attachment_id": 30154,
+    "relative_file_path": "2025/03/Steam_Deck_colored_logo.svg.png",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/03/Steam_Deck_colored_logo.svg.png"
+  },
+  {
+    "brand_legacy_id": 19132,
+    "brand_name": "Nintendo",
+    "attachment_id": 30155,
+    "relative_file_path": "2025/03/images.png",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/03/images.png"
+  },
+  {
+    "brand_legacy_id": 19133,
+    "brand_name": "PlayStation",
+    "attachment_id": 30156,
+    "relative_file_path": "2025/03/PLAYSTATION.png",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/03/PLAYSTATION.png"
+  },
+  {
+    "brand_legacy_id": 19134,
+    "brand_name": "Xbox",
+    "attachment_id": 30157,
+    "relative_file_path": "2025/03/Xbox.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/03/Xbox.webp"
+  },
+  {
+    "brand_legacy_id": 37537,
+    "brand_name": "Tecno",
+    "attachment_id": 44093,
+    "relative_file_path": "2025/08/tecno-best-computer-hub.png",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/tecno-best-computer-hub.png"
+  },
+  {
+    "brand_legacy_id": 37538,
+    "brand_name": "Lenovo",
+    "attachment_id": 44094,
+    "relative_file_path": "2025/08/lenovo-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/lenovo-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37539,
+    "brand_name": "Gigabyte",
+    "attachment_id": 44095,
+    "relative_file_path": "2025/08/gigabyte-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/gigabyte-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37540,
+    "brand_name": "AMD",
+    "attachment_id": 44096,
+    "relative_file_path": "2025/08/amd-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/amd-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37541,
+    "brand_name": "Intel",
+    "attachment_id": 44097,
+    "relative_file_path": "2025/08/intel-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/intel-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37542,
+    "brand_name": "ASRock",
+    "attachment_id": 44098,
+    "relative_file_path": "2025/08/asrock-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/asrock-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37543,
+    "brand_name": "Biostar",
+    "attachment_id": 44099,
+    "relative_file_path": "2025/08/Biostar-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Biostar-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37548,
+    "brand_name": "Revenger",
+    "attachment_id": 44100,
+    "relative_file_path": "2025/08/revenger-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/revenger-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37556,
+    "brand_name": "Crucial",
+    "attachment_id": 44102,
+    "relative_file_path": "2025/08/Crucial-Best-Computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Crucial-Best-Computer.webp"
+  },
+  {
+    "brand_legacy_id": 37557,
+    "brand_name": "Corsair",
+    "attachment_id": 44103,
+    "relative_file_path": "2025/08/Corsair-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Corsair-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37560,
+    "brand_name": "Adata",
+    "attachment_id": 44104,
+    "relative_file_path": "2025/08/Adata-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Adata-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 37564,
+    "brand_name": "Apacer",
+    "attachment_id": 44105,
+    "relative_file_path": "2025/08/Apacer-Best-Computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Apacer-Best-Computer.webp"
+  },
+  {
+    "brand_legacy_id": 37570,
+    "brand_name": "G.Skill",
+    "attachment_id": 44106,
+    "relative_file_path": "2025/08/G.Skill-Best-Computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/G.Skill-Best-Computer.webp"
+  },
+  {
+    "brand_legacy_id": 37578,
+    "brand_name": "Geil",
+    "attachment_id": 44107,
+    "relative_file_path": "2025/08/geil-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/geil-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37582,
+    "brand_name": "Kingston",
+    "attachment_id": 44108,
+    "relative_file_path": "2025/08/Kingston-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kingston-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37584,
+    "brand_name": "Lexar",
+    "attachment_id": 44109,
+    "relative_file_path": "2025/08/Lexar-Best-Computer-Hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Lexar-Best-Computer-Hub.webp"
+  },
+  {
+    "brand_legacy_id": 37598,
+    "brand_name": "OCPC",
+    "attachment_id": 44110,
+    "relative_file_path": "2025/08/ocpc-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/ocpc-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37599,
+    "brand_name": "Team",
+    "attachment_id": 44111,
+    "relative_file_path": "2025/08/Team-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Team-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37621,
+    "brand_name": "Transcend",
+    "attachment_id": 44112,
+    "relative_file_path": "2025/08/Transcend-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Transcend-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37622,
+    "brand_name": "Colorful",
+    "attachment_id": 44113,
+    "relative_file_path": "2025/08/colorful-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/colorful-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37623,
+    "brand_name": "Sapphire",
+    "attachment_id": 44114,
+    "relative_file_path": "2025/08/sapphire-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/sapphire-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37624,
+    "brand_name": "PELADN",
+    "attachment_id": 44115,
+    "relative_file_path": "2025/08/peladn-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/peladn-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37625,
+    "brand_name": "Zotac",
+    "attachment_id": 44116,
+    "relative_file_path": "2025/08/zotac-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/zotac-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37626,
+    "brand_name": "PNY",
+    "attachment_id": 44117,
+    "relative_file_path": "2025/08/PNY-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/PNY-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37627,
+    "brand_name": "Cooler Master",
+    "attachment_id": 44118,
+    "relative_file_path": "2025/08/cooler-master-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/cooler-master-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37628,
+    "brand_name": "Thermaltake",
+    "attachment_id": 44119,
+    "relative_file_path": "2025/08/Thermaltake-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Thermaltake-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37629,
+    "brand_name": "Antec",
+    "attachment_id": 44120,
+    "relative_file_path": "2025/08/Antec-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Antec-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37630,
+    "brand_name": "Benq",
+    "attachment_id": 44121,
+    "relative_file_path": "2025/08/Benq-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Benq-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37631,
+    "brand_name": "LG",
+    "attachment_id": 44122,
+    "relative_file_path": "2025/08/LG-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/LG-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37632,
+    "brand_name": "ViewSonic",
+    "attachment_id": 44123,
+    "relative_file_path": "2025/08/viewsonic-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/viewsonic-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37633,
+    "brand_name": "Philips",
+    "attachment_id": 44124,
+    "relative_file_path": "2025/08/Philips-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Philips-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37634,
+    "brand_name": "AOC",
+    "attachment_id": 44125,
+    "relative_file_path": "2025/08/AOC-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/AOC-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37635,
+    "brand_name": "Netac",
+    "attachment_id": 44126,
+    "relative_file_path": "2025/08/Netac-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Netac-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37636,
+    "brand_name": "Deepcool",
+    "attachment_id": 44127,
+    "relative_file_path": "2025/08/Deepcool-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Deepcool-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37637,
+    "brand_name": "AULA",
+    "attachment_id": 44128,
+    "relative_file_path": "2025/08/Aula-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Aula-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37638,
+    "brand_name": "Dareu",
+    "attachment_id": 44129,
+    "relative_file_path": "2025/08/Dareu-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Dareu-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37639,
+    "brand_name": "HAVIT",
+    "attachment_id": 44130,
+    "relative_file_path": "2025/08/Havit-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Havit-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37640,
+    "brand_name": "Matias",
+    "attachment_id": 44131,
+    "relative_file_path": "2025/08/Matias-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Matias-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37641,
+    "brand_name": "Meetion",
+    "attachment_id": 44132,
+    "relative_file_path": "2025/08/Meetion-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Meetion-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37642,
+    "brand_name": "Micropack",
+    "attachment_id": 44133,
+    "relative_file_path": "2025/08/Micropack-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Micropack-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37643,
+    "brand_name": "NZXT",
+    "attachment_id": 44134,
+    "relative_file_path": "2025/08/NZXT-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/NZXT-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37644,
+    "brand_name": "Rapoo",
+    "attachment_id": 44135,
+    "relative_file_path": "2025/08/Rapoo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Rapoo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37645,
+    "brand_name": "REDRAGON",
+    "attachment_id": 44136,
+    "relative_file_path": "2025/08/Redragon-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Redragon-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37646,
+    "brand_name": "SteelSeries",
+    "attachment_id": 44137,
+    "relative_file_path": "2025/08/SteelSeries-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/SteelSeries-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37647,
+    "brand_name": "T-WOLF",
+    "attachment_id": 44138,
+    "relative_file_path": "2025/08/T-wolf-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/T-wolf-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37648,
+    "brand_name": "ThundeRobot",
+    "attachment_id": 44140,
+    "relative_file_path": "2025/08/Thunderobot-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Thunderobot-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37649,
+    "brand_name": "Fantech",
+    "attachment_id": 44141,
+    "relative_file_path": "2025/08/Fantech-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Fantech-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37650,
+    "brand_name": "RAZER",
+    "attachment_id": 44142,
+    "relative_file_path": "2025/08/Razer-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Razer-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37651,
+    "brand_name": "Xtrike Me",
+    "attachment_id": 44143,
+    "relative_file_path": "2025/08/xtrike-me-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/xtrike-me-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37652,
+    "brand_name": "Bose",
+    "attachment_id": 44144,
+    "relative_file_path": "2025/08/Bose-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Bose-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37653,
+    "brand_name": "F&amp;D",
+    "attachment_id": 44145,
+    "relative_file_path": "2025/08/fD-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/fD-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37654,
+    "brand_name": "Microlab",
+    "attachment_id": 44146,
+    "relative_file_path": "2025/08/Microlab-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Microlab-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37655,
+    "brand_name": "Thonet &amp; Vander",
+    "attachment_id": 44147,
+    "relative_file_path": "2025/08/ThonetVander-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/ThonetVander-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37656,
+    "brand_name": "Xtreme",
+    "attachment_id": 44154,
+    "relative_file_path": "2025/08/xtreme-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/xtreme-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37657,
+    "brand_name": "Yamaha",
+    "attachment_id": 44155,
+    "relative_file_path": "2025/08/Yamaha-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Yamaha-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37658,
+    "brand_name": "JABRA",
+    "attachment_id": 44156,
+    "relative_file_path": "2025/08/Jabra-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Jabra-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37659,
+    "brand_name": "RODE",
+    "attachment_id": 44157,
+    "relative_file_path": "2025/08/Rode-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Rode-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37660,
+    "brand_name": "Meta",
+    "attachment_id": 44158,
+    "relative_file_path": "2025/08/Meta-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Meta-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37661,
+    "brand_name": "Pico",
+    "attachment_id": 44159,
+    "relative_file_path": "2025/08/pico-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/pico-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37942,
+    "brand_name": "AVerMedia",
+    "attachment_id": 44171,
+    "relative_file_path": "2025/08/AverMedia-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/AverMedia-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37943,
+    "brand_name": "Orico",
+    "attachment_id": 44172,
+    "relative_file_path": "2025/08/Orico-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Orico-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37944,
+    "brand_name": "Value-Top",
+    "attachment_id": 44173,
+    "relative_file_path": "2025/08/Value-top-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Value-top-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37945,
+    "brand_name": "SanDisk",
+    "attachment_id": 44174,
+    "relative_file_path": "2025/08/SanDisk-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/SanDisk-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37946,
+    "brand_name": "Seagate",
+    "attachment_id": 44175,
+    "relative_file_path": "2025/08/Seagate-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Seagate-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37947,
+    "brand_name": "Western Digital",
+    "attachment_id": 44176,
+    "relative_file_path": "2025/08/Western-Digital-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Western-Digital-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37948,
+    "brand_name": "Toshiba",
+    "attachment_id": 44177,
+    "relative_file_path": "2025/08/Toshiba-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Toshiba-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37949,
+    "brand_name": "EKWB",
+    "attachment_id": 44178,
+    "relative_file_path": "2025/08/ekwb-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/ekwb-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37950,
+    "brand_name": "Lian Li",
+    "attachment_id": 44179,
+    "relative_file_path": "2025/08/Lian-li-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Lian-li-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37951,
+    "brand_name": "Apollo",
+    "attachment_id": 44180,
+    "relative_file_path": "2025/08/Apollo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Apollo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37952,
+    "brand_name": "Kstar",
+    "attachment_id": 44181,
+    "relative_file_path": "2025/08/Kstar-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kstar-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37953,
+    "brand_name": "MaxGreen",
+    "attachment_id": 44182,
+    "relative_file_path": "2025/08/Maxgreen-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Maxgreen-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37954,
+    "brand_name": "Power Guard",
+    "attachment_id": 44183,
+    "relative_file_path": "2025/08/Power-Guard-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Power-Guard-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 37955,
+    "brand_name": "Power Pac",
+    "attachment_id": 44184,
+    "relative_file_path": "2025/08/Power-Pac-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Power-Pac-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38226,
+    "brand_name": "Prolink",
+    "attachment_id": 44186,
+    "relative_file_path": "2025/08/Prolink-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Prolink-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38228,
+    "brand_name": "Santak",
+    "attachment_id": 44187,
+    "relative_file_path": "2025/08/Santak-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Santak-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38229,
+    "brand_name": "KENSON",
+    "attachment_id": 44188,
+    "relative_file_path": "2025/08/Kenson-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kenson-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38230,
+    "brand_name": "LONG",
+    "attachment_id": 44189,
+    "relative_file_path": "2025/08/Long-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Long-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38234,
+    "brand_name": "Marsriva",
+    "attachment_id": 44190,
+    "relative_file_path": "2025/08/Marsriva-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Marsriva-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38240,
+    "brand_name": "PC Power",
+    "attachment_id": 44191,
+    "relative_file_path": "2025/08/PC-Power-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/PC-Power-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38241,
+    "brand_name": "WGP",
+    "attachment_id": 44192,
+    "relative_file_path": "2025/08/wgp-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/wgp-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38244,
+    "brand_name": "Belkin",
+    "attachment_id": 44193,
+    "relative_file_path": "2025/08/Belkin-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Belkin-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38246,
+    "brand_name": "Huntkey",
+    "attachment_id": 44194,
+    "relative_file_path": "2025/08/Huntkey-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Huntkey-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38251,
+    "brand_name": "LDNIO",
+    "attachment_id": 44195,
+    "relative_file_path": "2025/08/LDNIO-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/LDNIO-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38256,
+    "brand_name": "Awei",
+    "attachment_id": 44196,
+    "relative_file_path": "2025/08/Awei-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Awei-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38259,
+    "brand_name": "Joyroom",
+    "attachment_id": 44197,
+    "relative_file_path": "2025/08/Joyroom-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Joyroom-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38262,
+    "brand_name": "Remax",
+    "attachment_id": 44198,
+    "relative_file_path": "2025/08/Remax-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Remax-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38264,
+    "brand_name": "Adobe",
+    "attachment_id": 44199,
+    "relative_file_path": "2025/08/Adobe-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Adobe-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38268,
+    "brand_name": "Anydesk",
+    "attachment_id": 44200,
+    "relative_file_path": "2025/08/Anydesk-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Anydesk-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38269,
+    "brand_name": "AutoDesk",
+    "attachment_id": 44201,
+    "relative_file_path": "2025/08/Autodesk-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Autodesk-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38270,
+    "brand_name": "Bijoy",
+    "attachment_id": 44202,
+    "relative_file_path": "2025/08/Bijoy-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Bijoy-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38273,
+    "brand_name": "Vmware",
+    "attachment_id": 44203,
+    "relative_file_path": "2025/08/VmWare-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/VmWare-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38277,
+    "brand_name": "Dinstar",
+    "attachment_id": 44204,
+    "relative_file_path": "2025/08/Dinstar-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Dinstar-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38287,
+    "brand_name": "DSPPA",
+    "attachment_id": 44205,
+    "relative_file_path": "2025/08/dsppa-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/dsppa-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38291,
+    "brand_name": "CANON",
+    "attachment_id": 44206,
+    "relative_file_path": "2025/08/canon-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/canon-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38296,
+    "brand_name": "EPSON",
+    "attachment_id": 44207,
+    "relative_file_path": "2025/08/epson-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/epson-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38299,
+    "brand_name": "Pantum",
+    "attachment_id": 44208,
+    "relative_file_path": "2025/08/Pantum-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Pantum-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38304,
+    "brand_name": "Brother",
+    "attachment_id": 44209,
+    "relative_file_path": "2025/08/brother-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/brother-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38307,
+    "brand_name": "Casio",
+    "attachment_id": 44210,
+    "relative_file_path": "2025/08/casio-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/casio-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38572,
+    "brand_name": "Rongta",
+    "attachment_id": 44213,
+    "relative_file_path": "2025/08/Rongta-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Rongta-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38579,
+    "brand_name": "Sewoo",
+    "attachment_id": 44214,
+    "relative_file_path": "2025/08/Sewoo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Sewoo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38585,
+    "brand_name": "SPRT",
+    "attachment_id": 44215,
+    "relative_file_path": "2025/08/Sprt-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Sprt-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38590,
+    "brand_name": "Xprinter",
+    "attachment_id": 44216,
+    "relative_file_path": "2025/08/Xprinter-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Xprinter-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38591,
+    "brand_name": "Zebra",
+    "attachment_id": 44217,
+    "relative_file_path": "2025/08/Zebra-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Zebra-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38597,
+    "brand_name": "VIVITEK",
+    "attachment_id": 44219,
+    "relative_file_path": "2025/08/vivitek-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/vivitek-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38600,
+    "brand_name": "Plustek",
+    "attachment_id": 44220,
+    "relative_file_path": "2025/08/Plustek-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Plustek-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38601,
+    "brand_name": "Honeywell",
+    "attachment_id": 44221,
+    "relative_file_path": "2025/08/honeywell-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/honeywell-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38602,
+    "brand_name": "Sunlux",
+    "attachment_id": 44222,
+    "relative_file_path": "2025/08/sunlux-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/sunlux-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38603,
+    "brand_name": "Sunmi",
+    "attachment_id": 44223,
+    "relative_file_path": "2025/08/Sunmi-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Sunmi-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38604,
+    "brand_name": "Winson",
+    "attachment_id": 44224,
+    "relative_file_path": "2025/08/Winson-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Winson-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38605,
+    "brand_name": "TEV",
+    "attachment_id": 44225,
+    "relative_file_path": "2025/08/Tev-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Tev-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38606,
+    "brand_name": "Mitel",
+    "attachment_id": 44226,
+    "relative_file_path": "2025/08/Mitel-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Mitel-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38607,
+    "brand_name": "Panasonic",
+    "attachment_id": 44227,
+    "relative_file_path": "2025/08/panasonic-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/panasonic-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38608,
+    "brand_name": "Zycoo",
+    "attachment_id": 44229,
+    "relative_file_path": "2025/08/zycoo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/zycoo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38609,
+    "brand_name": "Arctic",
+    "attachment_id": 44230,
+    "relative_file_path": "2025/08/Arctic-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Arctic-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38610,
+    "brand_name": "Gamdias",
+    "attachment_id": 44231,
+    "relative_file_path": "2025/08/Gamdias-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Gamdias-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38611,
+    "brand_name": "Thermalright",
+    "attachment_id": 44232,
+    "relative_file_path": "2025/08/Thermalright-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Thermalright-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38612,
+    "brand_name": "Ajazz",
+    "attachment_id": 44233,
+    "relative_file_path": "2025/08/Ajazz-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ajazz-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38613,
+    "brand_name": "Vertux",
+    "attachment_id": 44234,
+    "relative_file_path": "2025/08/Vertux-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Vertux-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38617,
+    "brand_name": "Vention",
+    "attachment_id": 44235,
+    "relative_file_path": "2025/08/Vention-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Vention-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38618,
+    "brand_name": "Arctic Hunter",
+    "attachment_id": 44236,
+    "relative_file_path": "2025/08/Arctic-hunter-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Arctic-hunter-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38989,
+    "brand_name": "Targus",
+    "attachment_id": 44238,
+    "relative_file_path": "2025/08/Tagrus-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Tagrus-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38990,
+    "brand_name": "Vyvylabs",
+    "attachment_id": 44239,
+    "relative_file_path": "2025/08/Vyvylabs-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Vyvylabs-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38991,
+    "brand_name": "Wiwu",
+    "attachment_id": 44240,
+    "relative_file_path": "2025/08/wiwu-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/wiwu-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38992,
+    "brand_name": "Amazfit",
+    "attachment_id": 44241,
+    "relative_file_path": "2025/08/Amazfit-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Amazfit-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38993,
+    "brand_name": "COLMI",
+    "attachment_id": 44242,
+    "relative_file_path": "2025/08/colmi-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/colmi-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38994,
+    "brand_name": "FASTRACK",
+    "attachment_id": 44243,
+    "relative_file_path": "2025/08/Fastrack-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Fastrack-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38995,
+    "brand_name": "HAYLOU",
+    "attachment_id": 44244,
+    "relative_file_path": "2025/08/Haylou-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Haylou-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38996,
+    "brand_name": "Honor",
+    "attachment_id": 44245,
+    "relative_file_path": "2025/08/Honor-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Honor-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38997,
+    "brand_name": "Kieslect",
+    "attachment_id": 44246,
+    "relative_file_path": "2025/08/Kieslect-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kieslect-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38998,
+    "brand_name": "OnePlus",
+    "attachment_id": 44247,
+    "relative_file_path": "2025/08/Oneplus-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Oneplus-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 38999,
+    "brand_name": "Xiaomi",
+    "attachment_id": 44248,
+    "relative_file_path": "2025/08/xiaomi-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/xiaomi-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39000,
+    "brand_name": "XINJI",
+    "attachment_id": 44249,
+    "relative_file_path": "2025/08/xinji-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/xinji-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39001,
+    "brand_name": "Zeblaze",
+    "attachment_id": 44250,
+    "relative_file_path": "2025/08/Zeblaze-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Zeblaze-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39002,
+    "brand_name": "QCY",
+    "attachment_id": 44251,
+    "relative_file_path": "2025/08/Qcy-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Qcy-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39003,
+    "brand_name": "Google",
+    "attachment_id": 44252,
+    "relative_file_path": "2025/08/Google-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Google-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39004,
+    "brand_name": "AKASO",
+    "attachment_id": 44254,
+    "relative_file_path": "2025/08/Akaso-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Akaso-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39005,
+    "brand_name": "AUSEK",
+    "attachment_id": 44255,
+    "relative_file_path": "2025/08/Ausek-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ausek-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39006,
+    "brand_name": "Insta360",
+    "attachment_id": 44256,
+    "relative_file_path": "2025/08/insta360-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/insta360-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39007,
+    "brand_name": "ORDRO",
+    "attachment_id": 44257,
+    "relative_file_path": "2025/08/ordro-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/ordro-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39008,
+    "brand_name": "SJCAM",
+    "attachment_id": 44258,
+    "relative_file_path": "2025/08/sjcam-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/sjcam-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39213,
+    "brand_name": "FUJIFILM",
+    "attachment_id": 44259,
+    "relative_file_path": "2025/08/Fujifilm-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Fujifilm-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39214,
+    "brand_name": "Nikon",
+    "attachment_id": 44260,
+    "relative_file_path": "2025/08/Nikon-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Nikon-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39215,
+    "brand_name": "Digipod",
+    "attachment_id": 44261,
+    "relative_file_path": "2025/08/Digipod-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Digipod-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39216,
+    "brand_name": "K&amp;F Concept",
+    "attachment_id": 44262,
+    "relative_file_path": "2025/08/kF-Concept-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/kF-Concept-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39217,
+    "brand_name": "Manbily",
+    "attachment_id": 44263,
+    "relative_file_path": "2025/08/Manbily-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Manbily-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39218,
+    "brand_name": "Yunteng",
+    "attachment_id": 44264,
+    "relative_file_path": "2025/08/Yunteng-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Yunteng-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39219,
+    "brand_name": "ZHIYUN",
+    "attachment_id": 44266,
+    "relative_file_path": "2025/08/Zhiyun-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Zhiyun-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39220,
+    "brand_name": "Behringer",
+    "attachment_id": 44267,
+    "relative_file_path": "2025/08/Behringer-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Behringer-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39221,
+    "brand_name": "Maono",
+    "attachment_id": 44268,
+    "relative_file_path": "2025/08/Maono-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Maono-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39222,
+    "brand_name": "Ahuja",
+    "attachment_id": 44269,
+    "relative_file_path": "2025/08/Ahuja-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ahuja-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39223,
+    "brand_name": "ASTHA",
+    "attachment_id": 44270,
+    "relative_file_path": "2025/08/Astha-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Astha-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39224,
+    "brand_name": "Kington",
+    "attachment_id": 44271,
+    "relative_file_path": "2025/08/Kington-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kington-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39225,
+    "brand_name": "Silicon",
+    "attachment_id": 44272,
+    "relative_file_path": "2025/08/Silicon-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Silicon-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39226,
+    "brand_name": "Oppo",
+    "attachment_id": 44273,
+    "relative_file_path": "2025/08/Oppo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Oppo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39227,
+    "brand_name": "TECHNOPLUS",
+    "attachment_id": 44274,
+    "relative_file_path": "2025/08/Tecno-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Tecno-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39228,
+    "brand_name": "Vivo",
+    "attachment_id": 44275,
+    "relative_file_path": "2025/08/Vivo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Vivo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39229,
+    "brand_name": "Huion",
+    "attachment_id": 44276,
+    "relative_file_path": "2025/08/Huion-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Huion-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39230,
+    "brand_name": "VEIKK",
+    "attachment_id": 44277,
+    "relative_file_path": "2025/08/Veikk-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Veikk-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39231,
+    "brand_name": "Wacom",
+    "attachment_id": 44278,
+    "relative_file_path": "2025/08/Wacom-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Wacom-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39232,
+    "brand_name": "XP-Pen",
+    "attachment_id": 44279,
+    "relative_file_path": "2025/08/Xp-pen-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Xp-pen-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39233,
+    "brand_name": "Amazon",
+    "attachment_id": 44280,
+    "relative_file_path": "2025/08/Amazon-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Amazon-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39234,
+    "brand_name": "Black Shark",
+    "attachment_id": 44281,
+    "relative_file_path": "2025/08/Black-shark-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Black-shark-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39235,
+    "brand_name": "Chuwi",
+    "attachment_id": 44282,
+    "relative_file_path": "2025/08/Chuwi-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Chuwi-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39236,
+    "brand_name": "Teclast",
+    "attachment_id": 44283,
+    "relative_file_path": "2025/08/Teclast-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Teclast-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39237,
+    "brand_name": "Walton",
+    "attachment_id": 44284,
+    "relative_file_path": "2025/08/Walton-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Walton-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39238,
+    "brand_name": "ZTE",
+    "attachment_id": 44285,
+    "relative_file_path": "2025/08/Zte-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Zte-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39239,
+    "brand_name": "Beats",
+    "attachment_id": 44286,
+    "relative_file_path": "2025/08/Beats-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Beats-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39240,
+    "brand_name": "Texas",
+    "attachment_id": 44287,
+    "relative_file_path": "2025/08/Texas-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Texas-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39241,
+    "brand_name": "Armor",
+    "attachment_id": 44288,
+    "relative_file_path": "2025/08/Armor-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Armor-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39242,
+    "brand_name": "Innovtech",
+    "attachment_id": 44289,
+    "relative_file_path": "2025/08/Innovtech-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Innovtech-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39243,
+    "brand_name": "Garmin",
+    "attachment_id": 44290,
+    "relative_file_path": "2025/08/Garmin-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Garmin-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39244,
+    "brand_name": "Amazon Kindle",
+    "attachment_id": 44291,
+    "relative_file_path": "2025/08/Amazon-kindle-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Amazon-kindle-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39245,
+    "brand_name": "Boox",
+    "attachment_id": 44292,
+    "relative_file_path": "2025/08/Boox-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Boox-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39246,
+    "brand_name": "Rakuten Kobo",
+    "attachment_id": 44293,
+    "relative_file_path": "2025/08/Rakuten-kobo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Rakuten-kobo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39247,
+    "brand_name": "Dasung",
+    "attachment_id": 44294,
+    "relative_file_path": "2025/08/Dasung-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Dasung-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39248,
+    "brand_name": "Kobo",
+    "attachment_id": 44295,
+    "relative_file_path": "2025/08/Kobo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kobo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39249,
+    "brand_name": "ZOOM",
+    "attachment_id": 44296,
+    "relative_file_path": "2025/08/Zoom-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Zoom-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39250,
+    "brand_name": "Micom",
+    "attachment_id": 44297,
+    "relative_file_path": "2025/08/Micom-Best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Micom-Best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39279,
+    "brand_name": "Odiomix",
+    "attachment_id": 44298,
+    "relative_file_path": "2025/08/Odiomix-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Odiomix-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39280,
+    "brand_name": "Yuanxin",
+    "attachment_id": 44299,
+    "relative_file_path": "2025/08/Yuanxin-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Yuanxin-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39281,
+    "brand_name": "Ruijie",
+    "attachment_id": 44300,
+    "relative_file_path": "2025/08/Ruijie-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ruijie-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39282,
+    "brand_name": "Cdata",
+    "attachment_id": 44301,
+    "relative_file_path": "2025/08/Cdata-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Cdata-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39283,
+    "brand_name": "GrameenPhone",
+    "attachment_id": 44302,
+    "relative_file_path": "2025/08/Grameenphone-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Grameenphone-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39284,
+    "brand_name": "Fortinet",
+    "attachment_id": 44303,
+    "relative_file_path": "2025/08/Fortinet-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Fortinet-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39285,
+    "brand_name": "IP-COM",
+    "attachment_id": 44304,
+    "relative_file_path": "2025/08/ip-com-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/ip-com-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39286,
+    "brand_name": "UbiQUITI",
+    "attachment_id": 44305,
+    "relative_file_path": "2025/08/Ubiquiti-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ubiquiti-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39287,
+    "brand_name": "Zyxel",
+    "attachment_id": 44306,
+    "relative_file_path": "2025/08/Zyxel-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Zyxel-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39288,
+    "brand_name": "DBC",
+    "attachment_id": 44307,
+    "relative_file_path": "2025/08/DBC-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/DBC-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39289,
+    "brand_name": "EXFO",
+    "attachment_id": 44308,
+    "relative_file_path": "2025/08/Exfo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Exfo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39290,
+    "brand_name": "Comway",
+    "attachment_id": 44309,
+    "relative_file_path": "2025/08/Comway-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Comway-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39291,
+    "brand_name": "OPWILL",
+    "attachment_id": 44310,
+    "relative_file_path": "2025/08/Opwill-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Opwill-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39292,
+    "brand_name": "Acnet",
+    "attachment_id": 44311,
+    "relative_file_path": "2025/08/AC-net-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/AC-net-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39293,
+    "brand_name": "BT-PON",
+    "attachment_id": 44312,
+    "relative_file_path": "2025/08/BT-PON-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/BT-PON-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39294,
+    "brand_name": "TBS",
+    "attachment_id": 44313,
+    "relative_file_path": "2025/08/TBS-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/TBS-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39295,
+    "brand_name": "GrandLink",
+    "attachment_id": 44314,
+    "relative_file_path": "2025/08/Grandlink-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Grandlink-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39296,
+    "brand_name": "Sumitomo",
+    "attachment_id": 44315,
+    "relative_file_path": "2025/08/Sumitomo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Sumitomo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39297,
+    "brand_name": "FiberFox",
+    "attachment_id": 44316,
+    "relative_file_path": "2025/08/Fiberfox-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Fiberfox-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39298,
+    "brand_name": "Jilong",
+    "attachment_id": 44317,
+    "relative_file_path": "2025/08/Jilong-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Jilong-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39299,
+    "brand_name": "Shinho",
+    "attachment_id": 44318,
+    "relative_file_path": "2025/08/Shinho-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Shinho-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39301,
+    "brand_name": "Tumtec",
+    "attachment_id": 44319,
+    "relative_file_path": "2025/08/Tumtec-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Tumtec-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39303,
+    "brand_name": "Inno View",
+    "attachment_id": 44320,
+    "relative_file_path": "2025/08/Innoview-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Innoview-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39304,
+    "brand_name": "ELOIK IOT",
+    "attachment_id": 44321,
+    "relative_file_path": "2025/08/Eloik-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Eloik-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39307,
+    "brand_name": "Jetfiber",
+    "attachment_id": 44322,
+    "relative_file_path": "2025/08/Jetfiber-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Jetfiber-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39308,
+    "brand_name": "D-Link",
+    "attachment_id": 44323,
+    "relative_file_path": "2025/08/D-Link-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/D-Link-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39439,
+    "brand_name": "F5",
+    "attachment_id": 44329,
+    "relative_file_path": "2025/08/F5-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/F5-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39440,
+    "brand_name": "Palo Alto",
+    "attachment_id": 44330,
+    "relative_file_path": "2025/08/Palo-Alto-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Palo-Alto-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39441,
+    "brand_name": "Shopos",
+    "attachment_id": 44331,
+    "relative_file_path": "2025/08/Shopos-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Shopos-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39442,
+    "brand_name": "SonicWall",
+    "attachment_id": 44332,
+    "relative_file_path": "2025/08/SonicWall-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/SonicWall-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39443,
+    "brand_name": "SpaceX",
+    "attachment_id": 44333,
+    "relative_file_path": "2025/08/Spacex-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Spacex-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39444,
+    "brand_name": "Noyafa",
+    "attachment_id": 44334,
+    "relative_file_path": "2025/08/Noyafa-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Noyafa-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39445,
+    "brand_name": "TRENDnet",
+    "attachment_id": 44335,
+    "relative_file_path": "2025/08/TrendNet-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/TrendNet-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39446,
+    "brand_name": "CommScope",
+    "attachment_id": 44336,
+    "relative_file_path": "2025/08/CommScope-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/CommScope-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39447,
+    "brand_name": "Dintek",
+    "attachment_id": 44337,
+    "relative_file_path": "2025/08/Dintek-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Dintek-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39448,
+    "brand_name": "Micronet",
+    "attachment_id": 44338,
+    "relative_file_path": "2025/08/Micronet-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Micronet-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39449,
+    "brand_name": "R&amp;M",
+    "attachment_id": 44339,
+    "relative_file_path": "2025/08/RM-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/RM-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39450,
+    "brand_name": "Rosenberger",
+    "attachment_id": 44340,
+    "relative_file_path": "2025/08/Rosenberger-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Rosenberger-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39451,
+    "brand_name": "SafeNet",
+    "attachment_id": 44341,
+    "relative_file_path": "2025/08/SafeNet-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/SafeNet-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39452,
+    "brand_name": "Jovision",
+    "attachment_id": 44342,
+    "relative_file_path": "2025/08/Jovision-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Jovision-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39453,
+    "brand_name": "Uniview",
+    "attachment_id": 44343,
+    "relative_file_path": "2025/08/Uniview-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Uniview-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39454,
+    "brand_name": "Ezviz",
+    "attachment_id": 44344,
+    "relative_file_path": "2025/08/Ezviz-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ezviz-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39455,
+    "brand_name": "Imou",
+    "attachment_id": 44345,
+    "relative_file_path": "2025/08/Imou-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Imou-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39456,
+    "brand_name": "Vimtag",
+    "attachment_id": 44346,
+    "relative_file_path": "2025/08/Vimtag-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Vimtag-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39457,
+    "brand_name": "Nexakey",
+    "attachment_id": 44347,
+    "relative_file_path": "2025/08/Nexakey-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Nexakey-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39458,
+    "brand_name": "Onspot",
+    "attachment_id": 44348,
+    "relative_file_path": "2025/08/Onspot-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Onspot-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39459,
+    "brand_name": "SmartLife",
+    "attachment_id": 44349,
+    "relative_file_path": "2025/08/SmartLife-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/SmartLife-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39460,
+    "brand_name": "Cote",
+    "attachment_id": 44350,
+    "relative_file_path": "2025/08/Cote-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Cote-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39461,
+    "brand_name": "QNAP",
+    "attachment_id": 44351,
+    "relative_file_path": "2025/08/Qnap-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Qnap-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39462,
+    "brand_name": "General",
+    "attachment_id": 44353,
+    "relative_file_path": "2025/08/General-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/General-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39463,
+    "brand_name": "Hisense",
+    "attachment_id": 44355,
+    "relative_file_path": "2025/08/Hisense-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Hisense-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39464,
+    "brand_name": "Midea",
+    "attachment_id": 44356,
+    "relative_file_path": "2025/08/Midea-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Midea-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39465,
+    "brand_name": "Sharp",
+    "attachment_id": 44357,
+    "relative_file_path": "2025/08/Sharp-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Sharp-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39466,
+    "brand_name": "CLICK",
+    "attachment_id": 44358,
+    "relative_file_path": "2025/08/Click-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Click-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39467,
+    "brand_name": "Defender",
+    "attachment_id": 44359,
+    "relative_file_path": "2025/08/Defender-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Defender-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39468,
+    "brand_name": "Disnie",
+    "attachment_id": 44360,
+    "relative_file_path": "2025/08/Disnie-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Disnie-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39469,
+    "brand_name": "JISULIFE",
+    "attachment_id": 44361,
+    "relative_file_path": "2025/08/Jisulife-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Jisulife-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39470,
+    "brand_name": "Kingshan",
+    "attachment_id": 44362,
+    "relative_file_path": "2025/08/Kingshan-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Kingshan-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39471,
+    "brand_name": "VISION",
+    "attachment_id": 44363,
+    "relative_file_path": "2025/08/Vision-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Vision-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39472,
+    "brand_name": "Duranta",
+    "attachment_id": 44364,
+    "relative_file_path": "2025/08/Duranta-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Duranta-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39473,
+    "brand_name": "Veloce",
+    "attachment_id": 44365,
+    "relative_file_path": "2025/08/Veloce-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Veloce-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39474,
+    "brand_name": "SolarWinds",
+    "attachment_id": 44366,
+    "relative_file_path": "2025/08/Solarwinds-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Solarwinds-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39475,
+    "brand_name": "Paessler",
+    "attachment_id": 44367,
+    "relative_file_path": "2025/08/Paessler-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Paessler-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39476,
+    "brand_name": "Manage Engine",
+    "attachment_id": 44368,
+    "relative_file_path": "2025/08/Manage-Engine-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Manage-Engine-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39477,
+    "brand_name": "GREYCORTEX",
+    "attachment_id": 44369,
+    "relative_file_path": "2025/08/Greycontex-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Greycontex-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39478,
+    "brand_name": "Safetica",
+    "attachment_id": 44370,
+    "relative_file_path": "2025/08/Safetica-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Safetica-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39479,
+    "brand_name": "Xopero",
+    "attachment_id": 44371,
+    "relative_file_path": "2025/08/Xopero-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Xopero-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39480,
+    "brand_name": "HPE Aruba",
+    "attachment_id": 44372,
+    "relative_file_path": "2025/08/HPE-Auroba-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/HPE-Auroba-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39481,
+    "brand_name": "Govee",
+    "attachment_id": 44373,
+    "relative_file_path": "2025/08/Govee-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Govee-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39482,
+    "brand_name": "HMD",
+    "attachment_id": 44374,
+    "relative_file_path": "2025/08/HMD-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/HMD-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39483,
+    "brand_name": "Supermicro",
+    "attachment_id": 44375,
+    "relative_file_path": "2025/08/Supermicro-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Supermicro-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39484,
+    "brand_name": "Ximax",
+    "attachment_id": 44376,
+    "relative_file_path": "2025/08/Ximax-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ximax-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39485,
+    "brand_name": "Ozlo",
+    "attachment_id": 44377,
+    "relative_file_path": "2025/08/Ozlo-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ozlo-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39486,
+    "brand_name": "Shokz",
+    "attachment_id": 44378,
+    "relative_file_path": "2025/08/Shokz-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Shokz-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39487,
+    "brand_name": "OPENDOTS",
+    "attachment_id": 44379,
+    "relative_file_path": "2025/08/Opendots-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Opendots-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39488,
+    "brand_name": "Luminous",
+    "attachment_id": 44380,
+    "relative_file_path": "2025/08/Luminous-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Luminous-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39489,
+    "brand_name": "Exide",
+    "attachment_id": 44381,
+    "relative_file_path": "2025/08/Exide-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Exide-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39490,
+    "brand_name": "Ecoflow",
+    "attachment_id": 44382,
+    "relative_file_path": "2025/08/Ecoflow-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ecoflow-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39491,
+    "brand_name": "Maxsun",
+    "attachment_id": 44383,
+    "relative_file_path": "2025/08/Maxsun-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Maxsun-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39492,
+    "brand_name": "Huanda",
+    "attachment_id": 44384,
+    "relative_file_path": "2025/08/Huanda-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Huanda-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39493,
+    "brand_name": "U2 ProS",
+    "attachment_id": 44385,
+    "relative_file_path": "2025/08/U2-Pros-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/U2-Pros-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39494,
+    "brand_name": "ULANZI",
+    "attachment_id": 44386,
+    "relative_file_path": "2025/08/Ulanzi-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Ulanzi-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39495,
+    "brand_name": "OLAX",
+    "attachment_id": 44387,
+    "relative_file_path": "2025/08/Olax-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Olax-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39496,
+    "brand_name": "SKE",
+    "attachment_id": 44388,
+    "relative_file_path": "2025/08/SKE-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/SKE-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39497,
+    "brand_name": "AOCHUAN",
+    "attachment_id": 44389,
+    "relative_file_path": "2025/08/Aochuan-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Aochuan-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39498,
+    "brand_name": "GearUP",
+    "attachment_id": 44390,
+    "relative_file_path": "2025/08/Gearup-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Gearup-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39499,
+    "brand_name": "XUNDD",
+    "attachment_id": 44391,
+    "relative_file_path": "2025/08/Xundd-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Xundd-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 39500,
+    "brand_name": "MiLi MiTag",
+    "attachment_id": 44392,
+    "relative_file_path": "2025/08/Mili-Mitag-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Mili-Mitag-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 43189,
+    "brand_name": "Telesin",
+    "attachment_id": 44914,
+    "relative_file_path": "2025/08/Telesin-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/08/Telesin-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 43253,
+    "brand_name": "Montech",
+    "attachment_id": 44966,
+    "relative_file_path": "2025/09/Montech.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/09/Montech.webp"
+  },
+  {
+    "brand_legacy_id": 43256,
+    "brand_name": "1STPLAYER",
+    "attachment_id": 44984,
+    "relative_file_path": "2025/09/1st-plyer-best-computer.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/09/1st-plyer-best-computer.webp"
+  },
+  {
+    "brand_legacy_id": 43263,
+    "brand_name": "KingSpec",
+    "attachment_id": 45373,
+    "relative_file_path": "2025/10/6306dcea4705b.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/10/6306dcea4705b.webp"
+  },
+  {
+    "brand_legacy_id": 43268,
+    "brand_name": "Viper Gaming",
+    "attachment_id": 45500,
+    "relative_file_path": "2025/11/viper-gaming.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/11/viper-gaming.webp"
+  },
+  {
+    "brand_legacy_id": 43269,
+    "brand_name": "Arzopa",
+    "attachment_id": 45517,
+    "relative_file_path": "2025/11/Arzopa-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/11/Arzopa-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 43271,
+    "brand_name": "PowerColor",
+    "attachment_id": 45522,
+    "relative_file_path": "2025/11/PowerColor-Best-Computer-Hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/11/PowerColor-Best-Computer-Hub.webp"
+  },
+  {
+    "brand_legacy_id": 43277,
+    "brand_name": "Palit",
+    "attachment_id": 45530,
+    "relative_file_path": "2025/11/Palit-Best-Computer-Hub-Ltd.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/11/Palit-Best-Computer-Hub-Ltd.webp"
+  },
+  {
+    "brand_legacy_id": 43279,
+    "brand_name": "Arktek",
+    "attachment_id": 45533,
+    "relative_file_path": "2025/11/arktek-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/11/arktek-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 43280,
+    "brand_name": "Gunnir",
+    "attachment_id": 45535,
+    "relative_file_path": "2025/11/Gunnnir-Best-Computer-Hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2025/11/Gunnnir-Best-Computer-Hub.webp"
+  },
+  {
+    "brand_legacy_id": 43338,
+    "brand_name": "Fujitsu",
+    "attachment_id": 45945,
+    "relative_file_path": "2026/01/fujitsu-best-computer-hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2026/01/fujitsu-best-computer-hub.webp"
+  },
+  {
+    "brand_legacy_id": 43587,
+    "brand_name": "TOTOLINK",
+    "attachment_id": 46101,
+    "relative_file_path": "2026/02/TOTOLINK-Best-Computer-Hub.webp",
+    "image_url": "https://bestcomputerhub.com/wp-content/uploads/2026/02/TOTOLINK-Best-Computer-Hub.webp"
+  }
+]
