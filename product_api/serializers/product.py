@@ -8,10 +8,11 @@ from rest_framework import serializers
 from category_api.models import Category
 from origin_api.models import Origin
 from product_api.models import (
-    Product, ProductPriceHistory, ProductVariant,
+    Product, ProductPriceHistory, ProductVariant, Brand,
 )
 from category_api.serializers import CategorySummarySerializer
 from product_api.serializers.product_image import ProductDefaultImageSerializer
+from product_api.serializers.brand import BrandSummarySerializer
 from origin_api.serializers import OriginSummarySerializer
 
 
@@ -78,6 +79,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     categories = CategorySummarySerializer(many=True)
     origin = OriginSummarySerializer(read_only=True)
+    brand = BrandSummarySerializer(read_only=True)
     price_histories = ProductPriceHistorySerializer(many=True, read_only=True)
     wishlist = serializers.BooleanField(read_only=True)
     in_cart = serializers.BooleanField(read_only=True)
@@ -92,94 +94,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'wishlist',
             'in_cart',
         ]
-
-
-class ProductCreateUpdateSerializer(serializers.ModelSerializer):
-    variants = ProductVariantSerializer(many=True, required=False)
-    categories = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.filter(is_active=True),
-        many=True,
-        required=False
-    )
-    origin = serializers.PrimaryKeyRelatedField(
-        queryset=Origin.objects.filter(is_active=True),
-        required=False,
-        allow_null=True,
-    )
-
-    class Meta:
-        model = Product
-        fields = [
-            'id', 'name', 'categories', 'origin', 'current_selling_price',
-            'variants',
-        ]
-        extra_kwargs = {
-            'id': {'read_only': True}
-        }
-
-    def validate_name(self, value):
-        qs = Product.objects.filter(name__iexact=value, is_active=True)
-        if self.instance:
-            qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            raise serializers.ValidationError(
-                "A product with this name already exists.")
-        return value
-
-    def create(self, validated_data):
-        variants_data = validated_data.pop('variants', [])
-        categories = validated_data.pop('categories', [])
-        product = Product.objects.create(**validated_data)
-
-        if categories:
-            product.categories.set(categories)
-
-        ProductPriceHistory.objects.create(
-            product=product,
-            price=product.current_selling_price,
-            changed_by=self.context['request'].user
-        )
-
-        if variants_data:
-            variants_to_create = []
-            for variant_data in variants_data:
-                variants_to_create.append(
-                    ProductVariant(product=product, **variant_data)
-                )
-            ProductVariant.objects.bulk_create(variants_to_create)
-
-        return product
-
-    def update(self, instance, validated_data):
-        old_price = instance.current_selling_price
-        categories = validated_data.pop('categories', None)
-        instance = super().update(instance, validated_data)
-
-        if categories is not None:
-            instance.categories.set(categories)
-
-        new_price = instance.current_selling_price
-        if old_price != new_price:
-            ProductPriceHistory.objects.create(
-                product=instance,
-                price=new_price,
-                changed_by=self.context['request'].user
-            )
-
-        return instance
-
-    def to_representation(self, instance):
-        """Customize the output representation"""
-        representation = super().to_representation(instance)
-
-        # Include only active variants in the response
-        if instance.pk:
-            active_variants = instance.variants.filter(is_active=True)
-            representation['variants'] = ProductVariantSerializer(
-                active_variants, many=True
-            ).data
-
-        return representation
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -200,13 +114,18 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    brand = serializers.PrimaryKeyRelatedField(
+        queryset=Brand.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'short_description',
             'specifications', 'categories', 'origin',
-            'current_selling_price',
+            'current_selling_price', 'brand',
         ]
         extra_kwargs = {
             'id': {'read_only': True}

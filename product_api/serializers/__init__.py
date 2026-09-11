@@ -3,7 +3,6 @@ from .product import (
     ProductPriceHistorySerializer,
     ProductListSerializer,
     ProductDetailSerializer,
-    ProductCreateUpdateSerializer,
     ProductCreateSerializer,
     ProductUpdateSerializer,
     ProductVariantListSerializer,
@@ -14,6 +13,7 @@ from .brand import (
     BrandListSerializer,
     BrandDetailSerializer,
     BrandCreateUpdateSerializer,
+    BrandSummarySerializer,
 )
 from .product_image import (
     ProductDefaultImageSerializer,
@@ -29,7 +29,6 @@ __all__ = [
     "ProductPriceHistorySerializer",
     "ProductListSerializer",
     "ProductDetailSerializer",
-    "ProductCreateUpdateSerializer",
     "ProductCreateSerializer",
     "ProductUpdateSerializer",
     "ProductVariantListSerializer",
@@ -38,6 +37,7 @@ __all__ = [
     "BrandListSerializer",
     "BrandDetailSerializer",
     "BrandCreateUpdateSerializer",
+    "BrandSummarySerializer",
     "ProductDefaultImageSerializer",
     "ProductImageListSerializer",
     "ProductImageDetailSerializer",
