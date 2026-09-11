@@ -39,6 +39,13 @@ class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         null=True,
         blank=True,
     )
+    brand = models.ForeignKey(
+        "product_api.Brand",
+        on_delete=models.SET_NULL,
+        related_name="products",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ['name']
