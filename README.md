@@ -192,3 +192,7 @@ Import and map brand images
 ```bash
 python manage.py import_brand_images resources/brand_images.json
 ```
+Export brand metadata
+```bash
+python scripts/export_woocommerce_brand_metadata.py
+```

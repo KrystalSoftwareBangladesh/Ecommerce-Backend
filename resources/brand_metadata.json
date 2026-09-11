@@ -1,0 +1,2682 @@
+[
+  {
+    "legacy_id": 51,
+    "name": "Apple",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 52,
+    "name": "Asus",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 53,
+    "name": "A4tech",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1062,
+    "name": "Acer",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1063,
+    "name": "ANKER",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1064,
+    "name": "BASEUS",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1065,
+    "name": "BDCOM",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1066,
+    "name": "BOYA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1067,
+    "name": "CAMBIUM NETWORK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1068,
+    "name": "CISCO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1069,
+    "name": "Cudy",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1070,
+    "name": "DAHUA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1071,
+    "name": "DELL",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1072,
+    "name": "DJI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1073,
+    "name": "DLINK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1074,
+    "name": "DTECH",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1075,
+    "name": "EDIFIER",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1076,
+    "name": "GOPRO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1077,
+    "name": "Gudsen",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1078,
+    "name": "HIKVISION",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1079,
+    "name": "HOCO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1080,
+    "name": "HP",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1081,
+    "name": "HUAWEI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1082,
+    "name": "JBL",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1083,
+    "name": "LOGITECH",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1084,
+    "name": "MIKROTIK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1085,
+    "name": "MSI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1086,
+    "name": "NETGEAR",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1087,
+    "name": "NETIS",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1088,
+    "name": "Oraimo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1089,
+    "name": "TENDA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1090,
+    "name": "TOTEN",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1091,
+    "name": "TP-LINK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1092,
+    "name": "UGREEN",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1093,
+    "name": "V-SOL",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1094,
+    "name": "XGTECH",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1466,
+    "name": "ZKTeco",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1467,
+    "name": "Stata",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1468,
+    "name": "Grandstream",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1469,
+    "name": "Deli",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1470,
+    "name": "HPE",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1471,
+    "name": "Synology",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1472,
+    "name": "Kaspersky",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1473,
+    "name": "Microsoft",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1474,
+    "name": "ESET",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1475,
+    "name": "Red Hat",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1476,
+    "name": "Sony",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1477,
+    "name": "Samsung",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1478,
+    "name": "Haier",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1479,
+    "name": "Gree",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1480,
+    "name": "Orvibo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 1481,
+    "name": "SmartX",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 17920,
+    "name": "Realme",
+    "description": "Latest Realme Mobile Phone Price starts from BDT 10,999 up to BDT 29,999 in Bangladesh, depending on model and features. Buy official Realme phone fromBest Computer Hub Ltd. Browse below and order yours now!",
+    "seo_title": "Realme Mobile Price in Bangladesh | Best Computer Hub Ltd",
+    "seo_description": "Latest Realme Mobile Price in Bangladesh  starts from BDT 10,999 up to BDT 29,999 in Bangladesh, depending on model and features. ",
+    "seo_focus_keyword": "Realme Mobile Price in Bangladesh"
+  },
+  {
+    "legacy_id": 19131,
+    "name": "Steam Deck",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 19132,
+    "name": "Nintendo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 19133,
+    "name": "PlayStation",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 19134,
+    "name": "Xbox",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37537,
+    "name": "Tecno",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37538,
+    "name": "Lenovo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37539,
+    "name": "Gigabyte",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37540,
+    "name": "AMD",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37541,
+    "name": "Intel",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37542,
+    "name": "ASRock",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37543,
+    "name": "Biostar",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37548,
+    "name": "Revenger",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37556,
+    "name": "Crucial",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37557,
+    "name": "Corsair",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37560,
+    "name": "Adata",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37564,
+    "name": "Apacer",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37570,
+    "name": "G.Skill",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37578,
+    "name": "Geil",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37582,
+    "name": "Kingston",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37584,
+    "name": "Lexar",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37598,
+    "name": "OCPC",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37599,
+    "name": "Team",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37621,
+    "name": "Transcend",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37622,
+    "name": "Colorful",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37623,
+    "name": "Sapphire",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37624,
+    "name": "PELADN",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37625,
+    "name": "Zotac",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37626,
+    "name": "PNY",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37627,
+    "name": "Cooler Master",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37628,
+    "name": "Thermaltake",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37629,
+    "name": "Antec",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37630,
+    "name": "Benq",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37631,
+    "name": "LG",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37632,
+    "name": "ViewSonic",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37633,
+    "name": "Philips",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37634,
+    "name": "AOC",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37635,
+    "name": "Netac",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37636,
+    "name": "Deepcool",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37637,
+    "name": "AULA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37638,
+    "name": "Dareu",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37639,
+    "name": "HAVIT",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37640,
+    "name": "Matias",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37641,
+    "name": "Meetion",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37642,
+    "name": "Micropack",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37643,
+    "name": "NZXT",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37644,
+    "name": "Rapoo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37645,
+    "name": "REDRAGON",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37646,
+    "name": "SteelSeries",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37647,
+    "name": "T-WOLF",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37648,
+    "name": "ThundeRobot",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37649,
+    "name": "Fantech",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37650,
+    "name": "RAZER",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37651,
+    "name": "Xtrike Me",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37652,
+    "name": "Bose",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37653,
+    "name": "F&amp;D",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37654,
+    "name": "Microlab",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37655,
+    "name": "Thonet &amp; Vander",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37656,
+    "name": "Xtreme",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37657,
+    "name": "Yamaha",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37658,
+    "name": "JABRA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37659,
+    "name": "RODE",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37660,
+    "name": "Meta",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37661,
+    "name": "Pico",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37942,
+    "name": "AVerMedia",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37943,
+    "name": "Orico",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37944,
+    "name": "Value-Top",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37945,
+    "name": "SanDisk",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37946,
+    "name": "Seagate",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37947,
+    "name": "Western Digital",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37948,
+    "name": "Toshiba",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37949,
+    "name": "EKWB",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37950,
+    "name": "Lian Li",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37951,
+    "name": "Apollo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37952,
+    "name": "Kstar",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37953,
+    "name": "MaxGreen",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37954,
+    "name": "Power Guard",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 37955,
+    "name": "Power Pac",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38226,
+    "name": "Prolink",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38228,
+    "name": "Santak",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38229,
+    "name": "KENSON",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38230,
+    "name": "LONG",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38234,
+    "name": "Marsriva",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38240,
+    "name": "PC Power",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38241,
+    "name": "WGP",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38244,
+    "name": "Belkin",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38246,
+    "name": "Huntkey",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38251,
+    "name": "LDNIO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38256,
+    "name": "Awei",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38259,
+    "name": "Joyroom",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38262,
+    "name": "Remax",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38264,
+    "name": "Adobe",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38268,
+    "name": "Anydesk",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38269,
+    "name": "AutoDesk",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38270,
+    "name": "Bijoy",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38273,
+    "name": "Vmware",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38277,
+    "name": "Dinstar",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38287,
+    "name": "DSPPA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38291,
+    "name": "CANON",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38296,
+    "name": "EPSON",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38299,
+    "name": "Pantum",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38304,
+    "name": "Brother",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38307,
+    "name": "Casio",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38572,
+    "name": "Rongta",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38579,
+    "name": "Sewoo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38585,
+    "name": "SPRT",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38590,
+    "name": "Xprinter",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38591,
+    "name": "Zebra",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38597,
+    "name": "VIVITEK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38600,
+    "name": "Plustek",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38601,
+    "name": "Honeywell",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38602,
+    "name": "Sunlux",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38603,
+    "name": "Sunmi",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38604,
+    "name": "Winson",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38605,
+    "name": "TEV",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38606,
+    "name": "Mitel",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38607,
+    "name": "Panasonic",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38608,
+    "name": "Zycoo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38609,
+    "name": "Arctic",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38610,
+    "name": "Gamdias",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38611,
+    "name": "Thermalright",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38612,
+    "name": "Ajazz",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38613,
+    "name": "Vertux",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38617,
+    "name": "Vention",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38618,
+    "name": "Arctic Hunter",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38989,
+    "name": "Targus",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38990,
+    "name": "Vyvylabs",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38991,
+    "name": "Wiwu",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38992,
+    "name": "Amazfit",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38993,
+    "name": "COLMI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38994,
+    "name": "FASTRACK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38995,
+    "name": "HAYLOU",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38996,
+    "name": "Honor",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38997,
+    "name": "Kieslect",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38998,
+    "name": "OnePlus",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 38999,
+    "name": "Xiaomi",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39000,
+    "name": "XINJI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39001,
+    "name": "Zeblaze",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39002,
+    "name": "QCY",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39003,
+    "name": "Google",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39004,
+    "name": "AKASO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39005,
+    "name": "AUSEK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39006,
+    "name": "Insta360",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39007,
+    "name": "ORDRO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39008,
+    "name": "SJCAM",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39213,
+    "name": "FUJIFILM",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39214,
+    "name": "Nikon",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39215,
+    "name": "Digipod",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39216,
+    "name": "K&amp;F Concept",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39217,
+    "name": "Manbily",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39218,
+    "name": "Yunteng",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39219,
+    "name": "ZHIYUN",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39220,
+    "name": "Behringer",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39221,
+    "name": "Maono",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39222,
+    "name": "Ahuja",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39223,
+    "name": "ASTHA",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39224,
+    "name": "Kington",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39225,
+    "name": "Silicon",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39226,
+    "name": "Oppo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39227,
+    "name": "TECHNOPLUS",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39228,
+    "name": "Vivo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39229,
+    "name": "Huion",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39230,
+    "name": "VEIKK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39231,
+    "name": "Wacom",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39232,
+    "name": "XP-Pen",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39233,
+    "name": "Amazon",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39234,
+    "name": "Black Shark",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39235,
+    "name": "Chuwi",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39236,
+    "name": "Teclast",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39237,
+    "name": "Walton",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39238,
+    "name": "ZTE",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39239,
+    "name": "Beats",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39240,
+    "name": "Texas",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39241,
+    "name": "Armor",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39242,
+    "name": "Innovtech",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39243,
+    "name": "Garmin",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39244,
+    "name": "Amazon Kindle",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39245,
+    "name": "Boox",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39246,
+    "name": "Rakuten Kobo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39247,
+    "name": "Dasung",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39248,
+    "name": "Kobo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39249,
+    "name": "ZOOM",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39250,
+    "name": "Micom",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39279,
+    "name": "Odiomix",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39280,
+    "name": "Yuanxin",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39281,
+    "name": "Ruijie",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39282,
+    "name": "Cdata",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39283,
+    "name": "GrameenPhone",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39284,
+    "name": "Fortinet",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39285,
+    "name": "IP-COM",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39286,
+    "name": "UbiQUITI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39287,
+    "name": "Zyxel",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39288,
+    "name": "DBC",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39289,
+    "name": "EXFO",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39290,
+    "name": "Comway",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39291,
+    "name": "OPWILL",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39292,
+    "name": "Acnet",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39293,
+    "name": "BT-PON",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39294,
+    "name": "TBS",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39295,
+    "name": "GrandLink",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39296,
+    "name": "Sumitomo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39297,
+    "name": "FiberFox",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39298,
+    "name": "Jilong",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39299,
+    "name": "Shinho",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39301,
+    "name": "Tumtec",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39303,
+    "name": "Inno View",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39304,
+    "name": "ELOIK IOT",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39307,
+    "name": "Jetfiber",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39308,
+    "name": "D-Link",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39439,
+    "name": "F5",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39440,
+    "name": "Palo Alto",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39441,
+    "name": "Shopos",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39442,
+    "name": "SonicWall",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39443,
+    "name": "SpaceX",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39444,
+    "name": "Noyafa",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39445,
+    "name": "TRENDnet",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39446,
+    "name": "CommScope",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39447,
+    "name": "Dintek",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39448,
+    "name": "Micronet",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39449,
+    "name": "R&amp;M",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39450,
+    "name": "Rosenberger",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39451,
+    "name": "SafeNet",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39452,
+    "name": "Jovision",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39453,
+    "name": "Uniview",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39454,
+    "name": "Ezviz",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39455,
+    "name": "Imou",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39456,
+    "name": "Vimtag",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39457,
+    "name": "Nexakey",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39458,
+    "name": "Onspot",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39459,
+    "name": "SmartLife",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39460,
+    "name": "Cote",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39461,
+    "name": "QNAP",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39462,
+    "name": "General",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39463,
+    "name": "Hisense",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39464,
+    "name": "Midea",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39465,
+    "name": "Sharp",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39466,
+    "name": "CLICK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39467,
+    "name": "Defender",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39468,
+    "name": "Disnie",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39469,
+    "name": "JISULIFE",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39470,
+    "name": "Kingshan",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39471,
+    "name": "VISION",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39472,
+    "name": "Duranta",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39473,
+    "name": "Veloce",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39474,
+    "name": "SolarWinds",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39475,
+    "name": "Paessler",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39476,
+    "name": "Manage Engine",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39477,
+    "name": "GREYCORTEX",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39478,
+    "name": "Safetica",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39479,
+    "name": "Xopero",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39480,
+    "name": "HPE Aruba",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39481,
+    "name": "Govee",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39482,
+    "name": "HMD",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39483,
+    "name": "Supermicro",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39484,
+    "name": "Ximax",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39485,
+    "name": "Ozlo",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39486,
+    "name": "Shokz",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39487,
+    "name": "OPENDOTS",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39488,
+    "name": "Luminous",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39489,
+    "name": "Exide",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39490,
+    "name": "Ecoflow",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39491,
+    "name": "Maxsun",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39492,
+    "name": "Huanda",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39493,
+    "name": "U2 ProS",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39494,
+    "name": "ULANZI",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39495,
+    "name": "OLAX",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39496,
+    "name": "SKE",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39497,
+    "name": "AOCHUAN",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39498,
+    "name": "GearUP",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39499,
+    "name": "XUNDD",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 39500,
+    "name": "MiLi MiTag",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43189,
+    "name": "Telesin",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43253,
+    "name": "Montech",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43256,
+    "name": "1STPLAYER",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43263,
+    "name": "KingSpec",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43268,
+    "name": "Viper Gaming",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43269,
+    "name": "Arzopa",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43271,
+    "name": "PowerColor",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43277,
+    "name": "Palit",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43279,
+    "name": "Arktek",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43280,
+    "name": "Gunnir",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43338,
+    "name": "Fujitsu",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  },
+  {
+    "legacy_id": 43587,
+    "name": "TOTOLINK",
+    "description": "",
+    "seo_title": "",
+    "seo_description": "",
+    "seo_focus_keyword": ""
+  }
+]
