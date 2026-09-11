@@ -168,3 +168,7 @@ Map blog posts and authors
 ```bash
 python manage.py import_blog_post_authors resources/blog_post_authors.json
 ```
+Export brands
+```bash
+python scripts/export_woocommerce_brands.py
+```
