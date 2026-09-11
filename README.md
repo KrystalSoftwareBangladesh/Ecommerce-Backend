@@ -200,3 +200,11 @@ Import and map brand metadata
 ```bash
 python manage.py import_brand_metadata resources/brand_metadata.json
 ```
+Export customer addresses
+```bash
+python scripts/export_woocommerce_customer_addresses.py
+```
+Import and map customer addresses
+```bash
+python manage.py import_customer_addresses
+```

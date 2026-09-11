@@ -69,12 +69,8 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    # USERNAME_FIELD = 'username'
-    # USERNAME_FIELD = 'email'
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
-    # REQUIRED_FIELDS = ['email']
-    # REQUIRED_FIELDS = []
 
     def save(self, *args, **kwargs):
         if self.email:
