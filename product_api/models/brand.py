@@ -32,6 +32,15 @@ class Brand(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         db_index=True,
         help_text='Display order for brands. Lower values appear first.'
     )
+    legacy_id = models.BigIntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='''
+            Identifier of this brand in the system it was migrated from.
+        ''',
+    )
 
     class Meta:
         db_table = 'brands'

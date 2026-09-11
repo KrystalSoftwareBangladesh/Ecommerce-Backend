@@ -1,0 +1,1677 @@
+[
+  {
+    "legacy_id": 51,
+    "name": "Apple",
+    "slug": "apple"
+  },
+  {
+    "legacy_id": 52,
+    "name": "Asus",
+    "slug": "asus"
+  },
+  {
+    "legacy_id": 53,
+    "name": "A4tech",
+    "slug": "a4tech"
+  },
+  {
+    "legacy_id": 1062,
+    "name": "Acer",
+    "slug": "acer"
+  },
+  {
+    "legacy_id": 1063,
+    "name": "ANKER",
+    "slug": "anker"
+  },
+  {
+    "legacy_id": 1064,
+    "name": "BASEUS",
+    "slug": "baseus"
+  },
+  {
+    "legacy_id": 1065,
+    "name": "BDCOM",
+    "slug": "bdcom"
+  },
+  {
+    "legacy_id": 1066,
+    "name": "BOYA",
+    "slug": "boya"
+  },
+  {
+    "legacy_id": 1067,
+    "name": "CAMBIUM NETWORK",
+    "slug": "cambium-network"
+  },
+  {
+    "legacy_id": 1068,
+    "name": "CISCO",
+    "slug": "cisco"
+  },
+  {
+    "legacy_id": 1069,
+    "name": "Cudy",
+    "slug": "cudy"
+  },
+  {
+    "legacy_id": 1070,
+    "name": "DAHUA",
+    "slug": "dahua"
+  },
+  {
+    "legacy_id": 1071,
+    "name": "DELL",
+    "slug": "dell"
+  },
+  {
+    "legacy_id": 1072,
+    "name": "DJI",
+    "slug": "dji"
+  },
+  {
+    "legacy_id": 1073,
+    "name": "DLINK",
+    "slug": "dlink"
+  },
+  {
+    "legacy_id": 1074,
+    "name": "DTECH",
+    "slug": "dtech"
+  },
+  {
+    "legacy_id": 1075,
+    "name": "EDIFIER",
+    "slug": "edifier"
+  },
+  {
+    "legacy_id": 1076,
+    "name": "GOPRO",
+    "slug": "gopro"
+  },
+  {
+    "legacy_id": 1077,
+    "name": "Gudsen",
+    "slug": "gudsen"
+  },
+  {
+    "legacy_id": 1078,
+    "name": "HIKVISION",
+    "slug": "hikvision"
+  },
+  {
+    "legacy_id": 1079,
+    "name": "HOCO",
+    "slug": "hoco"
+  },
+  {
+    "legacy_id": 1080,
+    "name": "HP",
+    "slug": "hp"
+  },
+  {
+    "legacy_id": 1081,
+    "name": "HUAWEI",
+    "slug": "huawei"
+  },
+  {
+    "legacy_id": 1082,
+    "name": "JBL",
+    "slug": "jbl"
+  },
+  {
+    "legacy_id": 1083,
+    "name": "LOGITECH",
+    "slug": "logitech"
+  },
+  {
+    "legacy_id": 1084,
+    "name": "MIKROTIK",
+    "slug": "mikrotik"
+  },
+  {
+    "legacy_id": 1085,
+    "name": "MSI",
+    "slug": "msi"
+  },
+  {
+    "legacy_id": 1086,
+    "name": "NETGEAR",
+    "slug": "netgear"
+  },
+  {
+    "legacy_id": 1087,
+    "name": "NETIS",
+    "slug": "netis"
+  },
+  {
+    "legacy_id": 1088,
+    "name": "Oraimo",
+    "slug": "oraimo"
+  },
+  {
+    "legacy_id": 1089,
+    "name": "TENDA",
+    "slug": "tenda"
+  },
+  {
+    "legacy_id": 1090,
+    "name": "TOTEN",
+    "slug": "toten"
+  },
+  {
+    "legacy_id": 1091,
+    "name": "TP-LINK",
+    "slug": "tp-link"
+  },
+  {
+    "legacy_id": 1092,
+    "name": "UGREEN",
+    "slug": "ugreen"
+  },
+  {
+    "legacy_id": 1093,
+    "name": "V-SOL",
+    "slug": "v-sol"
+  },
+  {
+    "legacy_id": 1094,
+    "name": "XGTECH",
+    "slug": "xgtech"
+  },
+  {
+    "legacy_id": 1466,
+    "name": "ZKTeco",
+    "slug": "zkteco"
+  },
+  {
+    "legacy_id": 1467,
+    "name": "Stata",
+    "slug": "stata"
+  },
+  {
+    "legacy_id": 1468,
+    "name": "Grandstream",
+    "slug": "grandstream"
+  },
+  {
+    "legacy_id": 1469,
+    "name": "Deli",
+    "slug": "deli"
+  },
+  {
+    "legacy_id": 1470,
+    "name": "HPE",
+    "slug": "hewlett-packard-enterprise"
+  },
+  {
+    "legacy_id": 1471,
+    "name": "Synology",
+    "slug": "synology"
+  },
+  {
+    "legacy_id": 1472,
+    "name": "Kaspersky",
+    "slug": "kaspersky"
+  },
+  {
+    "legacy_id": 1473,
+    "name": "Microsoft",
+    "slug": "microsoft"
+  },
+  {
+    "legacy_id": 1474,
+    "name": "ESET",
+    "slug": "eset"
+  },
+  {
+    "legacy_id": 1475,
+    "name": "Red Hat",
+    "slug": "red_hat"
+  },
+  {
+    "legacy_id": 1476,
+    "name": "Sony",
+    "slug": "sony"
+  },
+  {
+    "legacy_id": 1477,
+    "name": "Samsung",
+    "slug": "samsung"
+  },
+  {
+    "legacy_id": 1478,
+    "name": "Haier",
+    "slug": "haier"
+  },
+  {
+    "legacy_id": 1479,
+    "name": "Gree",
+    "slug": "gree"
+  },
+  {
+    "legacy_id": 1480,
+    "name": "Orvibo",
+    "slug": "orvibo"
+  },
+  {
+    "legacy_id": 1481,
+    "name": "SmartX",
+    "slug": "smartx"
+  },
+  {
+    "legacy_id": 17920,
+    "name": "Realme",
+    "slug": "realme-mobile-price-in-bangladesh"
+  },
+  {
+    "legacy_id": 19131,
+    "name": "Steam Deck",
+    "slug": "steam-deck"
+  },
+  {
+    "legacy_id": 19132,
+    "name": "Nintendo",
+    "slug": "nintendo"
+  },
+  {
+    "legacy_id": 19133,
+    "name": "PlayStation",
+    "slug": "playstation"
+  },
+  {
+    "legacy_id": 19134,
+    "name": "Xbox",
+    "slug": "xbox"
+  },
+  {
+    "legacy_id": 37537,
+    "name": "Tecno",
+    "slug": "tecno"
+  },
+  {
+    "legacy_id": 37538,
+    "name": "Lenovo",
+    "slug": "lenovo"
+  },
+  {
+    "legacy_id": 37539,
+    "name": "Gigabyte",
+    "slug": "gigabyte"
+  },
+  {
+    "legacy_id": 37540,
+    "name": "AMD",
+    "slug": "amd"
+  },
+  {
+    "legacy_id": 37541,
+    "name": "Intel",
+    "slug": "intel"
+  },
+  {
+    "legacy_id": 37542,
+    "name": "ASRock",
+    "slug": "asrock"
+  },
+  {
+    "legacy_id": 37543,
+    "name": "Biostar",
+    "slug": "biostar"
+  },
+  {
+    "legacy_id": 37548,
+    "name": "Revenger",
+    "slug": "revenger"
+  },
+  {
+    "legacy_id": 37556,
+    "name": "Crucial",
+    "slug": "crucial"
+  },
+  {
+    "legacy_id": 37557,
+    "name": "Corsair",
+    "slug": "corsair"
+  },
+  {
+    "legacy_id": 37560,
+    "name": "Adata",
+    "slug": "adata"
+  },
+  {
+    "legacy_id": 37564,
+    "name": "Apacer",
+    "slug": "apacer"
+  },
+  {
+    "legacy_id": 37570,
+    "name": "G.Skill",
+    "slug": "g-skill"
+  },
+  {
+    "legacy_id": 37578,
+    "name": "Geil",
+    "slug": "geil"
+  },
+  {
+    "legacy_id": 37582,
+    "name": "Kingston",
+    "slug": "kingston"
+  },
+  {
+    "legacy_id": 37584,
+    "name": "Lexar",
+    "slug": "lexar"
+  },
+  {
+    "legacy_id": 37598,
+    "name": "OCPC",
+    "slug": "ocpc"
+  },
+  {
+    "legacy_id": 37599,
+    "name": "Team",
+    "slug": "team"
+  },
+  {
+    "legacy_id": 37621,
+    "name": "Transcend",
+    "slug": "transcend"
+  },
+  {
+    "legacy_id": 37622,
+    "name": "Colorful",
+    "slug": "colorful"
+  },
+  {
+    "legacy_id": 37623,
+    "name": "Sapphire",
+    "slug": "sapphire"
+  },
+  {
+    "legacy_id": 37624,
+    "name": "PELADN",
+    "slug": "peladn"
+  },
+  {
+    "legacy_id": 37625,
+    "name": "Zotac",
+    "slug": "zotac"
+  },
+  {
+    "legacy_id": 37626,
+    "name": "PNY",
+    "slug": "pny"
+  },
+  {
+    "legacy_id": 37627,
+    "name": "Cooler Master",
+    "slug": "cooler-master"
+  },
+  {
+    "legacy_id": 37628,
+    "name": "Thermaltake",
+    "slug": "thermaltake"
+  },
+  {
+    "legacy_id": 37629,
+    "name": "Antec",
+    "slug": "antec"
+  },
+  {
+    "legacy_id": 37630,
+    "name": "Benq",
+    "slug": "benq"
+  },
+  {
+    "legacy_id": 37631,
+    "name": "LG",
+    "slug": "lg"
+  },
+  {
+    "legacy_id": 37632,
+    "name": "ViewSonic",
+    "slug": "viewsonic"
+  },
+  {
+    "legacy_id": 37633,
+    "name": "Philips",
+    "slug": "philips"
+  },
+  {
+    "legacy_id": 37634,
+    "name": "AOC",
+    "slug": "aoc"
+  },
+  {
+    "legacy_id": 37635,
+    "name": "Netac",
+    "slug": "netac"
+  },
+  {
+    "legacy_id": 37636,
+    "name": "Deepcool",
+    "slug": "deepcool"
+  },
+  {
+    "legacy_id": 37637,
+    "name": "AULA",
+    "slug": "aula"
+  },
+  {
+    "legacy_id": 37638,
+    "name": "Dareu",
+    "slug": "dareu"
+  },
+  {
+    "legacy_id": 37639,
+    "name": "HAVIT",
+    "slug": "havit"
+  },
+  {
+    "legacy_id": 37640,
+    "name": "Matias",
+    "slug": "matias"
+  },
+  {
+    "legacy_id": 37641,
+    "name": "Meetion",
+    "slug": "meetion"
+  },
+  {
+    "legacy_id": 37642,
+    "name": "Micropack",
+    "slug": "micropack"
+  },
+  {
+    "legacy_id": 37643,
+    "name": "NZXT",
+    "slug": "nzxt"
+  },
+  {
+    "legacy_id": 37644,
+    "name": "Rapoo",
+    "slug": "rapoo"
+  },
+  {
+    "legacy_id": 37645,
+    "name": "REDRAGON",
+    "slug": "redragon"
+  },
+  {
+    "legacy_id": 37646,
+    "name": "SteelSeries",
+    "slug": "steelseries"
+  },
+  {
+    "legacy_id": 37647,
+    "name": "T-WOLF",
+    "slug": "t-wolf"
+  },
+  {
+    "legacy_id": 37648,
+    "name": "ThundeRobot",
+    "slug": "thunderobot"
+  },
+  {
+    "legacy_id": 37649,
+    "name": "Fantech",
+    "slug": "fantech"
+  },
+  {
+    "legacy_id": 37650,
+    "name": "RAZER",
+    "slug": "razer"
+  },
+  {
+    "legacy_id": 37651,
+    "name": "Xtrike Me",
+    "slug": "xtrike-me"
+  },
+  {
+    "legacy_id": 37652,
+    "name": "Bose",
+    "slug": "bose"
+  },
+  {
+    "legacy_id": 37653,
+    "name": "F&amp;D",
+    "slug": "fd"
+  },
+  {
+    "legacy_id": 37654,
+    "name": "Microlab",
+    "slug": "microlab"
+  },
+  {
+    "legacy_id": 37655,
+    "name": "Thonet &amp; Vander",
+    "slug": "thonet-vander"
+  },
+  {
+    "legacy_id": 37656,
+    "name": "Xtreme",
+    "slug": "xtreme"
+  },
+  {
+    "legacy_id": 37657,
+    "name": "Yamaha",
+    "slug": "yamaha"
+  },
+  {
+    "legacy_id": 37658,
+    "name": "JABRA",
+    "slug": "jabra"
+  },
+  {
+    "legacy_id": 37659,
+    "name": "RODE",
+    "slug": "rode"
+  },
+  {
+    "legacy_id": 37660,
+    "name": "Meta",
+    "slug": "meta"
+  },
+  {
+    "legacy_id": 37661,
+    "name": "Pico",
+    "slug": "pico"
+  },
+  {
+    "legacy_id": 37942,
+    "name": "AVerMedia",
+    "slug": "avermedia"
+  },
+  {
+    "legacy_id": 37943,
+    "name": "Orico",
+    "slug": "orico"
+  },
+  {
+    "legacy_id": 37944,
+    "name": "Value-Top",
+    "slug": "value-top"
+  },
+  {
+    "legacy_id": 37945,
+    "name": "SanDisk",
+    "slug": "sandisk"
+  },
+  {
+    "legacy_id": 37946,
+    "name": "Seagate",
+    "slug": "seagate"
+  },
+  {
+    "legacy_id": 37947,
+    "name": "Western Digital",
+    "slug": "western-digital"
+  },
+  {
+    "legacy_id": 37948,
+    "name": "Toshiba",
+    "slug": "toshiba"
+  },
+  {
+    "legacy_id": 37949,
+    "name": "EKWB",
+    "slug": "ekwb"
+  },
+  {
+    "legacy_id": 37950,
+    "name": "Lian Li",
+    "slug": "lian-li"
+  },
+  {
+    "legacy_id": 37951,
+    "name": "Apollo",
+    "slug": "apollo"
+  },
+  {
+    "legacy_id": 37952,
+    "name": "Kstar",
+    "slug": "kstar"
+  },
+  {
+    "legacy_id": 37953,
+    "name": "MaxGreen",
+    "slug": "maxgreen"
+  },
+  {
+    "legacy_id": 37954,
+    "name": "Power Guard",
+    "slug": "power-guard"
+  },
+  {
+    "legacy_id": 37955,
+    "name": "Power Pac",
+    "slug": "power-pac"
+  },
+  {
+    "legacy_id": 38226,
+    "name": "Prolink",
+    "slug": "prolink"
+  },
+  {
+    "legacy_id": 38228,
+    "name": "Santak",
+    "slug": "santak"
+  },
+  {
+    "legacy_id": 38229,
+    "name": "KENSON",
+    "slug": "kenson"
+  },
+  {
+    "legacy_id": 38230,
+    "name": "LONG",
+    "slug": "long"
+  },
+  {
+    "legacy_id": 38234,
+    "name": "Marsriva",
+    "slug": "marsriva"
+  },
+  {
+    "legacy_id": 38240,
+    "name": "PC Power",
+    "slug": "pc-power"
+  },
+  {
+    "legacy_id": 38241,
+    "name": "WGP",
+    "slug": "wgp"
+  },
+  {
+    "legacy_id": 38244,
+    "name": "Belkin",
+    "slug": "belkin"
+  },
+  {
+    "legacy_id": 38246,
+    "name": "Huntkey",
+    "slug": "huntkey"
+  },
+  {
+    "legacy_id": 38251,
+    "name": "LDNIO",
+    "slug": "ldnio"
+  },
+  {
+    "legacy_id": 38256,
+    "name": "Awei",
+    "slug": "awei"
+  },
+  {
+    "legacy_id": 38259,
+    "name": "Joyroom",
+    "slug": "joyroom"
+  },
+  {
+    "legacy_id": 38262,
+    "name": "Remax",
+    "slug": "remax"
+  },
+  {
+    "legacy_id": 38264,
+    "name": "Adobe",
+    "slug": "adobe"
+  },
+  {
+    "legacy_id": 38268,
+    "name": "Anydesk",
+    "slug": "anydesk"
+  },
+  {
+    "legacy_id": 38269,
+    "name": "AutoDesk",
+    "slug": "autodesk"
+  },
+  {
+    "legacy_id": 38270,
+    "name": "Bijoy",
+    "slug": "bijoy"
+  },
+  {
+    "legacy_id": 38273,
+    "name": "Vmware",
+    "slug": "vmware"
+  },
+  {
+    "legacy_id": 38277,
+    "name": "Dinstar",
+    "slug": "dinstar"
+  },
+  {
+    "legacy_id": 38287,
+    "name": "DSPPA",
+    "slug": "dsppa"
+  },
+  {
+    "legacy_id": 38291,
+    "name": "CANON",
+    "slug": "canon"
+  },
+  {
+    "legacy_id": 38296,
+    "name": "EPSON",
+    "slug": "epson"
+  },
+  {
+    "legacy_id": 38299,
+    "name": "Pantum",
+    "slug": "pantum"
+  },
+  {
+    "legacy_id": 38304,
+    "name": "Brother",
+    "slug": "brother"
+  },
+  {
+    "legacy_id": 38307,
+    "name": "Casio",
+    "slug": "casio"
+  },
+  {
+    "legacy_id": 38572,
+    "name": "Rongta",
+    "slug": "rongta"
+  },
+  {
+    "legacy_id": 38579,
+    "name": "Sewoo",
+    "slug": "sewoo"
+  },
+  {
+    "legacy_id": 38585,
+    "name": "SPRT",
+    "slug": "sprt"
+  },
+  {
+    "legacy_id": 38590,
+    "name": "Xprinter",
+    "slug": "xprinter"
+  },
+  {
+    "legacy_id": 38591,
+    "name": "Zebra",
+    "slug": "zebra"
+  },
+  {
+    "legacy_id": 38597,
+    "name": "VIVITEK",
+    "slug": "vivitek"
+  },
+  {
+    "legacy_id": 38600,
+    "name": "Plustek",
+    "slug": "plustek"
+  },
+  {
+    "legacy_id": 38601,
+    "name": "Honeywell",
+    "slug": "honeywell"
+  },
+  {
+    "legacy_id": 38602,
+    "name": "Sunlux",
+    "slug": "sunlux"
+  },
+  {
+    "legacy_id": 38603,
+    "name": "Sunmi",
+    "slug": "sunmi"
+  },
+  {
+    "legacy_id": 38604,
+    "name": "Winson",
+    "slug": "winson"
+  },
+  {
+    "legacy_id": 38605,
+    "name": "TEV",
+    "slug": "tev"
+  },
+  {
+    "legacy_id": 38606,
+    "name": "Mitel",
+    "slug": "mitel"
+  },
+  {
+    "legacy_id": 38607,
+    "name": "Panasonic",
+    "slug": "panasonic"
+  },
+  {
+    "legacy_id": 38608,
+    "name": "Zycoo",
+    "slug": "zycoo"
+  },
+  {
+    "legacy_id": 38609,
+    "name": "Arctic",
+    "slug": "arctic"
+  },
+  {
+    "legacy_id": 38610,
+    "name": "Gamdias",
+    "slug": "gamdias"
+  },
+  {
+    "legacy_id": 38611,
+    "name": "Thermalright",
+    "slug": "thermalright"
+  },
+  {
+    "legacy_id": 38612,
+    "name": "Ajazz",
+    "slug": "ajazz"
+  },
+  {
+    "legacy_id": 38613,
+    "name": "Vertux",
+    "slug": "vertux"
+  },
+  {
+    "legacy_id": 38617,
+    "name": "Vention",
+    "slug": "vention"
+  },
+  {
+    "legacy_id": 38618,
+    "name": "Arctic Hunter",
+    "slug": "arctic-hunter"
+  },
+  {
+    "legacy_id": 38989,
+    "name": "Targus",
+    "slug": "targus"
+  },
+  {
+    "legacy_id": 38990,
+    "name": "Vyvylabs",
+    "slug": "vyvylabs"
+  },
+  {
+    "legacy_id": 38991,
+    "name": "Wiwu",
+    "slug": "wiwu"
+  },
+  {
+    "legacy_id": 38992,
+    "name": "Amazfit",
+    "slug": "amazfit"
+  },
+  {
+    "legacy_id": 38993,
+    "name": "COLMI",
+    "slug": "colmi"
+  },
+  {
+    "legacy_id": 38994,
+    "name": "FASTRACK",
+    "slug": "fastrack"
+  },
+  {
+    "legacy_id": 38995,
+    "name": "HAYLOU",
+    "slug": "haylou"
+  },
+  {
+    "legacy_id": 38996,
+    "name": "Honor",
+    "slug": "honor"
+  },
+  {
+    "legacy_id": 38997,
+    "name": "Kieslect",
+    "slug": "kieslect"
+  },
+  {
+    "legacy_id": 38998,
+    "name": "OnePlus",
+    "slug": "oneplus"
+  },
+  {
+    "legacy_id": 38999,
+    "name": "Xiaomi",
+    "slug": "xiaomi"
+  },
+  {
+    "legacy_id": 39000,
+    "name": "XINJI",
+    "slug": "xinji"
+  },
+  {
+    "legacy_id": 39001,
+    "name": "Zeblaze",
+    "slug": "zeblaze"
+  },
+  {
+    "legacy_id": 39002,
+    "name": "QCY",
+    "slug": "qcy"
+  },
+  {
+    "legacy_id": 39003,
+    "name": "Google",
+    "slug": "google"
+  },
+  {
+    "legacy_id": 39004,
+    "name": "AKASO",
+    "slug": "akaso"
+  },
+  {
+    "legacy_id": 39005,
+    "name": "AUSEK",
+    "slug": "ausek"
+  },
+  {
+    "legacy_id": 39006,
+    "name": "Insta360",
+    "slug": "insta360"
+  },
+  {
+    "legacy_id": 39007,
+    "name": "ORDRO",
+    "slug": "ordro"
+  },
+  {
+    "legacy_id": 39008,
+    "name": "SJCAM",
+    "slug": "sjcam"
+  },
+  {
+    "legacy_id": 39213,
+    "name": "FUJIFILM",
+    "slug": "fujifilm"
+  },
+  {
+    "legacy_id": 39214,
+    "name": "Nikon",
+    "slug": "nikon"
+  },
+  {
+    "legacy_id": 39215,
+    "name": "Digipod",
+    "slug": "digipod"
+  },
+  {
+    "legacy_id": 39216,
+    "name": "K&amp;F Concept",
+    "slug": "kf-concept"
+  },
+  {
+    "legacy_id": 39217,
+    "name": "Manbily",
+    "slug": "manbily"
+  },
+  {
+    "legacy_id": 39218,
+    "name": "Yunteng",
+    "slug": "yunteng"
+  },
+  {
+    "legacy_id": 39219,
+    "name": "ZHIYUN",
+    "slug": "zhiyun"
+  },
+  {
+    "legacy_id": 39220,
+    "name": "Behringer",
+    "slug": "behringer"
+  },
+  {
+    "legacy_id": 39221,
+    "name": "Maono",
+    "slug": "maono"
+  },
+  {
+    "legacy_id": 39222,
+    "name": "Ahuja",
+    "slug": "ahuja"
+  },
+  {
+    "legacy_id": 39223,
+    "name": "ASTHA",
+    "slug": "astha"
+  },
+  {
+    "legacy_id": 39224,
+    "name": "Kington",
+    "slug": "kington"
+  },
+  {
+    "legacy_id": 39225,
+    "name": "Silicon",
+    "slug": "silicon"
+  },
+  {
+    "legacy_id": 39226,
+    "name": "Oppo",
+    "slug": "oppo"
+  },
+  {
+    "legacy_id": 39227,
+    "name": "TECHNOPLUS",
+    "slug": "technoplus"
+  },
+  {
+    "legacy_id": 39228,
+    "name": "Vivo",
+    "slug": "vivo"
+  },
+  {
+    "legacy_id": 39229,
+    "name": "Huion",
+    "slug": "huion"
+  },
+  {
+    "legacy_id": 39230,
+    "name": "VEIKK",
+    "slug": "veikk"
+  },
+  {
+    "legacy_id": 39231,
+    "name": "Wacom",
+    "slug": "wacom"
+  },
+  {
+    "legacy_id": 39232,
+    "name": "XP-Pen",
+    "slug": "xp-pen"
+  },
+  {
+    "legacy_id": 39233,
+    "name": "Amazon",
+    "slug": "amazon"
+  },
+  {
+    "legacy_id": 39234,
+    "name": "Black Shark",
+    "slug": "black-shark"
+  },
+  {
+    "legacy_id": 39235,
+    "name": "Chuwi",
+    "slug": "chuwi"
+  },
+  {
+    "legacy_id": 39236,
+    "name": "Teclast",
+    "slug": "teclast"
+  },
+  {
+    "legacy_id": 39237,
+    "name": "Walton",
+    "slug": "walton"
+  },
+  {
+    "legacy_id": 39238,
+    "name": "ZTE",
+    "slug": "zte"
+  },
+  {
+    "legacy_id": 39239,
+    "name": "Beats",
+    "slug": "beats"
+  },
+  {
+    "legacy_id": 39240,
+    "name": "Texas",
+    "slug": "texas"
+  },
+  {
+    "legacy_id": 39241,
+    "name": "Armor",
+    "slug": "armor"
+  },
+  {
+    "legacy_id": 39242,
+    "name": "Innovtech",
+    "slug": "innovtech"
+  },
+  {
+    "legacy_id": 39243,
+    "name": "Garmin",
+    "slug": "garmin"
+  },
+  {
+    "legacy_id": 39244,
+    "name": "Amazon Kindle",
+    "slug": "amazon-kindle"
+  },
+  {
+    "legacy_id": 39245,
+    "name": "Boox",
+    "slug": "boox"
+  },
+  {
+    "legacy_id": 39246,
+    "name": "Rakuten Kobo",
+    "slug": "rakuten-kobo"
+  },
+  {
+    "legacy_id": 39247,
+    "name": "Dasung",
+    "slug": "dasung"
+  },
+  {
+    "legacy_id": 39248,
+    "name": "Kobo",
+    "slug": "kobo"
+  },
+  {
+    "legacy_id": 39249,
+    "name": "ZOOM",
+    "slug": "zoom"
+  },
+  {
+    "legacy_id": 39250,
+    "name": "Micom",
+    "slug": "micom"
+  },
+  {
+    "legacy_id": 39279,
+    "name": "Odiomix",
+    "slug": "odiomix"
+  },
+  {
+    "legacy_id": 39280,
+    "name": "Yuanxin",
+    "slug": "yuanxin"
+  },
+  {
+    "legacy_id": 39281,
+    "name": "Ruijie",
+    "slug": "ruijie"
+  },
+  {
+    "legacy_id": 39282,
+    "name": "Cdata",
+    "slug": "cdata"
+  },
+  {
+    "legacy_id": 39283,
+    "name": "GrameenPhone",
+    "slug": "grameenphone"
+  },
+  {
+    "legacy_id": 39284,
+    "name": "Fortinet",
+    "slug": "fortinet"
+  },
+  {
+    "legacy_id": 39285,
+    "name": "IP-COM",
+    "slug": "ip-com"
+  },
+  {
+    "legacy_id": 39286,
+    "name": "UbiQUITI",
+    "slug": "ubiquiti"
+  },
+  {
+    "legacy_id": 39287,
+    "name": "Zyxel",
+    "slug": "zyxel"
+  },
+  {
+    "legacy_id": 39288,
+    "name": "DBC",
+    "slug": "dbc"
+  },
+  {
+    "legacy_id": 39289,
+    "name": "EXFO",
+    "slug": "exfo"
+  },
+  {
+    "legacy_id": 39290,
+    "name": "Comway",
+    "slug": "comway"
+  },
+  {
+    "legacy_id": 39291,
+    "name": "OPWILL",
+    "slug": "opwill"
+  },
+  {
+    "legacy_id": 39292,
+    "name": "Acnet",
+    "slug": "acnet"
+  },
+  {
+    "legacy_id": 39293,
+    "name": "BT-PON",
+    "slug": "bt-pon"
+  },
+  {
+    "legacy_id": 39294,
+    "name": "TBS",
+    "slug": "tbs"
+  },
+  {
+    "legacy_id": 39295,
+    "name": "GrandLink",
+    "slug": "grandlink"
+  },
+  {
+    "legacy_id": 39296,
+    "name": "Sumitomo",
+    "slug": "sumitomo"
+  },
+  {
+    "legacy_id": 39297,
+    "name": "FiberFox",
+    "slug": "fiberfox"
+  },
+  {
+    "legacy_id": 39298,
+    "name": "Jilong",
+    "slug": "jilong"
+  },
+  {
+    "legacy_id": 39299,
+    "name": "Shinho",
+    "slug": "shinho"
+  },
+  {
+    "legacy_id": 39301,
+    "name": "Tumtec",
+    "slug": "tumtec"
+  },
+  {
+    "legacy_id": 39303,
+    "name": "Inno View",
+    "slug": "inno-view"
+  },
+  {
+    "legacy_id": 39304,
+    "name": "ELOIK IOT",
+    "slug": "eloik-iot"
+  },
+  {
+    "legacy_id": 39307,
+    "name": "Jetfiber",
+    "slug": "jetfiber"
+  },
+  {
+    "legacy_id": 39308,
+    "name": "D-Link",
+    "slug": "d-link"
+  },
+  {
+    "legacy_id": 39439,
+    "name": "F5",
+    "slug": "f5"
+  },
+  {
+    "legacy_id": 39440,
+    "name": "Palo Alto",
+    "slug": "palo-alto"
+  },
+  {
+    "legacy_id": 39441,
+    "name": "Shopos",
+    "slug": "shopos"
+  },
+  {
+    "legacy_id": 39442,
+    "name": "SonicWall",
+    "slug": "sonicwall"
+  },
+  {
+    "legacy_id": 39443,
+    "name": "SpaceX",
+    "slug": "spacex"
+  },
+  {
+    "legacy_id": 39444,
+    "name": "Noyafa",
+    "slug": "noyafa"
+  },
+  {
+    "legacy_id": 39445,
+    "name": "TRENDnet",
+    "slug": "trendnet"
+  },
+  {
+    "legacy_id": 39446,
+    "name": "CommScope",
+    "slug": "commscope"
+  },
+  {
+    "legacy_id": 39447,
+    "name": "Dintek",
+    "slug": "dintek"
+  },
+  {
+    "legacy_id": 39448,
+    "name": "Micronet",
+    "slug": "micronet"
+  },
+  {
+    "legacy_id": 39449,
+    "name": "R&amp;M",
+    "slug": "rm"
+  },
+  {
+    "legacy_id": 39450,
+    "name": "Rosenberger",
+    "slug": "rosenberger"
+  },
+  {
+    "legacy_id": 39451,
+    "name": "SafeNet",
+    "slug": "safenet"
+  },
+  {
+    "legacy_id": 39452,
+    "name": "Jovision",
+    "slug": "jovision"
+  },
+  {
+    "legacy_id": 39453,
+    "name": "Uniview",
+    "slug": "uniview"
+  },
+  {
+    "legacy_id": 39454,
+    "name": "Ezviz",
+    "slug": "ezviz"
+  },
+  {
+    "legacy_id": 39455,
+    "name": "Imou",
+    "slug": "imou"
+  },
+  {
+    "legacy_id": 39456,
+    "name": "Vimtag",
+    "slug": "vimtag"
+  },
+  {
+    "legacy_id": 39457,
+    "name": "Nexakey",
+    "slug": "nexakey"
+  },
+  {
+    "legacy_id": 39458,
+    "name": "Onspot",
+    "slug": "onspot"
+  },
+  {
+    "legacy_id": 39459,
+    "name": "SmartLife",
+    "slug": "smartlife"
+  },
+  {
+    "legacy_id": 39460,
+    "name": "Cote",
+    "slug": "cote"
+  },
+  {
+    "legacy_id": 39461,
+    "name": "QNAP",
+    "slug": "qnap"
+  },
+  {
+    "legacy_id": 39462,
+    "name": "General",
+    "slug": "general"
+  },
+  {
+    "legacy_id": 39463,
+    "name": "Hisense",
+    "slug": "hisense"
+  },
+  {
+    "legacy_id": 39464,
+    "name": "Midea",
+    "slug": "midea"
+  },
+  {
+    "legacy_id": 39465,
+    "name": "Sharp",
+    "slug": "sharp"
+  },
+  {
+    "legacy_id": 39466,
+    "name": "CLICK",
+    "slug": "click"
+  },
+  {
+    "legacy_id": 39467,
+    "name": "Defender",
+    "slug": "defender"
+  },
+  {
+    "legacy_id": 39468,
+    "name": "Disnie",
+    "slug": "disnie"
+  },
+  {
+    "legacy_id": 39469,
+    "name": "JISULIFE",
+    "slug": "jisulife"
+  },
+  {
+    "legacy_id": 39470,
+    "name": "Kingshan",
+    "slug": "kingshan"
+  },
+  {
+    "legacy_id": 39471,
+    "name": "VISION",
+    "slug": "vision"
+  },
+  {
+    "legacy_id": 39472,
+    "name": "Duranta",
+    "slug": "duranta"
+  },
+  {
+    "legacy_id": 39473,
+    "name": "Veloce",
+    "slug": "veloce"
+  },
+  {
+    "legacy_id": 39474,
+    "name": "SolarWinds",
+    "slug": "solarwinds"
+  },
+  {
+    "legacy_id": 39475,
+    "name": "Paessler",
+    "slug": "paessler"
+  },
+  {
+    "legacy_id": 39476,
+    "name": "Manage Engine",
+    "slug": "manage-engine"
+  },
+  {
+    "legacy_id": 39477,
+    "name": "GREYCORTEX",
+    "slug": "greycortex"
+  },
+  {
+    "legacy_id": 39478,
+    "name": "Safetica",
+    "slug": "safetica"
+  },
+  {
+    "legacy_id": 39479,
+    "name": "Xopero",
+    "slug": "xopero"
+  },
+  {
+    "legacy_id": 39480,
+    "name": "HPE Aruba",
+    "slug": "hpe-aruba"
+  },
+  {
+    "legacy_id": 39481,
+    "name": "Govee",
+    "slug": "govee"
+  },
+  {
+    "legacy_id": 39482,
+    "name": "HMD",
+    "slug": "hmd"
+  },
+  {
+    "legacy_id": 39483,
+    "name": "Supermicro",
+    "slug": "supermicro"
+  },
+  {
+    "legacy_id": 39484,
+    "name": "Ximax",
+    "slug": "ximax"
+  },
+  {
+    "legacy_id": 39485,
+    "name": "Ozlo",
+    "slug": "ozlo"
+  },
+  {
+    "legacy_id": 39486,
+    "name": "Shokz",
+    "slug": "shokz"
+  },
+  {
+    "legacy_id": 39487,
+    "name": "OPENDOTS",
+    "slug": "opendots"
+  },
+  {
+    "legacy_id": 39488,
+    "name": "Luminous",
+    "slug": "luminous"
+  },
+  {
+    "legacy_id": 39489,
+    "name": "Exide",
+    "slug": "exide"
+  },
+  {
+    "legacy_id": 39490,
+    "name": "Ecoflow",
+    "slug": "ecoflow"
+  },
+  {
+    "legacy_id": 39491,
+    "name": "Maxsun",
+    "slug": "maxsun"
+  },
+  {
+    "legacy_id": 39492,
+    "name": "Huanda",
+    "slug": "huanda"
+  },
+  {
+    "legacy_id": 39493,
+    "name": "U2 ProS",
+    "slug": "u2-pros"
+  },
+  {
+    "legacy_id": 39494,
+    "name": "ULANZI",
+    "slug": "ulanzi"
+  },
+  {
+    "legacy_id": 39495,
+    "name": "OLAX",
+    "slug": "olax"
+  },
+  {
+    "legacy_id": 39496,
+    "name": "SKE",
+    "slug": "ske"
+  },
+  {
+    "legacy_id": 39497,
+    "name": "AOCHUAN",
+    "slug": "aochuan"
+  },
+  {
+    "legacy_id": 39498,
+    "name": "GearUP",
+    "slug": "gearup"
+  },
+  {
+    "legacy_id": 39499,
+    "name": "XUNDD",
+    "slug": "xundd"
+  },
+  {
+    "legacy_id": 39500,
+    "name": "MiLi MiTag",
+    "slug": "mili-mitag"
+  },
+  {
+    "legacy_id": 43189,
+    "name": "Telesin",
+    "slug": "telesin"
+  },
+  {
+    "legacy_id": 43253,
+    "name": "Montech",
+    "slug": "montech"
+  },
+  {
+    "legacy_id": 43256,
+    "name": "1STPLAYER",
+    "slug": "1stplayer"
+  },
+  {
+    "legacy_id": 43263,
+    "name": "KingSpec",
+    "slug": "kingspec"
+  },
+  {
+    "legacy_id": 43268,
+    "name": "Viper Gaming",
+    "slug": "viper-gaming"
+  },
+  {
+    "legacy_id": 43269,
+    "name": "Arzopa",
+    "slug": "arzopa"
+  },
+  {
+    "legacy_id": 43271,
+    "name": "PowerColor",
+    "slug": "powercolor"
+  },
+  {
+    "legacy_id": 43277,
+    "name": "Palit",
+    "slug": "palit"
+  },
+  {
+    "legacy_id": 43279,
+    "name": "Arktek",
+    "slug": "arktek"
+  },
+  {
+    "legacy_id": 43280,
+    "name": "Gunnir",
+    "slug": "gunnir"
+  },
+  {
+    "legacy_id": 43338,
+    "name": "Fujitsu",
+    "slug": "fujitsu"
+  },
+  {
+    "legacy_id": 43587,
+    "name": "TOTOLINK",
+    "slug": "totolink"
+  }
+]
