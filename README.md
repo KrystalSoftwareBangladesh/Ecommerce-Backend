@@ -176,3 +176,11 @@ Import brands
 ```bash
 python manage.py import_brands resources/brands.json
 ```
+Export map of products and brands
+```bash
+python scripts/export_woocommerce_product_brands.py
+```
+Map brands and products
+```bash
+python manage.py import_product_brands resources/product_brands.json
+```
