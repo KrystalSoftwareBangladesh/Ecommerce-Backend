@@ -55,10 +55,14 @@ class ProductFilter(django_filters.FilterSet):
         field_name='categories__id',
         lookup_expr='in',
     )
+    brands = django_filters.BaseInFilter(
+        field_name='brand__id',
+        lookup_expr='in',
+    )
 
     class Meta:
         model = Product
-        fields = ['categories']
+        fields = ['categories', 'brands']
 
 
 @extend_schema(tags=["Products"])
