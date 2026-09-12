@@ -1,7 +1,7 @@
 # product_api/admin.py
 from django.contrib import admin
-from django.db.models import Sum, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum, Value
+from django.db.models.functions import Coalesce, Trim
 
 from .models import (
     Product, ProductPriceHistory, ProductVariant,
@@ -11,10 +11,36 @@ from .models import (
 from .services.product import set_product_image_default
 
 
+class DescriptionFilter(admin.SimpleListFilter):
+    """Filter brands by whether description has content.
+
+    Blank and whitespace-only descriptions are treated as null.
+    """
+    title = 'description'
+    parameter_name = 'description_status'
+
+    def lookups(self, request, model_admin):
+        return [
+            ('empty', 'Without description'),
+            ('filled', 'With description'),
+        ]
+
+    def queryset(self, request, queryset):
+        empty = Q(description__isnull=True) | Q(trimmed_description='')
+
+        if self.value() == 'empty':
+            return queryset.annotate(
+                trimmed_description=Trim('description')).filter(empty)
+        if self.value() == 'filled':
+            return queryset.annotate(
+                trimmed_description=Trim('description')).exclude(empty)
+        return queryset
+
+
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name', 'slug', 'is_active', 'created_at']
-    list_filter = ['is_active', 'created_at']
+    list_filter = ['is_active', DescriptionFilter, 'created_at']
     search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
