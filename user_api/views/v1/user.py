@@ -68,7 +68,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = (
             User.objects
-            .filter(is_deleted=False)
+            .filter(
+                is_deleted=False,
+                role__in=["OWNER", "STAFF"],
+            )
             .order_by("-added_at", "-id")
         )
         if not self.request.user.is_superuser:
