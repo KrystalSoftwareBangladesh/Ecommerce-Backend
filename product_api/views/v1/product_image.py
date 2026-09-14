@@ -18,14 +18,16 @@ from product_api.serializers import (
     ProductImageDetailSerializer,
     ProductImageListSerializer,
     BulkProductImageUploadSerializer,
+    ProductImageSummarySerializer,
 )
-from product_api.services.product import (
+from product_api.services import (
     replace_product_image,
     reorder_product_images,
     set_product_image_default,
     soft_delete_product_image,
     upload_product_image,
     bulk_upload_product_images,
+    get_product_image_summary,
 )
 
 
@@ -263,3 +265,28 @@ class ProductImageViewSet(
             context=self.get_serializer_context(),
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Product images summary",
+        description=(
+            "Products count"
+            "Product images count"
+            "High resolution count"
+            "Ratio mismatch count"
+        ),
+        request=None,
+        responses=ProductImageSummarySerializer(),
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='summary',
+    )
+    def summary(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        summary_data = get_product_image_summary(queryset)
+
+        serializer = ProductImageSummarySerializer(summary_data)
+
+        return Response(serializer.data)

@@ -196,3 +196,10 @@ class BulkProductImageUploadSerializer(serializers.Serializer):
             )
 
         return attrs
+
+
+class ProductImageSummarySerializer(serializers.Serializer):
+    total_products = serializers.IntegerField()
+    total_product_images = serializers.IntegerField()
+    high_resolution_images = serializers.IntegerField()
+    ratio_mismatch_images = serializers.IntegerField()
