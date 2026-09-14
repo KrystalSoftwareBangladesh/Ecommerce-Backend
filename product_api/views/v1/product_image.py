@@ -283,10 +283,11 @@ class ProductImageViewSet(
         url_path='summary',
     )
     def summary(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
+        queryset = ProductImage.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        )
+        queryset = self.filter_queryset(queryset)
         summary_data = get_product_image_summary(queryset)
-
         serializer = ProductImageSummarySerializer(summary_data)
-
         return Response(serializer.data)
