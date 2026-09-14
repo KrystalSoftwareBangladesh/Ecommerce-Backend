@@ -8,6 +8,9 @@ from .product import (
     soft_delete_product_image,
     bulk_upload_product_images,
 )
+from .product_image import (
+    get_product_image_summary,
+)
 
 
 __all__ = [
@@ -18,4 +21,5 @@ __all__ = [
     'reorder_product_images',
     'soft_delete_product_image',
     'bulk_upload_product_images',
+    "get_product_image_summary",
 ]
