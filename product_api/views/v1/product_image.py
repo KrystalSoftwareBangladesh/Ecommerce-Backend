@@ -28,6 +28,8 @@ from product_api.services import (
     upload_product_image,
     bulk_upload_product_images,
     get_product_image_summary,
+    is_product_image_high_resolution,
+    is_product_image_ratio_mismatch,
 )
 
 
@@ -68,12 +70,25 @@ class ProductImageFilter(django_filters.FilterSet):
     products = django_filters.CharFilter(
         method='filter_products',
     )
+    is_high_resolution = django_filters.BooleanFilter(
+        method='filter_is_high_resolution'
+    )
+    is_ratio_mismatch = django_filters.BooleanFilter(
+        method='filter_is_ratio_mismatch'
+    )
 
     class Meta:
         model = ProductImage
-        fields = ['products']
+        fields = [
+            'products',
+            'is_high_resolution',
+            'is_ratio_mismatch',
+        ]
 
     def filter_products(self, queryset, name, value):
+        if not value:
+            return queryset
+
         values = [
             item.strip()
             for item in value.split(',')
@@ -101,6 +116,36 @@ class ProductImageFilter(django_filters.FilterSet):
             product_filter |= Q(product__slug__in=product_slugs)
 
         return queryset.filter(product_filter).distinct()
+
+    def filter_is_high_resolution(self, queryset, name, value):
+        if value is None:
+            return queryset
+
+        matching_ids = []
+
+        for product_image in queryset.iterator(chunk_size=100):
+            if is_product_image_high_resolution(product_image):
+                matching_ids.append(product_image.id)
+
+        if value:
+            return queryset.filter(id__in=matching_ids)
+
+        return queryset.exclude(id__in=matching_ids)
+
+    def filter_is_ratio_mismatch(self, queryset, name, value):
+        if value is None:
+            return queryset
+
+        matching_ids = []
+
+        for product_image in queryset.iterator(chunk_size=100):
+            if is_product_image_ratio_mismatch(product_image):
+                matching_ids.append(product_image.id)
+
+        if value:
+            return queryset.filter(id__in=matching_ids)
+
+        return queryset.exclude(id__in=matching_ids)
 
 
 @extend_schema(tags=["Products"])
