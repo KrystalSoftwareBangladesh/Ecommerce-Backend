@@ -1,9 +1,13 @@
 # product_api/views/v1/product_image.py
 from django.db import transaction
+from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+import django_filters
 
 from EcommerceBackend.core.permission import (
     PublicReadPermissionMixin, ModelPermissionAccess,
@@ -58,6 +62,45 @@ def _parse_bulk_image_data(data, files):
     ]
 
 
+class ProductImageFilter(django_filters.FilterSet):
+    products = django_filters.CharFilter(
+        method='filter_products',
+    )
+
+    class Meta:
+        model = ProductImage
+        fields = ['products']
+
+    def filter_products(self, queryset, name, value):
+        values = [
+            item.strip()
+            for item in value.split(',')
+            if item.strip()
+        ]
+
+        if not values:
+            return queryset
+
+        product_ids = []
+        product_slugs = []
+
+        for item in values:
+            if item.isdigit():
+                product_ids.append(int(item))
+            else:
+                product_slugs.append(item)
+
+        product_filter = Q()
+
+        if product_ids:
+            product_filter |= Q(product__id__in=product_ids)
+
+        if product_slugs:
+            product_filter |= Q(product__slug__in=product_slugs)
+
+        return queryset.filter(product_filter).distinct()
+
+
 @extend_schema(tags=["Products"])
 class ProductImageViewSet(
     PublicReadPermissionMixin,
@@ -74,6 +117,8 @@ class ProductImageViewSet(
         deleted_at__isnull=True,
     )
     serializer_class = ProductImageCreateUpdateSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductImageFilter
 
     def get_queryset(self):
         return (
