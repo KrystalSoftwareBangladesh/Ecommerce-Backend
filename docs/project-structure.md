@@ -3,7 +3,7 @@
 Mirrors the actual repository. Last verified 2026-09-07.
 
 ```text
-ZayrahLife-Backend/
+Backend-Backend/
 ├── AGENTS.md
 ├── README.md
 ├── manage.py
