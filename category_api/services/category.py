@@ -374,3 +374,30 @@ class CategoryImportService:
             errors.append(error_msg)
 
         return created_count, created_paths
+
+
+def get_category_descendant_ids(category):
+    """
+        Return the given category ID and all descendant
+        category IDs.
+    """
+    category_ids = {category.id}
+    pending_ids = [category.id]
+
+    while pending_ids:
+        child_ids = set(
+            Category.objects.filter(
+                parent_id__in=pending_ids,
+                deleted_at__isnull=True,
+            ).values_list("id", flat=True)
+        )
+
+        new_child_ids = child_ids - category_ids
+
+        if not new_child_ids:
+            break
+
+        category_ids.update(new_child_ids)
+        pending_ids = list(new_child_ids)
+
+    return category_ids
