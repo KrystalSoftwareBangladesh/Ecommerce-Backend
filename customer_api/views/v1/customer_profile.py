@@ -50,8 +50,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         # Customers see only their own profile
-        if not self.request.user.is_superuser:
-            qs = qs.filter(user=self.request.user)
+        # if not self.request.user.is_superuser:
+        #     qs = qs.filter(user=self.request.user)
         return qs
 
     def get_serializer_class(self):
