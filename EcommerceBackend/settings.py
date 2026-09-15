@@ -119,8 +119,6 @@ WSGI_APPLICATION = 'EcommerceBackend.wsgi.application'
 
 DATABASES = DATABASES_SETTINGS
 SPECTACULAR_SETTINGS = {
-    # "TITLE": f"ZayrahLife Backend API ({'DEV' if DEBUG else 'PROD'})",
-    # "DESCRIPTION": "API documentation for Zayrah Life system.",
     "TITLE": f"{PROJECT_NAME} Backend API ({'DEV' if DEBUG else 'PROD'})",
     "DESCRIPTION": f"API documentation for {PROJECT_NAME} system.",
     "VERSION": "1.0.0",

@@ -4,7 +4,8 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
@@ -14,11 +15,14 @@ from drf_spectacular.utils import (
 
 from EcommerceBackend.core.permission import PublicReadPermissionMixin
 
+from category_api.services import get_category_descendant_ids
 from product_api.models import Brand
+from category_api.models import Category
 from product_api.serializers import (
     BrandListSerializer,
     BrandDetailSerializer,
     BrandCreateUpdateSerializer,
+    BrandSummarySerializer,
 )
 
 
@@ -38,6 +42,9 @@ BRAND_LOOKUP_PARAMETER = OpenApiParameter(
 )
 class BrandViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     queryset = Brand.objects.filter(is_active=True, deleted_at__isnull=True)
+    public_actions = PublicReadPermissionMixin.public_actions + [
+        "category_brands",
+    ]
     parser_classes = [
         MultiPartParser,
         FormParser,
@@ -92,3 +99,70 @@ class BrandViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             return BrandDetailSerializer
         else:
             return BrandCreateUpdateSerializer
+
+    @extend_schema(
+        summary="List brands by category",
+        description=(
+            "Return unique active brands associated with products "
+            "belonging to the selected category or any of its descendants. "
+            "The category can be identified by ID or slug."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="category_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                required=True,
+                description="Category ID or slug.",
+            ),
+        ],
+        responses={
+            200: BrandSummarySerializer(many=True),
+        },
+        filters=False,
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"category/(?P<category_id>[^/.]+)",
+        url_name="category-brands",
+    )
+    def category_brands(self, request, category_id=None):
+        category_queryset = Category.objects.filter(
+            deleted_at__isnull=True,
+        )
+
+        if category_id.isdigit():
+            category = get_object_or_404(
+                category_queryset,
+                id=int(category_id),
+            )
+        else:
+            category = get_object_or_404(
+                category_queryset,
+                slug=category_id,
+            )
+
+        category_ids = get_category_descendant_ids(category)
+
+        queryset = self.get_queryset().filter(
+            products__categories__id__in=category_ids,
+        ).distinct()
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = BrandSummarySerializer(
+                page,
+                many=True,
+                context={"request": request},
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = BrandSummarySerializer(
+            queryset,
+            many=True,
+            context={"request": request},
+        )
+
+        return Response(serializer.data)
