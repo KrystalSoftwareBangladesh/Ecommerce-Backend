@@ -339,3 +339,17 @@ class CategoryPathSerializer(serializers.ModelSerializer):
 
 class CategoryPathResponseSerializer(serializers.Serializer):
     path = CategoryPathSerializer(many=True)
+
+
+class CategoryPriceRangeSerializer(serializers.Serializer):
+    category_id = serializers.IntegerField()
+    min_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        allow_null=True,
+    )
+    max_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        allow_null=True,
+    )

@@ -29,7 +29,9 @@ from category_api.serializers import (
     CategoryNavigationSerializer, CategoryStatisticsSerializer,
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
     CategoryPathSerializer, CategoryPathResponseSerializer,
+    CategoryPriceRangeSerializer,
 )
+from category_api.services import get_category_price_range
 from category_api.filters import CategoryFilter
 
 
@@ -57,6 +59,7 @@ class CategoryViewSet(
         "roots",
         "children",
         "path",
+        "price_range",
     ]
     custom_permissions = {
         "mark_as_menu": "mark_category_as_menu",
@@ -705,3 +708,32 @@ class CategoryViewSet(
         return Response({
             "path": serializer.data,
         })
+
+    @extend_schema(
+        tags=["Categories"],
+        summary="Category price range",
+        filters=False,
+        parameters=[CATEGORY_LOOKUP_PARAMETER],
+        responses={200: CategoryPriceRangeSerializer},
+        description=(
+            "Return the minimum and maximum selling price of the active "
+            "products belonging to the selected category or any of its "
+            "descendants. Both prices are null when the category has no "
+            "eligible product."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="price-range",
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def price_range(self, request, id=None):
+        category = self.get_object()
+
+        serializer = CategoryPriceRangeSerializer(
+            get_category_price_range(category),
+        )
+
+        return Response(serializer.data)
