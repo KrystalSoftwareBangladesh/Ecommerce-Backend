@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from category_api.models import Category
+from product_api.models import Product
 from user_api.models import User
 
 
@@ -419,3 +420,134 @@ class CategoryMenuPermissionTests(APITestCase):
             format='json',
         )
         self.assertEqual(bulk_response.status_code, 200)
+
+
+class CategoryPriceRangeTests(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(
+            name='Electronics',
+            slug='electronics',
+        )
+        self.child = Category.objects.create(
+            name='Phones',
+            slug='phones',
+            parent=self.category,
+        )
+        self.other_category = Category.objects.create(
+            name='Books',
+            slug='books',
+        )
+
+    def _create_product(self, name, price, category, **kwargs):
+        product = Product.objects.create(
+            name=name,
+            current_selling_price=price,
+            **kwargs,
+        )
+        product.categories.add(category)
+        return product
+
+    def test_returns_min_and_max_price_including_descendants(self):
+        self._create_product('Laptop', '10000.00', self.category)
+        self._create_product('Cable', '500.00', self.category)
+        self._create_product('Phone', '7500.00', self.child)
+        self._create_product('Novel', '50.00', self.other_category)
+
+        response = self.client.get(
+            f'/api/v1/categories/{self.category.id}/price-range/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {
+                'category_id': self.category.id,
+                'min_price': '500.00',
+                'max_price': '10000.00',
+            },
+        )
+
+    def test_excludes_inactive_and_deleted_products(self):
+        self._create_product('Cable', '500.00', self.category)
+        self._create_product(
+            'Inactive Laptop',
+            '10000.00',
+            self.category,
+            is_active=False,
+        )
+        deleted = self._create_product(
+            'Deleted Cable',
+            '100.00',
+            self.category,
+        )
+        deleted.soft_delete()
+
+        response = self.client.get(
+            f'/api/v1/categories/{self.category.id}/price-range/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['min_price'], '500.00')
+        self.assertEqual(response.data['max_price'], '500.00')
+
+    def test_category_without_eligible_products_returns_null_prices(self):
+        self._create_product(
+            'Inactive Laptop',
+            '10000.00',
+            self.category,
+            is_active=False,
+        )
+
+        response = self.client.get(
+            f'/api/v1/categories/{self.category.id}/price-range/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {
+                'category_id': self.category.id,
+                'min_price': None,
+                'max_price': None,
+            },
+        )
+
+    def test_price_range_is_public(self):
+        self._create_product('Cable', '500.00', self.category)
+
+        self.client.force_authenticate(user=None)
+        response = self.client.get(
+            f'/api/v1/categories/{self.category.id}/price-range/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['category_id'], self.category.id)
+
+    def test_price_range_lookup_by_id_and_slug(self):
+        self._create_product('Cable', '500.00', self.category)
+
+        by_id = self.client.get(
+            f'/api/v1/categories/{self.category.id}/price-range/'
+        )
+        by_slug = self.client.get(
+            f'/api/v1/categories/{self.category.slug}/price-range/'
+        )
+
+        self.assertEqual(by_id.status_code, 200)
+        self.assertEqual(by_slug.status_code, 200)
+        self.assertEqual(by_id.data, by_slug.data)
+
+    def test_price_range_unknown_category_returns_404(self):
+        response = self.client.get('/api/v1/categories/999999/price-range/')
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_price_range_ignores_soft_deleted_category(self):
+        self._create_product('Cable', '500.00', self.category)
+        self.category.soft_delete()
+
+        response = self.client.get(
+            f'/api/v1/categories/{self.category.id}/price-range/'
+        )
+
+        self.assertEqual(response.status_code, 404)

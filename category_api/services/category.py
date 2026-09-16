@@ -4,9 +4,11 @@ from typing import List, Dict, Any
 
 import pandas as pd
 from django.db import transaction
+from django.db.models import Max, Min
 from django.core.exceptions import ValidationError
 
 from category_api.models import Category
+from product_api.models import Product
 
 
 class CategoryImportService:
@@ -401,3 +403,30 @@ def get_category_descendant_ids(category):
         pending_ids = list(new_child_ids)
 
     return category_ids
+
+
+def get_category_price_range(category):
+    """
+        Return the minimum and maximum selling price of the
+        storefront-visible products belonging to the given
+        category or any of its descendants.
+
+        Both values are ``None`` when the category has no
+        eligible product.
+    """
+    category_ids = get_category_descendant_ids(category)
+
+    price_range = Product.objects.filter(
+        is_active=True,
+        deleted_at__isnull=True,
+        categories__id__in=category_ids,
+    ).aggregate(
+        min_price=Min("current_selling_price"),
+        max_price=Max("current_selling_price"),
+    )
+
+    return {
+        "category_id": category.id,
+        "min_price": price_range["min_price"],
+        "max_price": price_range["max_price"],
+    }
