@@ -35,6 +35,7 @@ from blog_api.services import (
     publish_blog_post,
     unpublish_blog_post,
     add_blog_post_categories,
+    remove_blog_post_category,
 )
 
 
@@ -71,6 +72,7 @@ class BlogPostViewSet(
         "publish": "publish_blog_post",
         "unpublish": "unpublish_blog_post",
         "add_categories": "change_blogpost",
+        "remove_category": "change_blogpost",
     }
     parser_classes = [
         JSONParser,
@@ -277,6 +279,42 @@ class BlogPostViewSet(
         updated_post = add_blog_post_categories(
             post=post,
             category_ids=serializer.validated_data["category_ids"],
+            user=request.user,
+        )
+
+        return self._detail_response(
+            updated_post,
+            status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=["Blog"],
+        parameters=[
+            BLOG_POST_LOOKUP_PARAMETER,
+            OpenApiParameter(
+                name="category_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="Category ID to remove",
+            ),
+        ],
+        request=None,
+        responses={200: BlogPostDetailSerializer},
+        description="Remove one category from a blog post.",
+    )
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r"categories/(?P<category_id>[0-9]+)",
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def remove_category(self, request, id=None, category_id=None):
+        post = self.get_object()
+
+        updated_post = remove_blog_post_category(
+            post=post,
+            category_id=int(category_id),
             user=request.user,
         )
 

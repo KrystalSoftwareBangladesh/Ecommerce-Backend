@@ -204,3 +204,34 @@ def add_blog_post_categories(*, post, category_ids, user):
         post.save(update_fields=['updated_by', 'updated_at'])
 
     return post
+
+
+@transaction.atomic
+def remove_blog_post_category(*, post, category_id, user):
+    """
+    Remove one category from a blog post.
+
+    Business Rules
+    --------------
+    - The category must be mapped to the blog post.
+    - Only one category is removed per operation.
+    - Other category associations remain unchanged.
+    """
+
+    category = post.categories.filter(
+        id=category_id,
+    ).first()
+
+    if not category:
+        raise ValidationError({
+            "category_id": (
+                "This category is not associated with the blog post."
+            )
+        })
+
+    post.categories.remove(category)
+
+    post.updated_by = user
+    post.save(update_fields=['updated_by', 'updated_at'])
+
+    return post
