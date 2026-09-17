@@ -178,3 +178,11 @@ class BlogPostUpdateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             user=self.context['request'].user,
         )
+
+
+class BlogPostCategoryAddSerializer(serializers.Serializer):
+    category_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        allow_empty=False,
+        help_text="List of category IDs to add to the blog post.",
+    )

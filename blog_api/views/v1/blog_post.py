@@ -28,11 +28,13 @@ from blog_api.serializers import (
     BlogPostDetailSerializer,
     BlogPostListSerializer,
     BlogPostUpdateSerializer,
+    BlogPostCategoryAddSerializer,
 )
 from blog_api.services import (
     delete_blog_post,
     publish_blog_post,
     unpublish_blog_post,
+    add_blog_post_categories,
 )
 
 
@@ -68,6 +70,7 @@ class BlogPostViewSet(
     custom_permissions = {
         "publish": "publish_blog_post",
         "unpublish": "unpublish_blog_post",
+        "add_categories": "change_blogpost",
     }
     parser_classes = [
         JSONParser,
@@ -248,3 +251,36 @@ class BlogPostViewSet(
         drafted = unpublish_blog_post(post=post, user=request.user)
 
         return self._detail_response(drafted, status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["Blog"],
+        parameters=[BLOG_POST_LOOKUP_PARAMETER],
+        request=BlogPostCategoryAddSerializer,
+        responses={200: BlogPostDetailSerializer},
+        description="Add multiple categories to a blog post.",
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="categories",
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def add_categories(self, request, id=None):
+        post = self.get_object()
+
+        serializer = BlogPostCategoryAddSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+
+        updated_post = add_blog_post_categories(
+            post=post,
+            category_ids=serializer.validated_data["category_ids"],
+            user=request.user,
+        )
+
+        return self._detail_response(
+            updated_post,
+            status.HTTP_200_OK,
+        )
