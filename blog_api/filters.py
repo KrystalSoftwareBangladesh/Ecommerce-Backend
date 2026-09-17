@@ -16,6 +16,11 @@ class BlogPostFilter(django_filters.FilterSet):
         field_name='categories__id',
         help_text='Identifier of a category the post belongs to',
     )
+    categories = django_filters.BaseInFilter(
+        field_name='categories__id',
+        lookup_expr='in',
+        help_text='Comma-separated category IDs',
+    )
     category_slug = django_filters.CharFilter(
         field_name='categories__slug',
         help_text='Slug of a category the post belongs to',
