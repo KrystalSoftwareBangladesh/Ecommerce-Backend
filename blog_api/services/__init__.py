@@ -5,6 +5,7 @@ from .blog_post import (
     publish_blog_post,
     unpublish_blog_post,
     update_blog_post,
+    add_blog_post_categories,
 )
 from .blog_tag import (
     create_blog_tag,
@@ -21,5 +22,6 @@ __all__ = [
     'publish_blog_post',
     'unpublish_blog_post',
     'update_blog_post',
+    'add_blog_post_categories',
     'update_blog_tag',
 ]

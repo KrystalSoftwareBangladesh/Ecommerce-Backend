@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from blog_api.models import BlogPost, BlogPostStatus
+from category_api.models import Category
 
 
 @transaction.atomic
@@ -143,5 +144,63 @@ def unpublish_blog_post(*, post, user):
             'updated_at',
         ]
     )
+
+    return post
+
+
+@transaction.atomic
+def add_blog_post_categories(*, post, category_ids, user):
+    """
+    Add categories to a blog post.
+
+    Business Rules
+    --------------
+    - All categories must exist and be active.
+    - Soft-deleted categories cannot be added.
+    - Already mapped categories are skipped.
+    - Existing category associations remain unchanged.
+    - The operation is atomic.
+    """
+
+    categories = Category.objects.filter(
+        id__in=category_ids,
+        is_active=True,
+        deleted_at__isnull=True,
+    )
+
+    categories_by_id = {
+        category.id: category
+        for category in categories
+    }
+
+    missing_category_ids = sorted(
+        set(category_ids) - set(categories_by_id)
+    )
+
+    if missing_category_ids:
+        raise ValidationError({
+            "category_ids": (
+                f"These category IDs do not exist or are inactive: "
+                f"{missing_category_ids}"
+            )
+        })
+
+    existing_category_ids = set(
+        post.categories.filter(
+            id__in=category_ids
+        ).values_list('id', flat=True)
+    )
+
+    categories_to_add = [
+        category
+        for category in categories
+        if category.id not in existing_category_ids
+    ]
+
+    if categories_to_add:
+        post.categories.add(*categories_to_add)
+
+        post.updated_by = user
+        post.save(update_fields=['updated_by', 'updated_at'])
 
     return post
