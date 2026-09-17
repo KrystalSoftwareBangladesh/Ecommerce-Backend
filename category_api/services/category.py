@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 import pandas as pd
 from django.db import transaction
 from django.db.models import Max, Min
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from category_api.models import Category
 from product_api.models import Product
