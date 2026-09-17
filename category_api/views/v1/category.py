@@ -31,7 +31,7 @@ from category_api.serializers import (
     CategoryPathSerializer, CategoryPathResponseSerializer,
     CategoryPriceRangeSerializer,
 )
-from category_api.services import get_category_price_range
+from category_api.services import get_category_price_range, delete_category
 from category_api.filters import CategoryFilter
 
 
@@ -141,6 +141,11 @@ class CategoryViewSet(
             return CategoryUpdateSerializer
 
         return CategorySerializer
+
+    def destroy(self, request, *args, **kwargs):
+        category = self.get_object()
+        delete_category(category=category)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _get_category_ids_from_params(self, queryset):
         ids = self.request.query_params.get("ids")

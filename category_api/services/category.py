@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 
 from category_api.models import Category
 from product_api.models import Product
+from blog_api.models import BlogPost
 
 
 class CategoryImportService:
@@ -430,3 +431,60 @@ def get_category_price_range(category):
         "min_price": price_range["min_price"],
         "max_price": price_range["max_price"],
     }
+
+
+def delete_category(*, category: Category) -> None:
+    """
+    Soft-delete a category if it has no active dependencies.
+
+    A category cannot be deleted when it is associated with:
+    - Active products
+    - Active blog posts
+    - Active subcategories
+
+    Raises:
+        ValidationError: If the category has active dependencies.
+    """
+
+    has_products = Product.objects.filter(
+        categories=category,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).exists()
+
+    has_blog_posts = BlogPost.objects.filter(
+        categories=category,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).exists()
+
+    has_subcategories = Category.objects.filter(
+        parent=category,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).exists()
+
+    if has_products or has_blog_posts or has_subcategories:
+        errors = {}
+
+        if has_products:
+            errors["products"] = (
+                "Cannot delete this category because it is "
+                "associated with one or more active products."
+            )
+
+        if has_blog_posts:
+            errors["blog_posts"] = (
+                "Cannot delete this category because it is "
+                "associated with one or more active blog posts."
+            )
+
+        if has_subcategories:
+            errors["subcategories"] = (
+                "Cannot delete this category because it has "
+                "one or more active subcategories."
+            )
+
+        raise ValidationError(errors)
+
+    category.soft_delete()
