@@ -10,6 +10,9 @@ from EcommerceBackend.core.models import (
 class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, blank=True, null=True)
+    short_description_title = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     short_description = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     legacy_id = models.BigIntegerField(
