@@ -37,6 +37,21 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         db_index=True,
         help_text='Show this category in the storefront navigation menu'
     )
+    # Featured category configuration
+    is_featured = models.BooleanField(
+        default=False,
+        db_index=True,
+    )
+
+    featured_display_order = models.PositiveIntegerField(
+        default=0,
+    )
+
+    featured_icon = models.FileField(
+        upload_to="categories/featured-icons/",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = 'categories'
@@ -46,6 +61,8 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         permissions = [
             ('mark_category_as_menu', 'Can mark category as menu'),
             ('remove_category_from_menu', 'Can remove category from menu'),
+            ("mark_category_as_featured", "Can mark category as featured",),
+            ("remove_category_from_featured", "Can remove category from featured",),    # noqa
         ]
         constraints = [
             models.UniqueConstraint(

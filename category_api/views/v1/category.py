@@ -64,6 +64,8 @@ class CategoryViewSet(
     custom_permissions = {
         "mark_as_menu": "mark_category_as_menu",
         "remove_from_menu": "remove_category_from_menu",
+        "mark_as_featured": "mark_category_as_featured",
+        "remove_from_featured": "remove_category_from_featured",
     }
     serializer_class = CategorySerializer
     queryset = Category.objects.filter(
