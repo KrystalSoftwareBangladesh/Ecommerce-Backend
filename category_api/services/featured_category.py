@@ -117,3 +117,71 @@ def upload_featured_category_icon(*, category, featured_icon, user):
         default_storage.delete(old_icon_name)
 
     return category
+
+
+@transaction.atomic
+def reorder_featured_categories(*, category_ids, user):
+    featured_categories = list(
+        Category.objects
+        .select_for_update()
+        .filter(
+            is_featured=True,
+            is_active=True,
+            deleted_at__isnull=True,
+        )
+        .order_by("featured_display_order", "id")
+    )
+
+    featured_category_ids = {
+        category.id
+        for category in featured_categories
+    }
+
+    submitted_category_ids = set(category_ids)
+
+    if submitted_category_ids != featured_category_ids:
+        missing_ids = sorted(
+            featured_category_ids - submitted_category_ids
+        )
+
+        invalid_ids = sorted(
+            submitted_category_ids - featured_category_ids
+        )
+
+        error_detail = {}
+
+        if missing_ids:
+            error_detail["missing_category_ids"] = (
+                "All currently featured categories must be included."
+            )
+
+        if invalid_ids:
+            error_detail["invalid_category_ids"] = (
+                "Every category ID must belong to an active featured category."
+            )
+
+        raise ValidationError(error_detail)
+
+    categories_by_id = {
+        category.id: category
+        for category in featured_categories
+    }
+
+    updated_categories = []
+
+    for display_order, category_id in enumerate(category_ids):
+        category = categories_by_id[category_id]
+
+        if category.featured_display_order != display_order:
+            category.featured_display_order = display_order
+
+            category.save(
+                update_fields=[
+                    "featured_display_order",
+                    "updated_at",
+                ]
+            )
+
+        updated_categories.append(category)
+
+    return updated_categories

@@ -34,11 +34,12 @@ from category_api.serializers import (
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
     CategoryPathSerializer, CategoryPathResponseSerializer,
     CategoryPriceRangeSerializer, FeaturedIconUploadSerializer,
-    FeaturedCategorySerializer,
+    FeaturedCategorySerializer, FeaturedCategoryReorderSerializer,
 )
 from category_api.services import (
     get_category_price_range, delete_category, upload_featured_category_icon,
     mark_category_as_featured, remove_category_from_featured,
+    reorder_featured_categories,
 )
 from category_api.filters import CategoryFilter
 
@@ -890,5 +891,41 @@ class CategoryViewSet(
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=FeaturedCategoryReorderSerializer,
+        responses={
+            200: FeaturedCategorySerializer(many=True),
+        },
+        description=(
+            "Reorder all currently featured categories. "
+            "The request must include every active featured "
+            "category exactly once."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["patch"],
+        url_path="featured/reorder",
+    )
+    def reorder_featured(self, request, *args, **kwargs):
+        serializer = FeaturedCategoryReorderSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        categories = reorder_featured_categories(
+            category_ids=serializer.validated_data["category_ids"],
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                categories,
+                many=True,
+                context=self.get_serializer_context(),
+            ).data,
             status=status.HTTP_200_OK,
         )
