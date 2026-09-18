@@ -16,6 +16,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.parsers import (
+    FormParser,
+    MultiPartParser,
+)
 
 from EcommerceBackend.core.permission import (
     CustomPermissionAccessMixin,
@@ -29,9 +33,12 @@ from category_api.serializers import (
     CategoryNavigationSerializer, CategoryStatisticsSerializer,
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
     CategoryPathSerializer, CategoryPathResponseSerializer,
-    CategoryPriceRangeSerializer,
+    CategoryPriceRangeSerializer, FeaturedIconUploadSerializer,
+    FeaturedCategorySerializer,
 )
-from category_api.services import get_category_price_range, delete_category
+from category_api.services import (
+    get_category_price_range, delete_category, upload_featured_category_icon,
+)
 from category_api.filters import CategoryFilter
 
 
@@ -744,3 +751,41 @@ class CategoryViewSet(
         )
 
         return Response(serializer.data)
+
+    @extend_schema(
+        request=FeaturedIconUploadSerializer,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Upload or replace the featured icon for a category. "
+            "The category does not need to be featured yet."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="featured-icon",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def featured_icon(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        serializer = FeaturedIconUploadSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        category = upload_featured_category_icon(
+            category=category,
+            featured_icon=serializer.validated_data["featured_icon"],
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )

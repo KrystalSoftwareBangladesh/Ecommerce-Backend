@@ -1,5 +1,6 @@
 # category_api/services/featured_category.py
 from django.db import transaction
+from django.core.files.storage import default_storage
 from rest_framework.exceptions import ValidationError
 
 from category_api.models import Category
@@ -76,5 +77,43 @@ def remove_category_from_featured(*, category, user):
             "updated_at",
         ]
     )
+
+    return category
+
+
+@transaction.atomic
+def upload_featured_category_icon(*, category, featured_icon, user):
+    if not featured_icon:
+        raise ValidationError(
+            {
+                "featured_icon": "Featured icon is required."
+            }
+        )
+
+    old_icon_name = category.featured_icon.name
+
+    category.featured_icon = featured_icon
+
+    update_fields = [
+        "featured_icon",
+    ]
+
+    # Include this only if UserStampedModel uses updated_by
+    # and your existing services update it manually.
+    #
+    # category.updated_by = user
+    # update_fields.append("updated_by")
+
+    category.save(
+        update_fields=update_fields,
+    )
+
+    # Remove the old file only after the new file has been saved.
+    if (
+        old_icon_name
+        and old_icon_name != category.featured_icon.name
+        and default_storage.exists(old_icon_name)
+    ):
+        default_storage.delete(old_icon_name)
 
     return category

@@ -6,6 +6,7 @@ from .category import (
 from .featured_category import (
     mark_category_as_featured,
     remove_category_from_featured,
+    upload_featured_category_icon,
 )
 
 
@@ -16,4 +17,5 @@ __all__ = [
     "delete_category",
     "mark_category_as_featured",
     "remove_category_from_featured",
+    "upload_featured_category_icon",
 ]
