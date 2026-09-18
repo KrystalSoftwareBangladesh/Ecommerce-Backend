@@ -371,3 +371,26 @@ class FeaturedCategorySerializer(serializers.ModelSerializer):
             "featured_icon",
         ]
         read_only_fields = fields
+
+
+class FeaturedIconUploadSerializer(serializers.Serializer):
+    featured_icon = serializers.FileField(
+        required=True,
+        allow_empty_file=False,
+    )
+
+
+class FeaturedCategoryReorderSerializer(serializers.Serializer):
+    category_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=True,
+        allow_empty=False,
+    )
+
+    def validate_category_ids(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError(
+                "Category IDs must be unique."
+            )
+
+        return value
