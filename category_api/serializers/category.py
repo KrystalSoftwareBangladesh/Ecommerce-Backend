@@ -16,6 +16,8 @@ class CategoryListSerializer(serializers.ModelSerializer):
             "slug",
             "name",
             "show_in_menu",
+            "featured_icon",
+            "is_featured",
         ]
 
 
