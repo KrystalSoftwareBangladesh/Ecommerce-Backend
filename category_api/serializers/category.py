@@ -2,6 +2,9 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
+from category_api.validators.featured_icon import (
+    validate_featured_icon,
+)
 from category_api.models import Category
 
 
@@ -377,6 +380,9 @@ class FeaturedIconUploadSerializer(serializers.Serializer):
     featured_icon = serializers.FileField(
         required=True,
         allow_empty_file=False,
+        validators=[
+            validate_featured_icon,
+        ],
     )
 
 
