@@ -1,9 +1,10 @@
 # product_api/services/product.py
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
-from product_api.models import ProductImage
+from product_api.models import ProductImage, Product
 
 
 def _get_active_images(product):
@@ -334,3 +335,13 @@ def bulk_upload_product_images(
             )
 
         return created_images
+
+
+def increment_product_view_count(*, product: Product) -> None:
+    Product.objects.filter(
+        pk=product.pk,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).update(
+        view_count=F("view_count") + 1,
+    )

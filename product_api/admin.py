@@ -54,7 +54,7 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_categories',
+    list_display = ['id', 'name', 'get_categories', 'view_count',
                     'current_selling_price', 'is_active']
     list_display_links = ['name',]
     list_filter = ['is_active',]
