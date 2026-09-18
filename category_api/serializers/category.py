@@ -359,3 +359,15 @@ class CategoryPriceRangeSerializer(serializers.Serializer):
         decimal_places=2,
         allow_null=True,
     )
+
+
+class FeaturedCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "featured_icon",
+        ]
+        read_only_fields = fields
