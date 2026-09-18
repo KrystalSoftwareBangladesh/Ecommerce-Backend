@@ -6,6 +6,14 @@ from rest_framework.exceptions import ValidationError
 from category_api.models import Category
 
 
+def _delete_storage_file(file_name: str | None) -> None:
+    if not file_name:
+        return
+
+    if default_storage.exists(file_name):
+        default_storage.delete(file_name)
+
+
 @transaction.atomic
 def mark_category_as_featured(*, category, user):
     if category.is_featured:
@@ -84,37 +92,29 @@ def remove_category_from_featured(*, category, user):
 @transaction.atomic
 def upload_featured_category_icon(*, category, featured_icon, user):
     if not featured_icon:
-        raise ValidationError(
-            {
-                "featured_icon": "Featured icon is required."
-            }
-        )
+        raise ValidationError({
+            "featured_icon": "Featured icon is required."
+        })
 
     old_icon_name = category.featured_icon.name
 
     category.featured_icon = featured_icon
-
-    update_fields = [
-        "featured_icon",
-    ]
-
-    # Include this only if UserStampedModel uses updated_by
-    # and your existing services update it manually.
-    #
-    # category.updated_by = user
-    # update_fields.append("updated_by")
-
     category.save(
-        update_fields=update_fields,
+        update_fields=[
+            "featured_icon",
+            "updated_at",
+        ]
     )
 
-    # Remove the old file only after the new file has been saved.
+    new_icon_name = category.featured_icon.name
+
     if (
         old_icon_name
-        and old_icon_name != category.featured_icon.name
-        and default_storage.exists(old_icon_name)
+        and old_icon_name != new_icon_name
     ):
-        default_storage.delete(old_icon_name)
+        transaction.on_commit(
+            lambda: _delete_storage_file(old_icon_name)
+        )
 
     return category
 
@@ -185,3 +185,35 @@ def reorder_featured_categories(*, category_ids, user):
         updated_categories.append(category)
 
     return updated_categories
+
+
+@transaction.atomic
+def remove_featured_category_icon(*, category, user):
+    if category.is_featured:
+        raise ValidationError({
+            "featured_icon": (
+                "You must remove this category from featured "
+                "categories before deleting its icon."
+            )
+        })
+
+    if not category.featured_icon:
+        raise ValidationError({
+            "featured_icon": "This category does not have an icon."
+        })
+
+    icon_name = category.featured_icon.name
+
+    category.featured_icon = None
+    category.save(
+        update_fields=[
+            "featured_icon",
+            "updated_at",
+        ]
+    )
+
+    transaction.on_commit(
+        lambda: _delete_storage_file(icon_name)
+    )
+
+    return category

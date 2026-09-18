@@ -39,7 +39,7 @@ from category_api.serializers import (
 from category_api.services import (
     get_category_price_range, delete_category, upload_featured_category_icon,
     mark_category_as_featured, remove_category_from_featured,
-    reorder_featured_categories,
+    reorder_featured_categories, remove_featured_category_icon,
 )
 from category_api.filters import CategoryFilter
 
@@ -925,6 +925,37 @@ class CategoryViewSet(
             FeaturedCategorySerializer(
                 categories,
                 many=True,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Remove a category's featured icon. "
+            "The category must not currently be featured."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path="featured-icon",
+    )
+    def remove_featured_icon(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        category = remove_featured_category_icon(
+            category=category,
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
                 context=self.get_serializer_context(),
             ).data,
             status=status.HTTP_200_OK,
