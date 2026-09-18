@@ -2,6 +2,9 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
+from category_api.validators.featured_icon import (
+    validate_featured_icon,
+)
 from category_api.models import Category
 
 
@@ -359,3 +362,41 @@ class CategoryPriceRangeSerializer(serializers.Serializer):
         decimal_places=2,
         allow_null=True,
     )
+
+
+class FeaturedCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "featured_icon",
+        ]
+        read_only_fields = fields
+
+
+class FeaturedIconUploadSerializer(serializers.Serializer):
+    featured_icon = serializers.FileField(
+        required=True,
+        allow_empty_file=False,
+        validators=[
+            validate_featured_icon,
+        ],
+    )
+
+
+class FeaturedCategoryReorderSerializer(serializers.Serializer):
+    category_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=True,
+        allow_empty=False,
+    )
+
+    def validate_category_ids(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError(
+                "Category IDs must be unique."
+            )
+
+        return value

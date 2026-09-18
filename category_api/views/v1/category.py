@@ -16,6 +16,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.parsers import (
+    FormParser,
+    MultiPartParser,
+)
 
 from EcommerceBackend.core.permission import (
     CustomPermissionAccessMixin,
@@ -29,9 +33,14 @@ from category_api.serializers import (
     CategoryNavigationSerializer, CategoryStatisticsSerializer,
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
     CategoryPathSerializer, CategoryPathResponseSerializer,
-    CategoryPriceRangeSerializer,
+    CategoryPriceRangeSerializer, FeaturedIconUploadSerializer,
+    FeaturedCategorySerializer, FeaturedCategoryReorderSerializer,
 )
-from category_api.services import get_category_price_range, delete_category
+from category_api.services import (
+    get_category_price_range, delete_category, upload_featured_category_icon,
+    mark_category_as_featured, remove_category_from_featured,
+    reorder_featured_categories, remove_featured_category_icon,
+)
 from category_api.filters import CategoryFilter
 
 
@@ -60,10 +69,13 @@ class CategoryViewSet(
         "children",
         "path",
         "price_range",
+        "featured",
     ]
     custom_permissions = {
         "mark_as_menu": "mark_category_as_menu",
         "remove_from_menu": "remove_category_from_menu",
+        "mark_as_featured": "mark_category_as_featured",
+        "remove_from_featured": "remove_category_from_featured",
     }
     serializer_class = CategorySerializer
     queryset = Category.objects.filter(
@@ -742,3 +754,209 @@ class CategoryViewSet(
         )
 
         return Response(serializer.data)
+
+    @extend_schema(
+        request=FeaturedIconUploadSerializer,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Upload or replace the featured icon for a category. "
+            "The category does not need to be featured yet."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="featured-icon",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def featured_icon(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        serializer = FeaturedIconUploadSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        category = upload_featured_category_icon(
+            category=category,
+            featured_icon=serializer.validated_data["featured_icon"],
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Mark a category as featured. "
+            "The category must have a valid featured icon."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="feature",
+    )
+    def mark_as_featured(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        category = mark_category_as_featured(
+            category=category,
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Remove a category from featured categories. "
+            "The existing featured icon will be preserved."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="unfeature",
+    )
+    def remove_from_featured(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        category = remove_category_from_featured(
+            category=category,
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer(many=True),
+        },
+        description="Retrieve the publicly visible featured categories.",
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="featured",
+        pagination_class=None,
+        filter_backends=[],
+    )
+    def featured(self, request, *args, **kwargs):
+        queryset = (
+            self.get_queryset()
+            .filter(
+                is_featured=True,
+                is_active=True,
+                deleted_at__isnull=True,
+            )
+            .order_by(
+                "featured_display_order",
+                "id",
+            )
+        )
+
+        serializer = FeaturedCategorySerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=FeaturedCategoryReorderSerializer,
+        responses={
+            200: FeaturedCategorySerializer(many=True),
+        },
+        description=(
+            "Reorder all currently featured categories. "
+            "The request must include every active featured "
+            "category exactly once."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["patch"],
+        url_path="featured/reorder",
+    )
+    def reorder_featured(self, request, *args, **kwargs):
+        serializer = FeaturedCategoryReorderSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        categories = reorder_featured_categories(
+            category_ids=serializer.validated_data["category_ids"],
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                categories,
+                many=True,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Remove a category's featured icon. "
+            "The category must not currently be featured."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path="featured-icon",
+    )
+    def remove_featured_icon(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        category = remove_featured_category_icon(
+            category=category,
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )

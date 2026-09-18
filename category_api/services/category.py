@@ -438,6 +438,7 @@ def delete_category(*, category: Category) -> None:
     Soft-delete a category if it has no active dependencies.
 
     A category cannot be deleted when it is associated with:
+    - Active feature category
     - Active products
     - Active blog posts
     - Active subcategories
@@ -445,6 +446,15 @@ def delete_category(*, category: Category) -> None:
     Raises:
         ValidationError: If the category has active dependencies.
     """
+    if category.is_featured:
+        raise ValidationError(
+            {
+                "detail": (
+                    "This category is currently featured. "
+                    "Remove it from featured categories before deleting it."
+                )
+            }
+        )
 
     has_products = Product.objects.filter(
         categories=category,

@@ -7,6 +7,9 @@ from .category import (
     CategoryBulkMenuUpdateSerializer, CategoryBulkMenuUpdateResponseSerializer,
     CategoryPathSerializer, CategoryPathResponseSerializer,
     CategoryPriceRangeSerializer,
+    FeaturedCategorySerializer,
+    FeaturedIconUploadSerializer,
+    FeaturedCategoryReorderSerializer,
 )
 from .category_import import (
     CategoryJsonImportSerializer,
@@ -24,6 +27,8 @@ __all__ = [
     "CategoryStatisticsSerializer", "CategoryBulkMenuUpdateSerializer",
     "CategoryBulkMenuUpdateResponseSerializer", "CategoryPathSerializer",
     "CategoryPathResponseSerializer", "CategoryPriceRangeSerializer",
+    "FeaturedCategorySerializer", "FeaturedIconUploadSerializer",
+    "FeaturedCategoryReorderSerializer",
     "CategoryJsonImportSerializer",
     "CategoryCsvImportSerializer",
     "CategoryXlsxImportSerializer",
