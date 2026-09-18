@@ -38,6 +38,7 @@ from category_api.serializers import (
 )
 from category_api.services import (
     get_category_price_range, delete_category, upload_featured_category_icon,
+    mark_category_as_featured,
 )
 from category_api.filters import CategoryFilter
 
@@ -779,6 +780,37 @@ class CategoryViewSet(
         category = upload_featured_category_icon(
             category=category,
             featured_icon=serializer.validated_data["featured_icon"],
+            user=request.user,
+        )
+
+        return Response(
+            FeaturedCategorySerializer(
+                category,
+                context=self.get_serializer_context(),
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer,
+        },
+        description=(
+            "Mark a category as featured. "
+            "The category must have a valid featured icon."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="feature",
+    )
+    def mark_as_featured(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        category = mark_category_as_featured(
+            category=category,
             user=request.user,
         )
 
