@@ -68,6 +68,7 @@ class CategoryViewSet(
         "children",
         "path",
         "price_range",
+        "featured",
     ]
     custom_permissions = {
         "mark_as_menu": "mark_category_as_menu",
@@ -850,5 +851,44 @@ class CategoryViewSet(
                 category,
                 context=self.get_serializer_context(),
             ).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: FeaturedCategorySerializer(many=True),
+        },
+        description="Retrieve the publicly visible featured categories.",
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="featured",
+        pagination_class=None,
+        filter_backends=[],
+    )
+    def featured(self, request, *args, **kwargs):
+        queryset = (
+            self.get_queryset()
+            .filter(
+                is_featured=True,
+                is_active=True,
+                deleted_at__isnull=True,
+            )
+            .order_by(
+                "featured_display_order",
+                "id",
+            )
+        )
+
+        serializer = FeaturedCategorySerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            serializer.data,
             status=status.HTTP_200_OK,
         )
