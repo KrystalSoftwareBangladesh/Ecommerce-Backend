@@ -84,7 +84,6 @@ class CategoryViewSet(
 
     search_fields = [
         "name",
-        "description",
         "slug",
     ]
     ordering_fields = [
