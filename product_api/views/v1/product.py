@@ -26,6 +26,7 @@ from product_api.models import (
 from review_api.models import Review
 from wishlist_api.models import Wishlist
 from cart_api.models import CartItem
+from product_api.services import increment_product_view_count
 from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
@@ -138,7 +139,6 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                     distinct=True,
                 ),
             )
-            # .order_by("name", "id")
         )
         if self.request.user.is_authenticated:
             queryset = queryset.annotate(
@@ -164,7 +164,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 wishlist=Value(False, output_field=BooleanField()),
                 in_cart=Value(False, output_field=BooleanField()),
             )
-        return queryset.order_by("name", "id")
+        return queryset.order_by("view_count", "name", "id")
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -176,6 +176,15 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         if self.action in ['update', 'partial_update']:
             return ProductUpdateSerializer
         return ProductDetailSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        increment_product_view_count(product=instance)
+
+        serializer = self.get_serializer(instance)
+
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

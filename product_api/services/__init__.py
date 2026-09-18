@@ -7,6 +7,7 @@ from .product import (
     reorder_product_images,
     soft_delete_product_image,
     bulk_upload_product_images,
+    increment_product_view_count,
 )
 from .product_image import (
     get_product_image_summary,
@@ -24,6 +25,7 @@ __all__ = [
     'reorder_product_images',
     'soft_delete_product_image',
     'bulk_upload_product_images',
+    'increment_product_view_count',
     "get_product_image_summary",
     'get_product_image_dimensions',
     'is_product_image_high_resolution',

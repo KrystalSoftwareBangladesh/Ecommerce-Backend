@@ -46,9 +46,13 @@ class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         null=True,
         blank=True,
     )
+    view_count = models.PositiveBigIntegerField(
+        default=0,
+        db_index=True,
+    )
 
     class Meta:
-        ordering = ['name']
+        ordering = ['view_count', 'name']
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         indexes = [models.Index(fields=['name'])]
