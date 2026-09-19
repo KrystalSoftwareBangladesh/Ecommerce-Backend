@@ -73,3 +73,16 @@ class BannerStorefrontSerializer(serializers.ModelSerializer):
             "cta_url",
             "display_order",
         ]
+
+
+class BannerReorderItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    display_order = serializers.IntegerField(min_value=0)
+
+
+class BannerReorderSerializer(serializers.Serializer):
+    banners = BannerReorderItemSerializer(many=True, allow_empty=False)
+
+
+class ReorderBannerResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
