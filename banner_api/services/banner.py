@@ -6,6 +6,10 @@ from django.utils import timezone
 from banner_api.models import Banner
 
 
+class BannerReorderError(Exception):
+    """Raised when banner reordering cannot be completed."""
+
+
 def get_available_banners(*, placement=None):
     """
     Return banners that are active and currently within their
@@ -27,31 +31,49 @@ def get_available_banners(*, placement=None):
 
 
 @transaction.atomic
-def reorder_banners(*, banner_orders):
+def reorder_banners(*, placement, banner_orders):
     """
-    Reorder banners.
+    Reorder banners belonging to a specific placement.
 
     banner_orders example:
         [
-            {"id": 10, "display_order": 1},
-            {"id": 15, "display_order": 2},
-            {"id": 20, "display_order": 3},
+            {"id": 10, "display_order": 0},
+            {"id": 15, "display_order": 1},
+            {"id": 20, "display_order": 2},
         ]
     """
-    banners = {
-        banner.id: banner
-        for banner in Banner.objects.filter(
-            id__in=[item["id"] for item in banner_orders]
+    banner_ids = [item["id"] for item in banner_orders]
+
+    banners = list(
+        Banner.objects.filter(
+            id__in=banner_ids,
+            placement=placement,
         )
+    )
+
+    found_ids = {banner.id for banner in banners}
+    missing_ids = set(banner_ids) - found_ids
+
+    if missing_ids:
+        raise BannerReorderError(
+            f"Banner(s) not found for this placement: "
+            f"{sorted(missing_ids)}"
+        )
+
+    order_map = {
+        item["id"]: item["display_order"]
+        for item in banner_orders
     }
 
-    for item in banner_orders:
-        banner = banners.get(item["id"])
+    now = timezone.now()
 
-        if banner is None:
-            continue
+    for banner in banners:
+        banner.display_order = order_map[banner.id]
+        banner.updated_at = now
 
-        banner.display_order = item["display_order"]
-        banner.save(update_fields=["display_order", "updated_at"])
+    Banner.objects.bulk_update(
+        banners,
+        ["display_order", "updated_at"],
+    )
 
-    return banners.values()
+    return banners

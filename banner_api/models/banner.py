@@ -30,7 +30,6 @@ class Banner(TimeStampedModel, SoftDeleteModel, UserStampedModel):
 
     display_order = models.PositiveIntegerField(
         default=0,
-        db_index=True,
     )
 
     start_at = models.DateTimeField(blank=True, null=True)

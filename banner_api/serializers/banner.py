@@ -1,7 +1,7 @@
 # banner_api/serializers/banner.py
 from rest_framework import serializers
 
-from banner_api.models import Banner
+from banner_api.models import Banner, BannerPlacement
 
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -35,22 +35,36 @@ class BannerSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def validate(self, attrs):
-        start_at = attrs.get("start_at")
-        end_at = attrs.get("end_at")
+    # def validate(self, attrs):
+    #     start_at = attrs.get("start_at")
+    #     end_at = attrs.get("end_at")
 
-        # When updating, use existing values if they weren't supplied.
+    #     # When updating, use existing values if they weren't supplied.
+    #     if self.instance:
+    #         start_at = (
+    #             start_at
+    #             if start_at is not None
+    #             else self.instance.start_at
+    #         )
+    #         end_at = (
+    #             end_at
+    #             if end_at is not None
+    #             else self.instance.end_at
+    #         )
+
+    #     if start_at and end_at and start_at >= end_at:
+    #         raise serializers.ValidationError({
+    #             "end_at": "End time must be later than start time."
+    #         })
+
+    #     return attrs
+    def validate(self, attrs):
         if self.instance:
-            start_at = (
-                start_at
-                if start_at is not None
-                else self.instance.start_at
-            )
-            end_at = (
-                end_at
-                if end_at is not None
-                else self.instance.end_at
-            )
+            start_at = attrs.get("start_at", self.instance.start_at)
+            end_at = attrs.get("end_at", self.instance.end_at)
+        else:
+            start_at = attrs.get("start_at")
+            end_at = attrs.get("end_at")
 
         if start_at and end_at and start_at >= end_at:
             raise serializers.ValidationError({
@@ -81,7 +95,13 @@ class BannerReorderItemSerializer(serializers.Serializer):
 
 
 class BannerReorderSerializer(serializers.Serializer):
-    banners = BannerReorderItemSerializer(many=True, allow_empty=False)
+    placement = serializers.PrimaryKeyRelatedField(
+        queryset=BannerPlacement.objects.all(),
+    )
+    banners = BannerReorderItemSerializer(
+        many=True,
+        allow_empty=False,
+    )
 
 
 class ReorderBannerResponseSerializer(serializers.Serializer):

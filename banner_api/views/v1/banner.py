@@ -3,7 +3,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
+from rest_framework.exceptions import ValidationError
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiTypes,
+    extend_schema,
+)
 
 from banner_api.filters import BannerFilter
 from banner_api.models import Banner
@@ -12,6 +17,7 @@ from banner_api.serializers import (
     ReorderBannerResponseSerializer,
 )
 from banner_api.services.banner import (
+    BannerReorderError,
     get_available_banners,
     reorder_banners,
 )
@@ -37,6 +43,15 @@ class BannerViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Available banners",
+        parameters=[
+            OpenApiParameter(
+                name="placement",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter available banners by placement ID.",
+            ),
+        ],
         responses=BannerStorefrontSerializer(many=True),
     )
     @action(
@@ -70,14 +85,16 @@ class BannerViewSet(viewsets.ModelViewSet):
         url_path="reorder",
     )
     def reorder(self, request):
-        serializer = BannerReorderSerializer(
-            data=request.data,
-        )
+        serializer = BannerReorderSerializer(data=request.data,)
         serializer.is_valid(raise_exception=True)
+        try:
+            reorder_banners(
+                placement=serializer.validated_data["placement"],
+                banner_orders=serializer.validated_data["banners"],
+            )
 
-        reorder_banners(
-            banner_orders=serializer.validated_data["banners"],
-        )
+        except BannerReorderError as exc:
+            raise ValidationError({"banners": str(exc)})
 
         return Response(
             {"detail": "Banners reordered successfully."}
