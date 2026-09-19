@@ -57,7 +57,6 @@ class Brand(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
-        db_table = 'brands'
         verbose_name = 'Brand'
         verbose_name_plural = 'Brands'
         ordering = ['display_order', 'name']
