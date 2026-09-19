@@ -52,7 +52,7 @@ class Product(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
-        ordering = ['view_count', 'name']
+        ordering = ['-view_count', 'id']
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         indexes = [models.Index(fields=['name'])]
