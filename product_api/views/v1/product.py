@@ -164,7 +164,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 wishlist=Value(False, output_field=BooleanField()),
                 in_cart=Value(False, output_field=BooleanField()),
             )
-        return queryset.order_by("view_count", "name", "id")
+        return queryset.order_by("-view_count", "id")
 
     def get_serializer_class(self):
         if self.action == 'list':
