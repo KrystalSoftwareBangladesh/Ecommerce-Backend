@@ -54,7 +54,6 @@ class Category(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
-        db_table = 'categories'
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         ordering = ['display_order', 'name']

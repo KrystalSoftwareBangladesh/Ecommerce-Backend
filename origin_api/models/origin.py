@@ -37,7 +37,6 @@ class Origin(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
-        db_table = 'origins'
         verbose_name = 'Origin'
         verbose_name_plural = 'Origins'
         ordering = ['name']
