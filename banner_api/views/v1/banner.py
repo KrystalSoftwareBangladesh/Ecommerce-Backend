@@ -10,6 +10,9 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 
+from EcommerceBackend.core.permission import (
+    PublicReadPermissionMixin,
+)
 from banner_api.filters import BannerFilter
 from banner_api.models import Banner
 from banner_api.serializers import (
@@ -24,9 +27,12 @@ from banner_api.services.banner import (
 
 
 @extend_schema(tags=["Banners"])
-class BannerViewSet(viewsets.ModelViewSet):
+class BannerViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     queryset = Banner.objects.select_related("placement").all()
     serializer_class = BannerSerializer
+    public_actions = PublicReadPermissionMixin.public_actions + [
+        "available",
+    ]
 
     filter_backends = [
         DjangoFilterBackend,
