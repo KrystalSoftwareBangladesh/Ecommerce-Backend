@@ -64,6 +64,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'current_selling_price', 'default_image',
             'origin', "average_rating", "total_reviews", "wishlist", "in_cart",
+            'short_description',
         ]
 
     @extend_schema_field(ProductDefaultImageSerializer)
