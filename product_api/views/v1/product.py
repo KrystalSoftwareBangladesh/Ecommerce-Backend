@@ -66,6 +66,32 @@ class ProductFilter(django_filters.FilterSet):
         fields = ['categories', 'brands']
 
 
+class ProductOrderingFilter(filters.BaseFilterBackend):
+    ordering_map = {
+        "price_low": ["current_selling_price", "id"],
+        "price_high": ["-current_selling_price", "id"],
+        "popularity": ["-view_count", "id"],
+        "rating": ["-average_rating", "-total_reviews", "id"],
+        "latest": ["-created_at", "id"],
+        "name_asc": ["name", "id"],
+        "name_desc": ["-name", "id"],
+    }
+    default_ordering = ["-view_count", "id"]
+
+    def filter_queryset(self, request, queryset, view):
+        ordering = request.query_params.get("ordering")
+
+        if not ordering:
+            return queryset.order_by(*self.default_ordering)
+
+        ordering_fields = self.ordering_map.get(ordering)
+
+        if ordering_fields:
+            return queryset.order_by(*ordering_fields)
+
+        return queryset.order_by(*self.default_ordering)
+
+
 @extend_schema(tags=["Products"])
 @extend_schema_view(
     retrieve=extend_schema(
@@ -85,7 +111,11 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         "product_variants", "product_images", "product_reviews",
         "product_review_summary",
     ]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        ProductOrderingFilter,
+    ]
     filterset_class = ProductFilter
     search_fields = ['name']
     lookup_field = "id"
@@ -164,7 +194,7 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 wishlist=Value(False, output_field=BooleanField()),
                 in_cart=Value(False, output_field=BooleanField()),
             )
-        return queryset.order_by("-view_count", "id")
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
