@@ -1,0 +1,42 @@
+{% extends "emails/base.html" %}
+
+{% block title %}
+Welcome to Best Computer Hub
+{% endblock %}
+
+{% block content %}
+
+<h1
+    style="margin: 0 0 16px; font-size: 26px; line-height: 34px; font-weight: 700; color: #172033;"
+>
+    Welcome, {{ user_name }}!
+</h1>
+
+<p
+    style="margin: 0 0 16px; font-size: 15px; line-height: 24px; color: #475467;"
+>
+    We're happy to have you with Best Computer Hub.
+</p>
+
+<p
+    style="margin: 0 0 24px; font-size: 15px; line-height: 24px; color: #475467;"
+>
+    Thank you for joining us. We're here to help you find the right
+    technology products and solutions.
+</p>
+
+<a
+    href="{{ frontend_url }}"
+    style="display: inline-block; padding: 12px 20px; background-color: #1677ff; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px;"
+>
+    Visit Best Computer Hub
+</a>
+
+<p
+    style="margin: 28px 0 0; font-size: 14px; line-height: 22px; color: #667085;"
+>
+    Regards,<br>
+    Best Computer Hub Team
+</p>
+
+{% endblock %}

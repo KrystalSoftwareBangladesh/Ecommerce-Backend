@@ -62,7 +62,6 @@ class ChartOfAccount(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
-        db_table = 'chart_of_accounts'
         ordering = ['code', 'id']
         verbose_name = 'Chart of Account'
         verbose_name_plural = 'Chart of Accounts'

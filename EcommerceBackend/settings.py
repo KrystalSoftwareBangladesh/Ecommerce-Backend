@@ -82,6 +82,7 @@ LOCAL_APPS = [
     'request_log_api',
     'blog_api',
     'banner_api',
+    'email_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
