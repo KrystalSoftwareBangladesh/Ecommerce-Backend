@@ -24,6 +24,7 @@ from .env import (
     SMTP_USE_TLS_SETTINGS,
     SMTP_USERNAME_SETTINGS,
     EMAIL_FROM_SETTINGS,
+    CELERY_BROKER_URL_SETTINGS,
 )
 from . import env
 
@@ -255,6 +256,9 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
+
+# Celery
+CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

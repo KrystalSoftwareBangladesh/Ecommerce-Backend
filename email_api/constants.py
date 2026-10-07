@@ -17,3 +17,12 @@ class EmailType(models.TextChoices):
     ORDER_CANCELLED = 'ORDER_CANCELLED', 'Order Cancelled'
     ORDER_SHIPPED = 'ORDER_SHIPPED', 'Order Shipped'
     CAMPAIGN = 'CAMPAIGN', 'Campaign'
+
+
+EMAIL_TEMPLATE_REGISTRY = {
+    EmailType.WELCOME: {
+        "subject": "Welcome to Best Computer Hub",
+        "text": "emails/welcome.txt",
+        "html": "emails/welcome.html",
+    },
+}
