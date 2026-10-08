@@ -25,6 +25,7 @@ from .env import (
     SMTP_USERNAME_SETTINGS,
     EMAIL_FROM_SETTINGS,
     CELERY_BROKER_URL_SETTINGS,
+    FRONTEND_BASE_URL_SETTINGS,
 )
 from . import env
 
@@ -207,6 +208,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Frontend
+FRONTEND_BASE_URL = FRONTEND_BASE_URL_SETTINGS
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

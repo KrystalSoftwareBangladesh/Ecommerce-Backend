@@ -1,4 +1,4 @@
-# email_api/services.py
+# email_api/services/email.py
 from pathlib import Path
 
 from django.db import IntegrityError, transaction
@@ -96,7 +96,7 @@ class EmailService:
             )
 
             logo_path = (
-                Path(__file__).resolve().parent
+                Path(__file__).resolve().parent.parent
                 / "static"
                 / "email"
                 / "round_logo_best_computer_hub.png"

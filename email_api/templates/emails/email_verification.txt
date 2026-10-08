@@ -1,0 +1,14 @@
+Hi {{ user_name }},
+
+Welcome to Best Computer Hub!
+
+Please verify your email address by clicking the link below:
+
+{{ verification_url }}
+
+This verification link will expire in 24 hours.
+
+If you did not create an account with Best Computer Hub, you can safely ignore this email.
+
+Regards,
+Best Computer Hub

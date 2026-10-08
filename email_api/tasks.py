@@ -3,7 +3,7 @@ from celery import shared_task
 
 from email_api.constants import EmailStatus
 from email_api.models.email_log import EmailLog
-from email_api.services import EmailDeliveryError, EmailService
+from email_api.services.email import EmailDeliveryError, EmailService
 
 
 @shared_task(

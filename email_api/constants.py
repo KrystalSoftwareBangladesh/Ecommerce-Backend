@@ -26,4 +26,9 @@ EMAIL_TEMPLATE_REGISTRY = {
         "text": "emails/welcome.txt",
         "html": "emails/welcome.html",
     },
+    EmailType.EMAIL_VERIFICATION: {
+        "subject": "Verify your email address",
+        "text": "emails/email_verification.txt",
+        "html": "emails/email_verification.html",
+    },
 }
