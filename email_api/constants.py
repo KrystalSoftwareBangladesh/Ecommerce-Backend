@@ -4,8 +4,9 @@ from django.db import models
 
 class EmailStatus(models.IntegerChoices):
     PENDING = 1, 'Pending'
-    SENT = 2, 'Sent'
-    FAILED = 3, 'Failed'
+    PROCESSING = 2, "Processing"
+    SENT = 3, 'Sent'
+    FAILED = 4, 'Failed'
 
 
 class EmailType(models.TextChoices):

@@ -18,6 +18,14 @@ def send_email_task(self, email_log_id, context=None):
     except EmailLog.DoesNotExist:
         return
 
+    email_log.status = EmailStatus.PROCESSING
+    email_log.save(
+        update_fields=[
+            "status",
+            "updated_at",
+        ],
+    )
+
     try:
         EmailService.send(
             email_log,
@@ -28,6 +36,7 @@ def send_email_task(self, email_log_id, context=None):
         if self.request.retries >= self.max_retries:
             email_log.status = EmailStatus.FAILED
             email_log.error_message = str(exc)
+
             email_log.save(
                 update_fields=[
                     "status",
@@ -35,10 +44,12 @@ def send_email_task(self, email_log_id, context=None):
                     "updated_at",
                 ],
             )
+
             raise
 
         email_log.status = EmailStatus.PENDING
         email_log.error_message = str(exc)
+
         email_log.save(
             update_fields=[
                 "status",

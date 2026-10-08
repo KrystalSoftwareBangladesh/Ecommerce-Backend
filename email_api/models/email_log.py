@@ -18,11 +18,15 @@ class EmailLog(TimeStampedModel):
         default=EmailStatus.PENDING,
         db_index=True,
     )
-
+    idempotency_key = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
     recipient = models.EmailField()
     sender = models.EmailField()
     subject = models.CharField(max_length=255)
-
     provider = models.CharField(
         max_length=50,
         blank=True,
@@ -32,7 +36,6 @@ class EmailLog(TimeStampedModel):
         blank=True,
         db_index=True,
     )
-
     related_user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -40,16 +43,13 @@ class EmailLog(TimeStampedModel):
         blank=True,
         related_name="email_logs",
     )
-
     metadata = models.JSONField(
         default=dict,
         blank=True,
     )
-
     error_message = models.TextField(
         blank=True,
     )
-
     sent_at = models.DateTimeField(
         null=True,
         blank=True,

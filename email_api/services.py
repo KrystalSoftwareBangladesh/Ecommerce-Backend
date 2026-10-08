@@ -1,9 +1,10 @@
 # email_api/services.py
 from pathlib import Path
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.utils import timezone
 from email.mime.image import MIMEImage
@@ -15,6 +16,10 @@ from email_api.constants import (
 from email_api.models.email_log import EmailLog
 
 
+class EmailDeliveryError(Exception):
+    """Raised when email delivery fails temporarily."""
+
+
 class EmailService:
 
     @staticmethod
@@ -24,7 +29,14 @@ class EmailService:
         recipient,
         related_user=None,
         metadata=None,
+        idempotency_key=None,
     ):
+        if not recipient:
+            raise ValidationError("Email recipient is required.")
+
+        if not email_type:
+            raise ValidationError("Email type is required.")
+
         template_config = EMAIL_TEMPLATE_REGISTRY.get(email_type)
 
         if not template_config:
@@ -41,6 +53,7 @@ class EmailService:
             provider="smtp",
             related_user=related_user,
             metadata=metadata or {},
+            idempotency_key=idempotency_key,
         )
 
     @staticmethod
@@ -73,6 +86,8 @@ class EmailService:
                 body=text_message,
                 from_email=email_log.sender,
                 to=[email_log.recipient],
+                connection=None,
+                headers=None,
             )
 
             email.attach_alternative(
@@ -110,13 +125,17 @@ class EmailService:
                 fail_silently=False,
             )
 
+            message_id = email.message().get("Message-ID")
+
             email_log.status = EmailStatus.SENT
             email_log.sent_at = timezone.now()
+            email_log.provider_message_id = message_id or ""
 
             email_log.save(
                 update_fields=[
                     "status",
                     "sent_at",
+                    "provider_message_id",
                     "updated_at",
                 ],
             )
@@ -124,17 +143,6 @@ class EmailService:
             return email_log
 
         except Exception as exc:
-            # email_log.status = EmailStatus.FAILED
-            # email_log.error_message = str(exc)
-
-            # email_log.save(
-            #     update_fields=[
-            #         "status",
-            #         "error_message",
-            #         "updated_at",
-            #     ],
-            # )
-
             raise EmailDeliveryError(str(exc)) from exc
 
     @staticmethod
@@ -145,13 +153,32 @@ class EmailService:
         context=None,
         related_user=None,
         metadata=None,
+        idempotency_key=None,
     ):
-        email_log = EmailService.create_log(
-            email_type=email_type,
-            recipient=recipient,
-            related_user=related_user,
-            metadata=metadata,
-        )
+        if idempotency_key:
+            existing_log = EmailLog.objects.filter(
+                idempotency_key=idempotency_key,
+            ).first()
+
+            if existing_log:
+                return existing_log
+
+        try:
+            with transaction.atomic():
+                email_log = EmailService.create_log(
+                    email_type=email_type,
+                    recipient=recipient,
+                    related_user=related_user,
+                    metadata=metadata,
+                    idempotency_key=idempotency_key,
+                )
+        except IntegrityError:
+            if not idempotency_key:
+                raise
+
+            email_log = EmailLog.objects.get(
+                idempotency_key=idempotency_key,
+            )
 
         from email_api.tasks import send_email_task
 
@@ -163,7 +190,3 @@ class EmailService:
         )
 
         return email_log
-
-
-class EmailDeliveryError(Exception):
-    """Raised when email delivery fails temporarily."""
