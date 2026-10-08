@@ -1,6 +1,7 @@
 # email_api/services.py
 from pathlib import Path
 
+from django.db import transaction
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -123,15 +124,46 @@ class EmailService:
             return email_log
 
         except Exception as exc:
-            email_log.status = EmailStatus.FAILED
-            email_log.error_message = str(exc)
+            # email_log.status = EmailStatus.FAILED
+            # email_log.error_message = str(exc)
 
-            email_log.save(
-                update_fields=[
-                    "status",
-                    "error_message",
-                    "updated_at",
-                ],
+            # email_log.save(
+            #     update_fields=[
+            #         "status",
+            #         "error_message",
+            #         "updated_at",
+            #     ],
+            # )
+
+            raise EmailDeliveryError(str(exc)) from exc
+
+    @staticmethod
+    def queue(
+        *,
+        email_type,
+        recipient,
+        context=None,
+        related_user=None,
+        metadata=None,
+    ):
+        email_log = EmailService.create_log(
+            email_type=email_type,
+            recipient=recipient,
+            related_user=related_user,
+            metadata=metadata,
+        )
+
+        from email_api.tasks import send_email_task
+
+        transaction.on_commit(
+            lambda: send_email_task.delay(
+                email_log.id,
+                context or {},
             )
+        )
 
-            raise
+        return email_log
+
+
+class EmailDeliveryError(Exception):
+    """Raised when email delivery fails temporarily."""
