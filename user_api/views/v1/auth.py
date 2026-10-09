@@ -11,11 +11,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema
 
 import logging
+import uuid
 
 from user_api.models import User
 from user_api.serializers import TokenSerializer
 from user_api.serializers import ChangePasswordSerializer
 from user_api.serializers import CustomerSignupSerializer
+from email_api.constants import EmailType
+from email_api.services import EmailService
 
 
 logger = logging.getLogger(__name__)
@@ -89,8 +92,21 @@ class ChangePasswordView(generics.UpdateAPIView):
         """
         serializer = self.get_serializer(data=request.data, context={'request': request})   # noqa
         serializer.is_valid(raise_exception=True)
-        self.get_object().set_password(serializer.validated_data['new_password'])   # noqa
-        self.get_object().save()
+        user = self.get_object()
+        user.set_password(serializer.validated_data["new_password"])
+        user.save(update_fields=["password", "updated_at"])
+
+        if user.email:
+            EmailService.queue(
+                email_type=EmailType.PASSWORD_CHANGED,
+                recipient=user.email,
+                context={
+                    "user_name": user.full_name or user.email,
+                },
+                related_user=user,
+                idempotency_key=f"PASSWORD_CHANGED:{user.id}:{uuid.uuid4()}",    # noqa
+            )
+
         return Response({
             "message": "Password changed successfully!"
         }, status=status.HTTP_200_OK)
