@@ -11,6 +11,7 @@ from .user import UserExistenceCheckView
 from .user import UserViewSet
 from .email_verification import (
     EmailVerificationRequestView, EmailVerificationConfirmView,
+    EmailVerificationStatusView,
 )
 
 
@@ -27,4 +28,5 @@ __all__ = [
     "UserViewSet",
     "EmailVerificationRequestView",
     'EmailVerificationConfirmView',
+    'EmailVerificationStatusView',
 ]

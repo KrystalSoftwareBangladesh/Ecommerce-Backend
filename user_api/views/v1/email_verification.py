@@ -18,6 +18,7 @@ from email_api.services.email_verification import (
 from email_api.serializers import (
     EmailVerificationConfirmSerializer,
     EmailVerificationConfirmResponseSerializer,
+    EmailVerificationStatusResponseSerializer,
 )
 
 
@@ -40,11 +41,6 @@ class EmailVerificationRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # if user.email_verified if hasattr(user, "email_verified") else False:
-        #     return Response(
-        #         {"message": "Your email is already verified."},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
         if EmailVerification.objects.filter(
             user=user,
             verified_at__isnull=False,
@@ -135,5 +131,30 @@ class EmailVerificationConfirmView(APIView):
 
         return Response(
             {"message": "Email address verified successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class EmailVerificationStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = []
+
+    @extend_schema(
+        tags=["Authentication"],
+        responses={
+            200: EmailVerificationStatusResponseSerializer,
+        },
+    )
+    def get(self, request):
+        is_verified = EmailVerification.objects.filter(
+            user=request.user,
+            verified_at__isnull=False,
+        ).exists()
+
+        return Response(
+            {
+                "email": request.user.email,
+                "email_verified": is_verified,
+            },
             status=status.HTTP_200_OK,
         )

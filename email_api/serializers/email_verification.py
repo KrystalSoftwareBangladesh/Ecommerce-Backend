@@ -8,3 +8,8 @@ class EmailVerificationConfirmSerializer(serializers.Serializer):
 
 class EmailVerificationConfirmResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
+
+
+class EmailVerificationStatusResponseSerializer(serializers.Serializer):
+    email = serializers.EmailField(allow_null=True)
+    email_verified = serializers.BooleanField()
