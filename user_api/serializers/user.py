@@ -76,6 +76,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_permissions(self, obj) -> list[str]:
         return sorted(obj.get_all_permissions())
 
+    @extend_schema_field(serializers.BooleanField())
     def get_email_verified(self, obj):
         if not obj.email:
             return False

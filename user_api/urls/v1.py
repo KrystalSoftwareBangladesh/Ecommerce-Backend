@@ -30,6 +30,12 @@ urlpatterns = [
         'auth/email-verification/confirm/',
         v1.EmailVerificationConfirmView.as_view(),
         name='email-verification-confirm',
+    ),
+
+    path(
+        'auth/email-verification/status/',
+        v1.EmailVerificationStatusView.as_view(),
+        name='email-verification-status',
     )
 ]
 
