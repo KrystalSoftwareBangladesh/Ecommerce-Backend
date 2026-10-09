@@ -62,5 +62,9 @@ jobs:
 
             echo "♻️ Restarting services"
             sudo systemctl restart gunicorn-best-computer-hub.service
+            echo "♻️ Restarting celery worker service"
+            sudo systemctl restart celery-best-computer-hub.service
+            echo "♻️ Restarting celery beat service"
+            sudo systemctl restart celery-best-computer-hub-beat.service
 
             echo "✅ Deployment completed successfully"
