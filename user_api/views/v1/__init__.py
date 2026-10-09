@@ -9,7 +9,9 @@ from user_api.views.v1.permission import PermissionListView
 from user_api.views.v1.group import GroupViewSet
 from .user import UserExistenceCheckView
 from .user import UserViewSet
-from .email_verification import EmailVerificationRequestView
+from .email_verification import (
+    EmailVerificationRequestView, EmailVerificationConfirmView,
+)
 
 
 __all__ = [
@@ -24,4 +26,5 @@ __all__ = [
     "UserExistenceCheckView",
     "UserViewSet",
     "EmailVerificationRequestView",
+    'EmailVerificationConfirmView',
 ]

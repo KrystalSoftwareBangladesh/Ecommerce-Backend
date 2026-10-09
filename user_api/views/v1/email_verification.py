@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import UserRateThrottle
 
-from datetime import timedelta
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
+from datetime import timedelta
 
 from email_api.models import EmailVerification
 from email_api.constants import EmailType
@@ -14,11 +15,15 @@ from email_api.services.email import EmailService
 from email_api.services.email_verification import (
     EmailVerificationService,
 )
+from email_api.serializers import (
+    EmailVerificationConfirmSerializer,
+    EmailVerificationConfirmResponseSerializer,
+)
 
 
 class EmailVerificationRequestThrottle(UserRateThrottle):
     scope = "email_verification_request"
-    rate = "1/5minutes"
+    rate = "5/m"
 
 
 @extend_schema(tags=["Authentication"])
@@ -93,5 +98,42 @@ class EmailVerificationRequestView(APIView):
 
         return Response(
             {"message": "Verification email sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    tags=["Authentication"],
+    request=EmailVerificationConfirmSerializer,
+    responses={
+        200: EmailVerificationConfirmResponseSerializer,
+        400: EmailVerificationConfirmResponseSerializer,
+    },
+)
+class EmailVerificationConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = []
+
+    def post(self, request):
+        serializer = EmailVerificationConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        raw_token = serializer.validated_data["token"]
+
+        try:
+            EmailVerificationService.verify(raw_token=raw_token)
+        except DjangoValidationError as exc:
+            message = (
+                exc.messages[0]
+                if exc.messages
+                else "Invalid verification token."
+            )
+            return Response(
+                {"message": message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"message": "Email address verified successfully."},
             status=status.HTTP_200_OK,
         )
