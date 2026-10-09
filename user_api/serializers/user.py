@@ -6,6 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 
 from drf_spectacular.utils import extend_schema_field
 
+from email_api.models import EmailVerification
 from user_api.models import User
 from .group import GroupSummarySerializer
 
@@ -19,6 +20,7 @@ class GroupPKRelatedField(serializers.PrimaryKeyRelatedField):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    email_verified = serializers.SerializerMethodField()
     password = serializers.CharField(
         write_only=True,
         # required=True,
@@ -43,7 +45,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'full_name', 'first_name', 'middle_name', 'last_name',
             'email', 'username', 'password', 'confirm_password', 'groups',
-            'permissions', 'is_superuser', 'role',
+            'permissions', 'is_superuser', 'role', 'email_verified',
         ]
         read_only_fields = ['id', 'is_superuser']
         write_only = ['password', 'confirm_password']
@@ -73,6 +75,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_permissions(self, obj) -> list[str]:
         return sorted(obj.get_all_permissions())
+
+    def get_email_verified(self, obj):
+        if not obj.email:
+            return False
+
+        return EmailVerification.objects.filter(
+            user=obj,
+            verified_at__isnull=False,
+        ).exists()
 
     def validate(self, data):
         return data
