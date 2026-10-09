@@ -31,4 +31,9 @@ EMAIL_TEMPLATE_REGISTRY = {
         "text": "emails/email_verification.txt",
         "html": "emails/email_verification.html",
     },
+    EmailType.PASSWORD_CHANGED: {
+        "subject": "Your password has been changed",
+        "text": "emails/password_changed.txt",
+        "html": "emails/password_changed.html",
+    },
 }
