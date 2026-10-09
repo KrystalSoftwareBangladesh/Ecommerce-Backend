@@ -1,0 +1,47 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 24px; color: #111827;">
+    Verify your email address
+</h1>
+
+<p style="margin: 0 0 16px;">
+    Hi {{ user_name }},
+</p>
+
+<p style="margin: 0 0 20px;">
+    Thanks for creating an account with Best Computer Hub.
+    Please verify your email address to confirm that it belongs to you.
+</p>
+
+<p style="margin: 0 0 24px; text-align: center;">
+    <a
+        href="{{ verification_url }}"
+        style="
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        "
+    >
+        Verify Email Address
+    </a>
+</p>
+
+<p style="margin: 0 0 12px;">
+    This verification link will expire in 24 hours.
+</p>
+
+<p style="margin: 0 0 16px; color: #6b7280;">
+    If you did not create an account with Best Computer Hub,
+    you can safely ignore this email.
+</p>
+
+<p style="margin: 24px 0 0;">
+    Regards,<br>
+    Best Computer Hub
+</p>
+{% endblock %}

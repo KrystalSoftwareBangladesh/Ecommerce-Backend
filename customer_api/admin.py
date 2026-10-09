@@ -35,6 +35,7 @@ class CustomerProfileAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     ]
+    list_per_page = 15
 
     def full_name_link(self, obj):
         if not obj.user:

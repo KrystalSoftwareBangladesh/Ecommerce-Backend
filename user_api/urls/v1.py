@@ -21,6 +21,16 @@ urlpatterns = [
     path('users/me/', v1.UserProfileView.as_view(), name='user-profile'),
     path('permissions/', v1.PermissionListView.as_view(), name='permission-list'),       # noqa
     path('users/verify/', v1.UserExistenceCheckView.as_view(), name='user-existence-check'),   # noqa
+    path(
+        'auth/email-verification/request/',
+        v1.EmailVerificationRequestView.as_view(),
+        name='email-verification-request',
+    ),
+    path(
+        'auth/email-verification/confirm/',
+        v1.EmailVerificationConfirmView.as_view(),
+        name='email-verification-confirm',
+    )
 ]
 
 urlpatterns += router.urls

@@ -1,0 +1,8 @@
+Hello {{ user_name }},
+
+Welcome to Best Computer Hub!
+
+We're happy to have you with us.
+
+Regards,
+Best Computer Hub

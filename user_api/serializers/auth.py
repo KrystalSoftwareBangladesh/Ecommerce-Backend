@@ -3,9 +3,14 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 
+from email_api.constants import EmailType
+from email_api.services import (
+    EmailVerificationService, EmailService,
+)
 from user_api.models import User
 
 
@@ -166,6 +171,45 @@ class CustomerSignupSerializer(serializers.Serializer):
             user=user,
             phone=phone,
             customer_type='WEBSITE',
+        )
+
+        # Create email verification token
+        verification, raw_token = EmailVerificationService.create(
+            user=user,
+        )
+
+        verification_url = (
+            f"{settings.FRONTEND_BASE_URL.rstrip('/')}"
+            f"/verify-email?token={raw_token}"
+        )
+
+        # Queue verification email
+        EmailService.queue(
+            email_type=EmailType.EMAIL_VERIFICATION,
+            recipient=user.email,
+            context={
+                "user_name": user.full_name or user.email,
+                "verification_url": verification_url,
+            },
+            related_user=user,
+            metadata={
+                "verification_id": verification.id,
+            },
+            idempotency_key=(
+                f"EMAIL_VERIFICATION:{verification.id}"
+            ),
+        )
+
+        # Queue welcome email
+        EmailService.queue(
+            email_type=EmailType.WELCOME,
+            recipient=user.email,
+            context={
+                "user_name": user.full_name or user.email,
+                "frontend_url": settings.FRONTEND_BASE_URL,
+            },
+            related_user=user,
+            idempotency_key=f"WELCOME:signup:{user.id}",
         )
 
         # Generate JWT tokens
