@@ -27,11 +27,20 @@ class EmailVerificationRequestThrottle(UserRateThrottle):
     rate = "5/m"
 
 
-@extend_schema(tags=["Authentication"])
 class EmailVerificationRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [EmailVerificationRequestThrottle]
 
+    @extend_schema(
+        tags=["Authentication"],
+        operation_id="requestEmailVerification",
+        request=None,
+        responses={
+            200: EmailVerificationConfirmResponseSerializer,
+            400: EmailVerificationConfirmResponseSerializer,
+            429: EmailVerificationConfirmResponseSerializer,
+        },
+    )
     def post(self, request):
         user = request.user
 
@@ -98,18 +107,19 @@ class EmailVerificationRequestView(APIView):
         )
 
 
-@extend_schema(
-    tags=["Authentication"],
-    request=EmailVerificationConfirmSerializer,
-    responses={
-        200: EmailVerificationConfirmResponseSerializer,
-        400: EmailVerificationConfirmResponseSerializer,
-    },
-)
 class EmailVerificationConfirmView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = []
 
+    @extend_schema(
+        tags=["Authentication"],
+        operation_id="confirmEmailVerification",
+        request=EmailVerificationConfirmSerializer,
+        responses={
+            200: EmailVerificationConfirmResponseSerializer,
+            400: EmailVerificationConfirmResponseSerializer,
+        },
+    )
     def post(self, request):
         serializer = EmailVerificationConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
