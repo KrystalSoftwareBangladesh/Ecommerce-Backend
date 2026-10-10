@@ -1,7 +1,8 @@
 # user_api/serializers/__init__.py
 from .auth import (
     TokenSerializer, ChangePasswordSerializer, CustomerSignupSerializer,
-    ChangeUserPasswordSerializer,
+    ChangeUserPasswordSerializer, PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
 )
 from .user import (
     UserProfileSerializer, UserExistenceCheckSerializer, UserSummarySerializer,
@@ -18,7 +19,8 @@ from .group import (
 
 __all__ = [
     TokenSerializer, ChangePasswordSerializer, CustomerSignupSerializer,
-    ChangeUserPasswordSerializer,
+    ChangeUserPasswordSerializer, PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
     UserProfileSerializer, UserSummarySerializer, UserCreateSerializer,
     UserUpdateSerializer, UserListSerializer, UserDetailSerializer,
     ChangeUserUsernameSerializer, ChangeUserEmailSerializer,

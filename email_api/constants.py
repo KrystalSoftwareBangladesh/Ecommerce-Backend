@@ -36,4 +36,9 @@ EMAIL_TEMPLATE_REGISTRY = {
         "text": "emails/password_changed.txt",
         "html": "emails/password_changed.html",
     },
+    EmailType.PASSWORD_RESET: {
+        "subject": "Reset your Best Computer Hub password",
+        "text": "emails/password_reset.txt",
+        "html": "emails/password_reset.html",
+    },
 }
