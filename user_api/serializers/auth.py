@@ -264,3 +264,27 @@ class ChangeUserPasswordSerializer(serializers.Serializer):
         instance.save(update_fields=["password"])
 
         return instance
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(
+        write_only=True,
+        validators=[validate_password],
+    )
+    confirm_new_password = serializers.CharField(
+        write_only=True,
+    )
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_new_password"]:
+            raise serializers.ValidationError({
+                "confirm_new_password": "Passwords do not match."
+            })
+
+        return attrs

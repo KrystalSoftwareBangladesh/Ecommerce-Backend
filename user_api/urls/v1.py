@@ -31,12 +31,21 @@ urlpatterns = [
         v1.EmailVerificationConfirmView.as_view(),
         name='email-verification-confirm',
     ),
-
     path(
         'auth/email-verification/status/',
         v1.EmailVerificationStatusView.as_view(),
         name='email-verification-status',
-    )
+    ),
+    path(
+        'auth/password-reset/request/',
+        v1.PasswordResetRequestView.as_view(),
+        name='password-reset-request',
+    ),
+    path(
+        'auth/password-reset/confirm/',
+        v1.PasswordResetConfirmView.as_view(),
+        name='password-reset-confirm',
+    ),
 ]
 
 urlpatterns += router.urls
