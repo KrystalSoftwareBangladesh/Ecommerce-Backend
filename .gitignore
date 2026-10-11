@@ -6,3 +6,4 @@ staticfiles/
 /media
 /.venv
 celerybeat-schedule
+.mimocode
