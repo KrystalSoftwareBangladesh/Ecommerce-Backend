@@ -5,6 +5,11 @@ from .customer_profile import (
     CustomerProfileListSerializer,
     CustomerProfileUpdateSerializer,
 )
+from .customer_address import (
+    CustomerAddressListSerializer,
+    CustomerAddressDetailSerializer,
+    CustomerAddressCreateUpdateSerializer,
+)
 
 
 __all__ = [
@@ -12,4 +17,7 @@ __all__ = [
     "CustomerProfileDetailSerializer",
     "CustomerProfileListSerializer",
     "CustomerProfileUpdateSerializer",
+    "CustomerAddressListSerializer",
+    "CustomerAddressDetailSerializer",
+    "CustomerAddressCreateUpdateSerializer",
 ]
