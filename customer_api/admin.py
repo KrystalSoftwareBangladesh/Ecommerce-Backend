@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import CustomerProfile
+from .models import CustomerProfile, CustomerAddress
 
 
 @admin.register(CustomerProfile)
@@ -49,3 +49,34 @@ class CustomerProfileAdmin(admin.ModelAdmin):
     def email(self, obj):
         return obj.user.email or "-"
     email.short_description = "Email"
+
+
+@admin.register(CustomerAddress)
+class CustomerAddressAdmin(admin.ModelAdmin):
+    list_display = [
+        "customer",
+        "address_type",
+        "first_name",
+        "last_name",
+        "city",
+        "country",
+        "is_active",
+        "created_at",
+    ]
+    list_filter = ["address_type", "is_active", "country", "created_at"]
+    search_fields = [
+        "customer__user__first_name",
+        "customer__user__last_name",
+        "customer__user__email",
+        "first_name",
+        "last_name",
+        "address_1",
+        "city",
+        "phone",
+    ]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+        "deleted_at",
+    ]
+    list_per_page = 15
