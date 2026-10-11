@@ -18,6 +18,7 @@ from content_security_api import urls as content_security_urls
 from request_log_api import urls as request_log_urls
 from blog_api import urls as blog_urls
 from banner_api import urls as banner_ulrs
+from shipping_api import urls as shipping_urls
 
 
 urlpatterns = []
@@ -41,3 +42,4 @@ urlpatterns += content_security_urls.urlpatterns
 urlpatterns += request_log_urls.urlpatterns
 urlpatterns += blog_urls.urlpatterns
 urlpatterns += banner_ulrs.urlpatterns
+urlpatterns += shipping_urls.urlpatterns
