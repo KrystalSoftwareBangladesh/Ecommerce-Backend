@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from shipping_api.serializers import (
     ShippingOptionSerializer,
+    ShippingOptionResponseSerializer,
 )
 from shipping_api.services import get_shipping_options
 
@@ -24,7 +25,7 @@ from shipping_api.services import get_shipping_options
             ),
         ),
     ],
-    responses={200: ShippingOptionSerializer(many=True)},
+    responses={200: ShippingOptionResponseSerializer},
 )
 class ShippingOptionView(APIView):
     permission_classes = [IsAuthenticated]

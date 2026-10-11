@@ -2,6 +2,14 @@
 from rest_framework import serializers
 
 
+class ShippingZoneSummarySerializer(
+    serializers.Serializer
+):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    code = serializers.CharField()
+
+
 class ShippingOptionSerializer(serializers.Serializer):
     shipping_method_id = serializers.IntegerField()
     shipping_method_name = serializers.CharField()
@@ -21,3 +29,13 @@ class ShippingOptionSerializer(serializers.Serializer):
     )
     zone_name = serializers.CharField()
     zone_code = serializers.CharField()
+
+
+class ShippingOptionResponseSerializer(
+    serializers.Serializer
+):
+    zone = ShippingZoneSummarySerializer()
+    cart_subtotal = serializers.DecimalField(
+        max_digits=12, decimal_places=2
+    )
+    options = ShippingOptionSerializer(many=True)

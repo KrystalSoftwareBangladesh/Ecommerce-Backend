@@ -16,6 +16,8 @@ from .shipping_rate import (
 )
 from .shipping_option import (
     ShippingOptionSerializer,
+    ShippingOptionResponseSerializer,
+    ShippingZoneSummarySerializer,
 )
 
 __all__ = [
@@ -29,4 +31,6 @@ __all__ = [
     "ShippingRateDetailSerializer",
     "ShippingRateCreateUpdateSerializer",
     "ShippingOptionSerializer",
+    "ShippingOptionResponseSerializer",
+    "ShippingZoneSummarySerializer",
 ]
