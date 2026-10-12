@@ -470,3 +470,283 @@ class SaleStatusApiTests(APITestCase):
         self.assertEqual(result['code'], 'CASH')
         self.assertEqual(result['default_account_id'], self.cash_account.id)
         self.assertEqual(result['default_account']['id'], self.cash_account.id)
+
+
+class AccountProvisioningTests(TestCase):
+    """Tests for account provisioning functions."""
+
+    def test_shipping_revenue_account_created(self):
+        from sale_api.services import (
+            get_or_create_shipping_revenue_account,
+        )
+        account = (
+            get_or_create_shipping_revenue_account()
+        )
+        self.assertEqual(
+            account.name, 'Shipping Revenue'
+        )
+        self.assertEqual(
+            account.account_type, AccountType.REVENUE
+        )
+        self.assertTrue(account.is_active)
+
+    def test_shipping_revenue_reuses_existing(self):
+        from sale_api.services import (
+            get_or_create_shipping_revenue_account,
+        )
+        first = (
+            get_or_create_shipping_revenue_account()
+        )
+        second = (
+            get_or_create_shipping_revenue_account()
+        )
+        self.assertEqual(first.id, second.id)
+
+    def test_shipping_revenue_inactive_raises(self):
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_shipping_revenue_account,
+        )
+        account = (
+            get_or_create_shipping_revenue_account()
+        )
+        account.is_active = False
+        account.save(update_fields=['is_active'])
+        with self.assertRaises(ValidationError):
+            get_or_create_shipping_revenue_account()
+
+    def test_accounts_receivable_created(self):
+        from sale_api.services import (
+            get_or_create_accounts_receivable_account,
+        )
+        account = (
+            get_or_create_accounts_receivable_account()
+        )
+        self.assertEqual(
+            account.name, 'Accounts Receivable'
+        )
+        self.assertEqual(
+            account.account_type, AccountType.ASSET
+        )
+        self.assertTrue(account.is_active)
+
+    def test_accounts_receivable_reuses_existing(
+        self,
+    ):
+        from sale_api.services import (
+            get_or_create_accounts_receivable_account,
+        )
+        first = (
+            get_or_create_accounts_receivable_account()
+        )
+        second = (
+            get_or_create_accounts_receivable_account()
+        )
+        self.assertEqual(first.id, second.id)
+
+    def test_sales_revenue_still_works(self):
+        from sale_api.services import (
+            get_or_create_sales_revenue_account,
+        )
+        account = (
+            get_or_create_sales_revenue_account()
+        )
+        self.assertEqual(
+            account.name, 'Sales Revenue'
+        )
+        self.assertEqual(
+            account.account_type, AccountType.REVENUE
+        )
+
+    def _delete_cod_pm(self):
+        """Remove the COD PM created by the data
+        migration so tests can set up their own."""
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM sale_api_paymentmethod "
+                "WHERE code = 'COD'"
+            )
+
+    def test_cod_payment_method_valid(self):
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        cash = ChartOfAccount.objects.create(
+            name='Cash - COD Test',
+            account_type=AccountType.ASSET,
+        )
+        pm = PaymentMethod.objects.create(
+            code='COD',
+            name='Cash on Delivery',
+            default_account=cash,
+            allow_account_override=False,
+        )
+        result = get_or_create_cod_payment_method()
+        self.assertEqual(result.id, pm.id)
+        self.assertEqual(
+            result.default_account.id, cash.id
+        )
+        self.assertFalse(
+            result.allow_account_override
+        )
+
+    def test_cod_payment_method_missing(self):
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        with self.assertRaises(ValidationError):
+            get_or_create_cod_payment_method()
+
+    def test_cod_payment_method_no_account(self):
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        PaymentMethod.objects.create(
+            code='COD',
+            name='Cash on Delivery',
+            default_account=None,
+        )
+        with self.assertRaises(ValidationError):
+            get_or_create_cod_payment_method()
+
+    def test_cod_payment_method_inactive_account(
+        self,
+    ):
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        cash = ChartOfAccount.objects.create(
+            name='Cash Inactive',
+            account_type=AccountType.ASSET,
+            is_active=False,
+        )
+        PaymentMethod.objects.create(
+            code='COD',
+            name='Cash on Delivery',
+            default_account=cash,
+        )
+        with self.assertRaises(ValidationError):
+            get_or_create_cod_payment_method()
+
+    def test_cod_payment_method_wrong_type(self):
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        rev = ChartOfAccount.objects.create(
+            name='Not Cash',
+            account_type=AccountType.REVENUE,
+        )
+        PaymentMethod.objects.create(
+            code='COD',
+            name='Cash on Delivery',
+            default_account=rev,
+        )
+        with self.assertRaises(ValidationError):
+            get_or_create_cod_payment_method()
+
+    def test_pos_payment_method_unchanged(self):
+        """Existing POS CASH method must not be
+        affected by COD provisioning."""
+        pos_cash = ChartOfAccount.objects.create(
+            name='Cash',
+            account_type=AccountType.ASSET,
+        )
+        pos_pm = PaymentMethod.objects.create(
+            code='CASH',
+            name='Cash',
+            default_account=pos_cash,
+        )
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        # COD PM already exists from data migration
+        cod = get_or_create_cod_payment_method()
+        pos_pm.refresh_from_db()
+        self.assertNotEqual(cod.id, pos_pm.id)
+        self.assertEqual(
+            pos_pm.default_account.id, pos_cash.id
+        )
+
+    def test_cod_different_account_preserved(self):
+        """If COD PM references a different active
+        ASSET account, the runtime function must
+        accept it without overwriting."""
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        alt_cash = ChartOfAccount.objects.create(
+            name='Cash - Alternate',
+            account_type=AccountType.ASSET,
+        )
+        pm = PaymentMethod.objects.create(
+            code='COD',
+            name='Cash on Delivery',
+            default_account=alt_cash,
+            allow_account_override=False,
+        )
+        result = get_or_create_cod_payment_method()
+        self.assertEqual(result.id, pm.id)
+        self.assertEqual(
+            result.default_account.id, alt_cash.id
+        )
+
+    def test_cod_deleted_account_raises(self):
+        """If COD PM references a soft-deleted
+        account, the runtime function must raise."""
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self._delete_cod_pm()
+        cash = ChartOfAccount.objects.create(
+            name='Cash Deleted',
+            account_type=AccountType.ASSET,
+        )
+        cash.soft_delete()
+        PaymentMethod.objects.create(
+            code='COD',
+            name='Cash on Delivery',
+            default_account=cash,
+        )
+        with self.assertRaises(ValidationError):
+            get_or_create_cod_payment_method()
+
+    def test_accounts_receivable_inactive_raises(
+        self,
+    ):
+        from django.core.exceptions import (
+            ValidationError,
+        )
+        from sale_api.services import (
+            get_or_create_accounts_receivable_account,
+        )
+        account = (
+            get_or_create_accounts_receivable_account()
+        )
+        account.is_active = False
+        account.save(update_fields=['is_active'])
+        with self.assertRaises(ValidationError):
+            get_or_create_accounts_receivable_account()

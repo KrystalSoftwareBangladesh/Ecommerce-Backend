@@ -55,6 +55,145 @@ def get_or_create_sales_revenue_account(user=None):
         )
 
 
+SHIPPING_REVENUE_ACCOUNT_NAME = 'Shipping Revenue'
+SHIPPING_REVENUE_ACCOUNT_DESCRIPTION = (
+    'System-managed revenue account used when '
+    'recording shipping charges on orders.'
+)
+
+ACCOUNTS_RECEIVABLE_ACCOUNT_NAME = (
+    'Accounts Receivable'
+)
+ACCOUNTS_RECEIVABLE_ACCOUNT_DESCRIPTION = (
+    'System-managed asset account used for '
+    'COD orders pending payment collection.'
+)
+
+COD_PAYMENT_METHOD_CODE = 'COD'
+COD_PAYMENT_METHOD_NAME = 'Cash on Delivery'
+
+
+def _get_or_create_account(
+    name, account_type, description, user=None
+):
+    """
+    Shared helper for safe account provisioning.
+
+    Looks up by name + account_type.
+    - If found and active: reuse it.
+    - If found but inactive or soft-deleted: raise
+      ValidationError. Do not silently reactivate.
+    - If not found: create it.
+    Uses select_for_update() for concurrency safety.
+    """
+    with transaction.atomic():
+        account = (
+            ChartOfAccount.objects
+            .select_for_update()
+            .filter(
+                name=name,
+                account_type=account_type,
+            )
+            .order_by('id')
+            .first()
+        )
+
+        if account:
+            if not account.is_active:
+                raise ValidationError(
+                    f"Account '{name}' ({account_type}) "
+                    "exists but is inactive. "
+                    "Reactivate it or create a new one."
+                )
+            if account.deleted_at is not None:
+                raise ValidationError(
+                    f"Account '{name}' ({account_type}) "
+                    "exists but is soft-deleted. "
+                    "Restore it or create a new one."
+                )
+            return account
+
+        return ChartOfAccount.objects.create(
+            name=name,
+            account_type=account_type,
+            description=description,
+            created_by=user,
+            updated_by=user,
+        )
+
+
+def get_or_create_shipping_revenue_account(
+    user=None,
+):
+    return _get_or_create_account(
+        name=SHIPPING_REVENUE_ACCOUNT_NAME,
+        account_type=AccountType.REVENUE,
+        description=SHIPPING_REVENUE_ACCOUNT_DESCRIPTION,
+        user=user,
+    )
+
+
+def get_or_create_accounts_receivable_account(
+    user=None,
+):
+    return _get_or_create_account(
+        name=ACCOUNTS_RECEIVABLE_ACCOUNT_NAME,
+        account_type=AccountType.ASSET,
+        description=ACCOUNTS_RECEIVABLE_ACCOUNT_DESCRIPTION,
+        user=user,
+    )
+
+
+def get_or_create_cod_payment_method(user=None):
+    """
+    Return the COD PaymentMethod.
+
+    Raises ValidationError if:
+    - No PaymentMethod with code 'COD' exists.
+    - The PaymentMethod has no default_account.
+    - The default_account is not an active ASSET.
+    """
+    from .models import PaymentMethod
+
+    pm = PaymentMethod.objects.filter(
+        code=COD_PAYMENT_METHOD_CODE,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).first()
+
+    if pm is None:
+        raise ValidationError(
+            f"Payment method '{COD_PAYMENT_METHOD_CODE}' "
+            "is not configured. Please contact support."
+        )
+
+    if pm.default_account is None:
+        raise ValidationError(
+            f"Payment method '{COD_PAYMENT_METHOD_CODE}' "
+            "has no default account configured."
+        )
+
+    account = pm.default_account
+    if (
+        not account.is_active
+        or account.deleted_at is not None
+    ):
+        raise ValidationError(
+            f"Payment method "
+            f"'{COD_PAYMENT_METHOD_CODE}' "
+            "references an inactive account."
+        )
+
+    if account.account_type != AccountType.ASSET:
+        raise ValidationError(
+            f"Payment method "
+            f"'{COD_PAYMENT_METHOD_CODE}' "
+            "must reference an ASSET account."
+        )
+
+    return pm
+
+
 def _is_blank_invoice_number(value):
     return value is None or (isinstance(value, str) and not value.strip())
 
