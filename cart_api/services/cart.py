@@ -117,7 +117,7 @@ def checkout_cart(
             "Only active carts can be checked out."
         )
 
-    if not cart.items.filter(is_active=True).exists():
+    if not cart.cart_items.filter(is_active=True).exists():
         raise ValidationError(
             "Cannot checkout an empty cart."
         )
