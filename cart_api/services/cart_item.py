@@ -82,7 +82,7 @@ def update_cart_item(
         raise ValidationError(
             "Cart item not found."
         )
-    if cart_item.cart.status is not CartStatus.ACTIVE:
+    if cart_item.cart.status != CartStatus.ACTIVE:
         raise ValidationError(
             "Only active cart items can be updated."
         )
