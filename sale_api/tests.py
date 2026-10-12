@@ -111,6 +111,7 @@ class SaleInvoiceGenerationTests(TestCase):
                 'OUT_OF_DELIVERY',
                 'DELIVERED',
                 'RETURNED',
+                'CANCELLED',
             ]
         )
 
@@ -327,7 +328,7 @@ class SaleStatusApiTests(APITestCase):
         self.assertEqual(response.data['default'], SaleStatus.PENDING)
         self.assertEqual(
             response.data['transitions']['PENDING'],
-            [SaleStatus.CONFIRMED]
+            [SaleStatus.CONFIRMED, SaleStatus.CANCELLED]
         )
 
     def test_update_status_endpoint_updates_sale(self):
@@ -344,7 +345,10 @@ class SaleStatusApiTests(APITestCase):
         self.assertIsNone(response.data['payment_method'])
         self.assertEqual(
             response.data['allowed_next_statuses'],
-            [{'value': SaleStatus.PROCESSING, 'label': 'Processing'}]
+            [
+                {'value': SaleStatus.PROCESSING, 'label': 'Processing'},
+                {'value': SaleStatus.CANCELLED, 'label': 'Cancelled'},
+            ]
         )
 
     def test_patch_sale_can_update_status_without_invoice_number(self):

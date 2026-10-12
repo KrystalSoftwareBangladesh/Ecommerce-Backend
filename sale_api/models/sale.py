@@ -1,4 +1,6 @@
 # sale_api/models/sale.py
+from decimal import Decimal
+
 from django.db import models
 from EcommerceBackend.core.models import (
     TimeStampedModel, UserStampedModel, SoftDeleteModel
@@ -18,18 +20,31 @@ class SaleStatus(models.TextChoices):
     OUT_OF_DELIVERY = 'OUT_OF_DELIVERY', 'Out of Delivery'
     DELIVERED = 'DELIVERED', 'Delivered'
     RETURNED = 'RETURNED', 'Returned'
+    CANCELLED = 'CANCELLED', 'Cancelled'
 
 
 SALE_STATUS_TRANSITIONS = {
-    SaleStatus.PENDING: [SaleStatus.CONFIRMED],
-    SaleStatus.CONFIRMED: [SaleStatus.PROCESSING],
+    SaleStatus.PENDING: [
+        SaleStatus.CONFIRMED,
+        SaleStatus.CANCELLED,
+    ],
+    SaleStatus.CONFIRMED: [
+        SaleStatus.PROCESSING,
+        SaleStatus.CANCELLED,
+    ],
     SaleStatus.PROCESSING: [SaleStatus.PACKAGED],
     SaleStatus.PACKAGED: [SaleStatus.SHIPPED],
     SaleStatus.SHIPPED: [SaleStatus.OUT_OF_DELIVERY],
     SaleStatus.OUT_OF_DELIVERY: [SaleStatus.DELIVERED],
     SaleStatus.DELIVERED: [SaleStatus.RETURNED],
     SaleStatus.RETURNED: [],
+    SaleStatus.CANCELLED: [],
 }
+
+
+class PaymentStatus(models.TextChoices):
+    UNPAID = 'UNPAID', 'Unpaid'
+    COLLECTED = 'COLLECTED', 'Collected'
 
 
 def get_next_sale_statuses(current_status):
@@ -110,14 +125,43 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     total_amount = models.DecimalField(
         max_digits=15, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.UNPAID,
+        db_index=True,
+    )
+    shipping_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+    )
+    shipping_address_snapshot = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+    idempotency_key = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
-        unique_together = ('invoice_number',)
+        unique_together = (
+            ('invoice_number',),
+            ('customer', 'idempotency_key'),
+        )
         verbose_name = 'Sale'
         verbose_name_plural = 'Sales'
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['sale_date']),
+            models.Index(
+                fields=['customer', 'status'],
+            ),
+            models.Index(
+                fields=['customer', 'payment_status'],
+            ),
         ]
 
 
