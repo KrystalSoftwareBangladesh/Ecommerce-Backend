@@ -87,6 +87,13 @@ Ecommerce-Backend/
 │   ├── admin.py
 │   └── tests.py
 │
+├── checkout_api/                      # no models — validation only
+│   ├── services.py
+│   ├── serializers/checkout.py
+│   ├── views/v1/checkout.py
+│   ├── urls/{__init__.py,v1.py}
+│   └── tests.py
+│
 ├── category_api/
 │   ├── models/category.py
 │   ├── serializers/{category.py,category_import.py,import.py}
