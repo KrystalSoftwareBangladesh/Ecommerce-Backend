@@ -1,14 +1,33 @@
 import decimal
+import hashlib
+import json
+
+from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
 
+from EcommerceBackend.core.choices import CartStatus
 from cart_api.services.cart import get_active_cart
 from customer_api.models import CustomerAddress
-from shipping_api.services.shipping import (
-    match_zone,
-    calculate_shipping_charge,
+from inventory_api.services.reservation import (
+    release_reservations,
+    reserve_stock,
+)
+from sale_api.models import (
+    PaymentStatus,
+    Sale,
+    SaleItem,
+    SaleStatus,
+)
+from sale_api.services import (
+    get_or_create_cod_payment_method,
 )
 from shipping_api.models import ShippingRate
+from shipping_api.services.shipping import (
+    calculate_shipping_charge,
+    match_zone,
+)
 
 
 def _validate_cart(user):
@@ -303,3 +322,315 @@ def validate_checkout(*, user, shipping_address_id,
         "shipping": shipping_data,
         "errors": [],
     }
+
+
+# ── Order creation and cancellation ──────────
+
+
+def _build_fingerprint(
+    shipping_address_id,
+    shipping_method_id,
+    notes,
+):
+    """
+    Build a canonical SHA-256 fingerprint of the
+    meaningful request inputs.
+
+    The fingerprint is deterministic: the same
+    inputs always produce the same hash.
+    """
+    canonical = json.dumps(
+        {
+            'shipping_address_id': (
+                shipping_address_id
+            ),
+            'shipping_method_id': (
+                shipping_method_id
+            ),
+            'notes': (notes or '').strip(),
+        },
+        sort_keys=True,
+        separators=(',', ':'),
+    )
+    return hashlib.sha256(
+        canonical.encode()
+    ).hexdigest()
+
+
+def _resolve_variant(product):
+    """
+    Resolve a product to exactly one eligible
+    active variant.
+
+    Returns the ProductVariant or raises
+    ValidationError.
+    """
+    active_variants = (
+        product.variants.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        )
+    )
+    count = active_variants.count()
+    if count == 0:
+        raise ValidationError(
+            f"Product '{product.name}' has no "
+            "available variants."
+        )
+    if count == 1:
+        return active_variants.first()
+    raise ValidationError(
+        f"Product '{product.name}' has multiple "
+        "variants. Please select one."
+    )
+
+
+def _snapshot_address(address):
+    """
+    Return a JSON-safe dict of the address fields
+    for persistence on the Sale.
+    """
+    return {
+        'first_name': address.first_name,
+        'last_name': address.last_name,
+        'company': address.company,
+        'address_1': address.address_1,
+        'address_2': address.address_2,
+        'city': address.city,
+        'state': address.state,
+        'postcode': address.postcode,
+        'country': address.country,
+        'phone': address.phone,
+    }
+
+
+@transaction.atomic
+def create_order(
+    *,
+    user,
+    shipping_address_id,
+    shipping_method_id,
+    idempotency_key,
+    notes='',
+):
+    """
+    Create a storefront order from the user's
+    active cart.
+
+    Idempotency is checked FIRST, before any cart
+    validation.
+
+    - Same idempotency_key + same fingerprint:
+      return existing order.
+    - Same idempotency_key + different fingerprint:
+      raise conflict (409 at API layer).
+    - No existing order: create new.
+
+    The entire operation is atomic — any failure
+    rolls back all changes.
+    """
+    # --- Step 0: Validate idempotency key ---
+    if not idempotency_key or not str(
+        idempotency_key
+    ).strip():
+        raise ValidationError(
+            "idempotency_key is required."
+        )
+
+    # --- Step 1: Idempotency (before cart) ---
+    fingerprint = _build_fingerprint(
+        shipping_address_id,
+        shipping_method_id,
+        notes,
+    )
+
+    customer = user.customer_profile
+    existing = Sale.objects.filter(
+        customer=customer,
+        idempotency_key=idempotency_key,
+    ).first()
+
+    if existing is not None:
+        if (
+            existing.request_fingerprint
+            == fingerprint
+        ):
+            # Same key, same inputs — return
+            # existing order.
+            return existing
+        # Same key, different inputs — conflict.
+        raise ValidationError(
+            "An order with this idempotency key "
+            "already exists with different "
+            "parameters."
+        )
+
+    # --- Step 2: Cart validation ---
+    cart = get_active_cart(user=user)
+    if cart is None:
+        raise ValidationError(
+            "No active cart found."
+        )
+
+    cart_items = _validate_cart_items(cart)
+    product_errors = _validate_products(cart_items)
+    if product_errors:
+        raise ValidationError(product_errors)
+
+    # --- Step 3: Resolve variants and prices ---
+    resolved_items = []
+    subtotal = decimal.Decimal("0.00")
+    for item in cart_items:
+        product = item.product
+        variant = _resolve_variant(product)
+        unit_price = (
+            product.current_selling_price
+        )
+        line_total = (
+            unit_price * item.quantity
+        )
+        subtotal += line_total
+        resolved_items.append({
+            'product_variant': variant,
+            'quantity': item.quantity,
+            'unit_price': unit_price,
+            'line_total': line_total,
+            'product_name': product.name,
+            'variant_sku': variant.sku,
+        })
+
+    # --- Step 4: Validate address ---
+    address = _validate_address(
+        user, shipping_address_id
+    )
+
+    # --- Step 5: Validate shipping ---
+    shipping = _resolve_shipping(
+        address, shipping_method_id, subtotal
+    )
+    shipping_charge = shipping['shipping_charge']
+
+    # --- Step 6: Get COD payment method ---
+    cod_pm = get_or_create_cod_payment_method(
+        user=user
+    )
+
+    # --- Step 7: Create Sale ---
+    discount = decimal.Decimal("0.00")
+    tax = decimal.Decimal("0.00")
+    grand_total = (
+        subtotal - discount
+        + tax + shipping_charge
+    )
+
+    try:
+        sale = Sale.objects.create(
+            customer=customer,
+            payment_method=cod_pm,
+            sale_date=timezone.now().date(),
+            channel=Sale.SaleChannel.WEBSITE,
+            status=SaleStatus.PENDING,
+            payment_status=PaymentStatus.UNPAID,
+            subtotal_amount=subtotal,
+            discount_amount=discount,
+            tax_amount=tax,
+            shipping_amount=shipping_charge,
+            total_amount=grand_total,
+            shipping_address_snapshot=(
+                _snapshot_address(address)
+            ),
+            idempotency_key=idempotency_key,
+            request_fingerprint=fingerprint,
+            notes=notes,
+            created_by=user,
+            updated_by=user,
+        )
+    except IntegrityError:
+        # Concurrent insert with same
+        # idempotency_key. Fetch and compare
+        # fingerprints.
+        existing = Sale.objects.filter(
+            customer=customer,
+            idempotency_key=idempotency_key,
+        ).first()
+        if existing is not None:
+            if (
+                existing.request_fingerprint
+                == fingerprint
+            ):
+                return existing
+            raise ValidationError(
+                "An order with this idempotency "
+                "key already exists with "
+                "different parameters."
+            )
+        raise
+
+    # --- Step 8: Create SaleItems ---
+    for item in resolved_items:
+        SaleItem.objects.create(
+            sale=sale,
+            product_variant=(
+                item['product_variant']
+            ),
+            quantity=item['quantity'],
+            unit_price=item['unit_price'],
+            line_total=item['line_total'],
+        )
+
+    # --- Step 9: Reserve inventory ---
+    reserve_items = [
+        {
+            'product_variant': (
+                item['product_variant']
+            ),
+            'quantity': item['quantity'],
+        }
+        for item in resolved_items
+    ]
+    reserve_stock(
+        sale, reserve_items, user=user
+    )
+
+    # --- Step 10: Mark cart CHECKED_OUT ---
+    cart.status = CartStatus.CHECKED_OUT
+    cart.updated_by = user
+    cart.save(
+        update_fields=[
+            'status',
+            'updated_by',
+            'updated_at',
+        ]
+    )
+
+    return sale
+
+
+@transaction.atomic
+def cancel_order(*, user, sale):
+    """
+    Cancel a pending storefront order.
+
+    Only PENDING orders can be cancelled.
+    Releases active reservations idempotently.
+
+    Returns the cancelled sale.
+    """
+    if sale.status != SaleStatus.PENDING:
+        raise ValidationError(
+            "Only pending orders can be cancelled."
+        )
+
+    release_reservations(sale, user=user)
+
+    sale.status = SaleStatus.CANCELLED
+    sale.updated_by = user
+    sale.save(
+        update_fields=[
+            'status',
+            'updated_by',
+            'updated_at',
+        ]
+    )
+
+    return sale

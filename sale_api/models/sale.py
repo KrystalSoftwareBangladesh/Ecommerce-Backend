@@ -142,9 +142,20 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         blank=True,
         null=True,
         help_text=(
-            'Durable request fingerprint for idempotent '
-            'order creation. Canonical hash of all '
-            'meaningful request inputs.'
+            'Client-provided idempotency key. '
+            'Scoped to customer. Used for duplicate '
+            'detection and retry matching.'
+        ),
+    )
+    request_fingerprint = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=(
+            'Canonical SHA-256 hash of all meaningful '
+            'order-creation inputs. Used to detect '
+            'conflicting requests with the same '
+            'idempotency key.'
         ),
     )
 

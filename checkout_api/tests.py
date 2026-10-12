@@ -529,3 +529,795 @@ class InputValidationTest(
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+
+class OrderCreationTestBase(TestCase):
+    """Shared setup for order creation tests."""
+
+    def setUp(self):
+        from product_api.models import ProductVariant
+        from EcommerceBackend.core.choices import (
+            CartStatus,
+        )
+
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='orderuser',
+            email='order@example.com',
+            password='testpass123',
+        )
+        self.client.force_authenticate(
+            user=self.user
+        )
+        self.profile = (
+            CustomerProfile.objects.create(
+                user=self.user,
+                customer_type='WEBSITE',
+            )
+        )
+        self.category = Category.objects.create(
+            name='Test', slug='test-order',
+        )
+        self.product = Product.objects.create(
+            name='Widget',
+            slug='widget-order',
+            current_selling_price=(
+                decimal.Decimal('500.00')
+            ),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.product.categories.add(self.category)
+        self.variant = (
+            ProductVariant.objects.create(
+                product=self.product,
+                sku='WDG-001',
+            )
+        )
+        # Give stock.
+        from inventory_api.models import (
+            InventoryMovement,
+            MovementType,
+        )
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=50,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.cart = Cart.objects.create(
+            created_by=self.user,
+            updated_by=self.user,
+            status=CartStatus.ACTIVE,
+        )
+        self.cart_item = CartItem.objects.create(
+            cart=self.cart,
+            product=self.product,
+            quantity=2,
+        )
+        self.address = (
+            CustomerAddress.objects.create(
+                customer=self.profile,
+                address_type=(
+                    CustomerAddress
+                    .AddressType.SHIPPING
+                ),
+                first_name='Test',
+                last_name='User',
+                address_1='123 Test St',
+                city='Dhaka',
+                postcode='1205',
+                country='Bangladesh',
+                phone='+8801700000000',
+                created_by=self.user,
+                updated_by=self.user,
+            )
+        )
+        self.zone = ShippingZone.objects.create(
+            name='Dhaka Metro',
+            code='dhaka-metro-order',
+            is_default=True,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        ShippingZoneRule.objects.create(
+            zone=self.zone,
+            match_type='CITY',
+            match_value='Dhaka',
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.method = (
+            ShippingMethod.objects.create(
+                name='Standard',
+                code='standard-order',
+                created_by=self.user,
+                updated_by=self.user,
+            )
+        )
+        self.rate = ShippingRate.objects.create(
+            zone=self.zone,
+            method=self.method,
+            base_charge=decimal.Decimal('60.00'),
+            free_shipping_threshold=(
+                decimal.Decimal('2000.00')
+            ),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        # Ensure COD PM exists (from data migration).
+        from sale_api.services import (
+            get_or_create_cod_payment_method,
+        )
+        self.cod_pm = (
+            get_or_create_cod_payment_method()
+        )
+
+    def _create_order(self, **kwargs):
+        from checkout_api.services import (
+            create_order,
+        )
+        defaults = {
+            'user': self.user,
+            'shipping_address_id': (
+                self.address.id
+            ),
+            'shipping_method_id': (
+                self.method.id
+            ),
+            'idempotency_key': (
+                'test-idem-key-001'
+            ),
+            'notes': '',
+        }
+        defaults.update(kwargs)
+        return create_order(**defaults)
+
+
+class OrderCreationTest(OrderCreationTestBase):
+    """Tests for create_order."""
+
+    def test_successful_order_creation(self):
+        from sale_api.models import (
+            Sale,
+            SaleStatus,
+            PaymentStatus,
+        )
+        sale = self._create_order()
+        self.assertEqual(
+            sale.status, SaleStatus.PENDING
+        )
+        self.assertEqual(
+            sale.payment_status,
+            PaymentStatus.UNPAID,
+        )
+        self.assertEqual(
+            sale.channel, Sale.SaleChannel.WEBSITE
+        )
+        self.assertEqual(
+            sale.subtotal_amount,
+            decimal.Decimal('1000.00'),
+        )
+        self.assertEqual(
+            sale.shipping_amount,
+            decimal.Decimal('60.00'),
+        )
+        self.assertEqual(
+            sale.total_amount,
+            decimal.Decimal('1060.00'),
+        )
+
+    def test_order_creates_sale_items(self):
+        from sale_api.models import SaleItem
+        sale = self._create_order()
+        items = SaleItem.objects.filter(
+            sale=sale
+        )
+        self.assertEqual(items.count(), 1)
+        item = items.first()
+        self.assertEqual(
+            item.product_variant_id,
+            self.variant.id,
+        )
+        self.assertEqual(item.quantity, 2)
+        self.assertEqual(
+            item.unit_price,
+            decimal.Decimal('500.00'),
+        )
+
+    def test_order_reserves_stock(self):
+        from inventory_api.models import (
+            InventoryReservation,
+            ReservationStatus,
+        )
+        from inventory_api.services.reservation import (
+            get_available_stock,
+        )
+        # setUp gives 50 stock.
+        sale = self._create_order()
+        reservations = (
+            InventoryReservation.objects.filter(
+                sale=sale,
+                status=ReservationStatus.ACTIVE,
+            )
+        )
+        self.assertEqual(
+            reservations.count(), 1
+        )
+        self.assertEqual(
+            reservations.first().quantity, 2
+        )
+        # 50 - 2 = 48.
+        self.assertEqual(
+            get_available_stock(self.variant), 48
+        )
+
+    def test_order_marks_cart_checked_out(self):
+        from EcommerceBackend.core.choices import (
+            CartStatus,
+        )
+        self._create_order()
+        self.cart.refresh_from_db()
+        self.assertEqual(
+            self.cart.status,
+            CartStatus.CHECKED_OUT,
+        )
+
+    def test_order_snapshots_address(self):
+        sale = self._create_order()
+        snapshot = (
+            sale.shipping_address_snapshot
+        )
+        self.assertEqual(
+            snapshot['first_name'], 'Test'
+        )
+        self.assertEqual(
+            snapshot['city'], 'Dhaka'
+        )
+
+    def test_order_sets_idempotency_key(self):
+        sale = self._create_order()
+        self.assertEqual(
+            sale.idempotency_key,
+            'test-idem-key-001',
+        )
+        self.assertIsNotNone(
+            sale.request_fingerprint
+        )
+        self.assertEqual(
+            len(sale.request_fingerprint), 64
+        )
+
+    def test_idempotent_return(self):
+        """Same fingerprint returns existing
+        order."""
+        sale1 = self._create_order()
+        sale2 = self._create_order()
+        self.assertEqual(sale1.id, sale2.id)
+
+    def test_different_key_creates_new(self):
+        """Different idempotency key creates new
+        order. Second order needs a fresh cart."""
+        sale1 = self._create_order(
+            idempotency_key='key-1',
+        )
+        # First order checked out the cart.
+        # Create a fresh cart for second order.
+        from EcommerceBackend.core.choices import (
+            CartStatus,
+        )
+        cart2 = Cart.objects.create(
+            created_by=self.user,
+            updated_by=self.user,
+            status=CartStatus.ACTIVE,
+        )
+        CartItem.objects.create(
+            cart=cart2,
+            product=self.product,
+            quantity=1,
+        )
+        sale2 = self._create_order(
+            idempotency_key='key-2',
+        )
+        self.assertNotEqual(sale1.id, sale2.id)
+
+    def test_same_key_different_inputs_conflict(
+        self,
+    ):
+        """Same idempotency key with different
+        inputs raises conflict."""
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        self._create_order(
+            idempotency_key='conflict-key',
+            notes='first request',
+        )
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key='conflict-key',
+                notes='different request',
+            )
+
+    def test_missing_idempotency_key_rejected(self):
+        """Empty or blank idempotency_key is
+        rejected before any state changes."""
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        from sale_api.models import Sale
+        from inventory_api.models import (
+            InventoryReservation,
+        )
+        from EcommerceBackend.core.choices import (
+            CartStatus,
+        )
+        sales_before = Sale.objects.count()
+        reservations_before = (
+            InventoryReservation.objects.count()
+        )
+        self.cart.refresh_from_db()
+        cart_status_before = self.cart.status
+
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key=''
+            )
+
+        # No state changed.
+        self.assertEqual(
+            Sale.objects.count(), sales_before
+        )
+        self.assertEqual(
+            InventoryReservation.objects.count(),
+            reservations_before,
+        )
+        self.cart.refresh_from_db()
+        self.assertEqual(
+            self.cart.status, cart_status_before
+        )
+
+    def test_blank_idempotency_key_rejected(self):
+        """Whitespace-only key is rejected."""
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key='   '
+            )
+
+    def test_empty_cart_raises(self):
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        self.cart_item.soft_delete()
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key='empty-cart'
+            )
+
+    def test_inactive_product_raises(self):
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        self.product.is_active = False
+        self.product.save()
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key='inactive-prod'
+            )
+
+    def test_multiple_variants_raises(self):
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        from product_api.models import ProductVariant
+        ProductVariant.objects.create(
+            product=self.product,
+            sku='WDG-002',
+        )
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key='multi-var'
+            )
+
+    def test_no_variant_raises(self):
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        from product_api.models import ProductVariant
+        from inventory_api.models import (
+            InventoryMovement,
+        )
+        # Delete movements first (PROTECT FK).
+        InventoryMovement.objects.filter(
+            product_variant__product=self.product,
+        ).delete()
+        ProductVariant.objects.filter(
+            product=self.product,
+        ).delete()
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                idempotency_key='no-var'
+            )
+
+    def test_insufficient_stock_raises(self):
+        from django.core.exceptions import (
+            ValidationError as DjangoValidationError,
+        )
+        from rest_framework.exceptions import (
+            ValidationError as DRFValidationError,
+        )
+        from inventory_api.models import (
+            InventoryMovement,
+        )
+        # Remove all stock movements.
+        InventoryMovement.objects.filter(
+            product_variant=self.variant,
+        ).delete()
+        with self.assertRaises(
+            (
+                DjangoValidationError,
+                DRFValidationError,
+            )
+        ):
+            self._create_order(
+                idempotency_key='no-stock'
+            )
+
+    def test_invalid_address_raises(self):
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        with self.assertRaises(ValidationError):
+            self._create_order(
+                shipping_address_id=99999,
+                idempotency_key='bad-addr',
+            )
+
+    def test_order_uses_backend_prices(self):
+        """Server-side price, not frontend."""
+        sale = self._create_order()
+        item = sale.items.first()
+        self.assertEqual(
+            item.unit_price,
+            decimal.Decimal('500.00'),
+        )
+
+
+class OrderCancellationTest(
+    OrderCreationTestBase
+):
+    """Tests for cancel_order."""
+
+    def test_cancel_pending_order(self):
+        from sale_api.models import SaleStatus
+        from inventory_api.models import (
+            InventoryMovement,
+            MovementType,
+            ReservationStatus,
+            InventoryReservation,
+        )
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=50,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        sale = self._create_order()
+        from checkout_api.services import (
+            cancel_order,
+        )
+        result = cancel_order(
+            user=self.user, sale=sale
+        )
+        self.assertEqual(
+            result.status, SaleStatus.CANCELLED
+        )
+        # Reservations released.
+        reservations = (
+            InventoryReservation.objects.filter(
+                sale=sale,
+            )
+        )
+        for r in reservations:
+            self.assertEqual(
+                r.status,
+                ReservationStatus.RELEASED,
+            )
+
+    def test_cancel_non_pending_raises(self):
+        from rest_framework.exceptions import (
+            ValidationError,
+        )
+        from sale_api.models import SaleStatus
+        from inventory_api.models import (
+            InventoryMovement,
+            MovementType,
+        )
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=50,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        sale = self._create_order()
+        # Confirm the sale first.
+        from sale_api.services import (
+            update_sale_status,
+        )
+        update_sale_status(
+            self.user, sale,
+            SaleStatus.CONFIRMED,
+        )
+        from checkout_api.services import (
+            cancel_order,
+        )
+        with self.assertRaises(ValidationError):
+            cancel_order(
+                user=self.user, sale=sale
+            )
+
+    def test_cancel_idempotent(self):
+        from sale_api.models import SaleStatus
+        from inventory_api.models import (
+            InventoryMovement,
+            MovementType,
+        )
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=50,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        sale = self._create_order()
+        from checkout_api.services import (
+            cancel_order,
+        )
+        cancel_order(
+            user=self.user, sale=sale
+        )
+        # Already cancelled.
+        sale.refresh_from_db()
+        self.assertEqual(
+            sale.status, SaleStatus.CANCELLED
+        )
+
+
+class OrderCreateSerializerTest(TestCase):
+    """Tests for OrderCreateSerializer."""
+
+    def test_valid_data(self):
+        from checkout_api.serializers.order import (
+            OrderCreateSerializer,
+        )
+        data = {
+            'shipping_address_id': 1,
+            'shipping_method_id': 2,
+            'idempotency_key': 'some-key',
+        }
+        serializer = OrderCreateSerializer(
+            data=data
+        )
+        self.assertTrue(serializer.is_valid())
+
+    def test_optional_notes(self):
+        from checkout_api.serializers.order import (
+            OrderCreateSerializer,
+        )
+        data = {
+            'shipping_address_id': 1,
+            'shipping_method_id': 2,
+            'idempotency_key': 'key',
+            'notes': 'Please call',
+        }
+        serializer = OrderCreateSerializer(
+            data=data
+        )
+        self.assertTrue(serializer.is_valid())
+
+    def test_missing_address_id(self):
+        from checkout_api.serializers.order import (
+            OrderCreateSerializer,
+        )
+        serializer = OrderCreateSerializer(
+            data={
+                'shipping_method_id': 2,
+                'idempotency_key': 'key',
+            }
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn(
+            'shipping_address_id',
+            serializer.errors,
+        )
+
+    def test_missing_method_id(self):
+        from checkout_api.serializers.order import (
+            OrderCreateSerializer,
+        )
+        serializer = OrderCreateSerializer(
+            data={
+                'shipping_address_id': 1,
+                'idempotency_key': 'key',
+            }
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn(
+            'shipping_method_id',
+            serializer.errors,
+        )
+
+    def test_missing_idempotency_key(self):
+        from checkout_api.serializers.order import (
+            OrderCreateSerializer,
+        )
+        serializer = OrderCreateSerializer(
+            data={
+                'shipping_address_id': 1,
+                'shipping_method_id': 2,
+            }
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn(
+            'idempotency_key',
+            serializer.errors,
+        )
+
+
+class OrderDetailSerializerTest(
+    OrderCreationTestBase
+):
+    """Tests for OrderDetailSerializer."""
+
+    def test_serializes_order(self):
+        from checkout_api.serializers.order import (
+            OrderDetailSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderDetailSerializer(sale)
+        data = serializer.data
+        self.assertEqual(data['id'], sale.id)
+        self.assertIn('invoice_number', data)
+        self.assertIn('status', data)
+        self.assertIn('payment_status', data)
+        self.assertIn('items', data)
+        self.assertIn('pricing', data)
+        self.assertIn(
+            'shipping_address', data
+        )
+        self.assertIn('notes', data)
+
+    def test_no_accounting_fields(self):
+        """Must NOT expose internal fields."""
+        from checkout_api.serializers.order import (
+            OrderDetailSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderDetailSerializer(sale)
+        data = serializer.data
+        self.assertNotIn('account', data)
+        self.assertNotIn(
+            'accounting_transaction', data
+        )
+        self.assertNotIn(
+            'return_transaction', data
+        )
+        self.assertNotIn('created_by', data)
+        self.assertNotIn('updated_by', data)
+        self.assertNotIn('deleted_at', data)
+
+    def test_pricing_structure(self):
+        from checkout_api.serializers.order import (
+            OrderDetailSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderDetailSerializer(sale)
+        pricing = serializer.data['pricing']
+        self.assertIn('subtotal', pricing)
+        self.assertIn('shipping_charge', pricing)
+        self.assertIn('discount_total', pricing)
+        self.assertIn('tax_total', pricing)
+        self.assertIn('grand_total', pricing)
+
+    def test_items_structure(self):
+        from checkout_api.serializers.order import (
+            OrderDetailSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderDetailSerializer(sale)
+        items = serializer.data['items']
+        self.assertEqual(len(items), 1)
+        item = items[0]
+        self.assertIn('id', item)
+        self.assertIn('product_variant', item)
+        self.assertIn('product_name', item)
+        self.assertIn('quantity', item)
+        self.assertIn('unit_price', item)
+        self.assertIn('line_total', item)
+        # Variant details.
+        variant = item['product_variant']
+        self.assertIn('id', variant)
+        self.assertIn('sku', variant)
+        self.assertIn('name', variant)
+
+    def test_shipping_address_snapshot(self):
+        from checkout_api.serializers.order import (
+            OrderDetailSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderDetailSerializer(sale)
+        addr = (
+            serializer.data['shipping_address']
+        )
+        self.assertEqual(addr['first_name'], 'Test')
+        self.assertEqual(addr['city'], 'Dhaka')
+
+    def test_allowed_next_statuses(self):
+        from checkout_api.serializers.order import (
+            OrderDetailSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderDetailSerializer(sale)
+        statuses = (
+            serializer.data[
+                'allowed_next_statuses'
+            ]
+        )
+        self.assertIsInstance(statuses, list)
+        values = [s['value'] for s in statuses]
+        self.assertIn('CONFIRMED', values)
+        self.assertIn('CANCELLED', values)
+
+
+class OrderListSerializerTest(
+    OrderCreationTestBase
+):
+    """Tests for OrderListSerializer."""
+
+    def test_compact_fields(self):
+        from checkout_api.serializers.order import (
+            OrderListSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderListSerializer(sale)
+        data = serializer.data
+        self.assertIn('id', data)
+        self.assertIn('invoice_number', data)
+        self.assertIn('status', data)
+        self.assertIn('payment_status', data)
+        self.assertIn('total_amount', data)
+        self.assertIn('item_count', data)
+        self.assertIn('created_at', data)
+
+    def test_item_count(self):
+        from checkout_api.serializers.order import (
+            OrderListSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderListSerializer(sale)
+        self.assertEqual(
+            serializer.data['item_count'], 1
+        )
+
+    def test_no_detail_fields(self):
+        """List serializer must not include
+        detail-only fields."""
+        from checkout_api.serializers.order import (
+            OrderListSerializer,
+        )
+        sale = self._create_order()
+        serializer = OrderListSerializer(sale)
+        data = serializer.data
+        self.assertNotIn('items', data)
+        self.assertNotIn('pricing', data)
+        self.assertNotIn(
+            'shipping_address', data
+        )
+        self.assertNotIn('notes', data)
+        self.assertNotIn('channel', data)

@@ -8,7 +8,7 @@ from account_api.models import AccountType, ChartOfAccount
 from customer_api.models import CustomerProfile
 from product_api.models import Product, ProductVariant
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
-from sale_api.models import PaymentMethod, Sale, SaleStatus
+from sale_api.models import PaymentMethod, Sale, SaleItem, SaleStatus
 from sale_api.services import create_sale, update_sale_status
 from transaction_api.models import TransactionStatus, TransactionType
 from user_api.models import User
@@ -750,3 +750,365 @@ class AccountProvisioningTests(TestCase):
         account.save(update_fields=['is_active'])
         with self.assertRaises(ValidationError):
             get_or_create_accounts_receivable_account()
+
+
+class StorefrontConfirmationTest(TestCase):
+    """Tests for storefront (WEBSITE channel)
+    order confirmation with reservations."""
+
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from inventory_api.models import (
+            InventoryReservation,
+            ReservationStatus,
+        )
+        from sale_api.models import Sale
+        from customer_api.models import CustomerProfile
+
+        self.user = User.objects.create_user(
+            username='web-staff',
+            email='web@example.com',
+            password='testpass123',
+            role='STAFF',
+        )
+        self.customer = (
+            CustomerProfile.objects.create(
+                user=self.user,
+                customer_type='WEBSITE',
+            )
+        )
+        self.variant = (
+            ProductVariant.objects.first()
+        )
+        if self.variant is None:
+            product = Product.objects.create(
+                name='Test P',
+                slug='test-p-sf',
+                current_selling_price=Decimal(
+                    '100.00'
+                ),
+            )
+            self.variant = (
+                ProductVariant.objects.create(
+                    product=product,
+                    sku='SF-001',
+                )
+            )
+        self.sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=date.today(),
+            status=SaleStatus.PENDING,
+            channel=Sale.SaleChannel.WEBSITE,
+            subtotal_amount=Decimal('200.00'),
+            shipping_amount=Decimal('50.00'),
+            total_amount=Decimal('250.00'),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        SaleItem.objects.create(
+            sale=self.sale,
+            product_variant=self.variant,
+            quantity=2,
+            unit_price=Decimal('100.00'),
+            line_total=Decimal('200.00'),
+        )
+        # Give stock.
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=100,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.reservation = (
+            InventoryReservation.objects.create(
+                product_variant=self.variant,
+                sale=self.sale,
+                quantity=2,
+                status=ReservationStatus.ACTIVE,
+                expires_at=(
+                    timezone.now()
+                    + timedelta(minutes=30)
+                ),
+                created_by=self.user,
+                updated_by=self.user,
+            )
+        )
+        self.InventoryReservation = (
+            InventoryReservation
+        )
+        self.ReservationStatus = ReservationStatus
+
+    def test_storefront_confirmation_consumes_reservations(
+        self,
+    ):
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        self.sale.refresh_from_db()
+        self.assertEqual(
+            self.sale.status, SaleStatus.CONFIRMED
+        )
+        self.reservation.refresh_from_db()
+        self.assertEqual(
+            self.reservation.status,
+            self.ReservationStatus.CONSUMED,
+        )
+        # Movement created.
+        movement = (
+            InventoryMovement.objects.filter(
+                product_variant=self.variant,
+                movement_type=MovementType.SALE,
+                reference_id=self.sale.pk,
+            ).first()
+        )
+        self.assertIsNotNone(movement)
+        self.assertEqual(movement.quantity, -2)
+
+    def test_storefront_confirmation_creates_receivable_accounting(
+        self,
+    ):
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        self.sale.refresh_from_db()
+        self.assertIsNotNone(
+            self.sale.accounting_transaction
+        )
+        self.assertIsNotNone(self.sale.account)
+        self.assertEqual(
+            self.sale.account.name,
+            'Accounts Receivable',
+        )
+
+    def test_storefront_confirmation_rejects_expired_reservations(
+        self,
+    ):
+        from datetime import timedelta
+        from django.utils import timezone
+        self.reservation.expires_at = (
+            timezone.now() - timedelta(minutes=1)
+        )
+        self.reservation.save(
+            update_fields=['expires_at']
+        )
+        with self.assertRaises(Exception):
+            update_sale_status(
+                self.user,
+                self.sale,
+                SaleStatus.CONFIRMED,
+            )
+
+    def test_storefront_return_rejected(self):
+        # Must confirm first.
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        with self.assertRaises(Exception):
+            update_sale_status(
+                self.user,
+                self.sale,
+                SaleStatus.RETURNED,
+            )
+
+    def test_storefront_cancellation_releases_reservations(
+        self,
+    ):
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CANCELLED,
+        )
+        self.sale.refresh_from_db()
+        self.assertEqual(
+            self.sale.status, SaleStatus.CANCELLED
+        )
+        self.reservation.refresh_from_db()
+        self.assertEqual(
+            self.reservation.status,
+            self.ReservationStatus.RELEASED,
+        )
+
+    def test_duplicate_confirmation_idempotent(self):
+        """Second confirmation is idempotent."""
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        result = update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        self.assertEqual(
+            result.status, SaleStatus.CONFIRMED
+        )
+
+    def test_duplicate_cancellation_idempotent(
+        self,
+    ):
+        """Second cancellation must succeed
+        (idempotent)."""
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CANCELLED,
+        )
+        # Status is already CANCELLED.
+        result = update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CANCELLED,
+        )
+        self.assertEqual(
+            result.status, SaleStatus.CANCELLED
+        )
+
+    def test_confirmed_storefront_cancellation_rejected(
+        self,
+    ):
+        """CONFIRMED→CANCELLED is not allowed for
+        storefront orders. The transition check
+        rejects it before the WEBSITE branch runs."""
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        with self.assertRaises(Exception):
+            update_sale_status(
+                self.user,
+                self.sale,
+                SaleStatus.CANCELLED,
+            )
+        self.sale.refresh_from_db()
+        self.assertEqual(
+            self.sale.status, SaleStatus.CONFIRMED
+        )
+
+
+class POSRegressionTest(TestCase):
+    """Verify existing POS behavior is unchanged."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='pos-staff',
+            email='pos@example.com',
+            password='testpass123',
+            role='STAFF',
+        )
+        self.customer = (
+            CustomerProfile.objects.create(
+                user=self.user,
+                customer_type='POS',
+            )
+        )
+        self.variant = (
+            ProductVariant.objects.first()
+        )
+        if self.variant is None:
+            product = Product.objects.create(
+                name='Test P POS',
+                slug='test-p-pos',
+                current_selling_price=Decimal(
+                    '50.00'
+                ),
+            )
+            self.variant = (
+                ProductVariant.objects.create(
+                    product=product,
+                    sku='POS-001',
+                )
+            )
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=100,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        asset = ChartOfAccount.objects.create(
+            name='Cash POS Test',
+            account_type=AccountType.ASSET,
+        )
+        self.pm = PaymentMethod.objects.create(
+            code='CASH-POS',
+            name='Cash POS',
+            default_account=asset,
+        )
+        self.sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=date.today(),
+            status=SaleStatus.PENDING,
+            channel=Sale.SaleChannel.WALK_IN,
+            payment_method=self.pm,
+            subtotal_amount=Decimal('100.00'),
+            total_amount=Decimal('100.00'),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        SaleItem.objects.create(
+            sale=self.sale,
+            product_variant=self.variant,
+            quantity=2,
+            unit_price=Decimal('50.00'),
+            line_total=Decimal('100.00'),
+        )
+
+    def test_pos_confirmation_uses_deduct_sale_stock(
+        self,
+    ):
+        """POS confirmation uses the original
+        _deduct_sale_stock, not reservations."""
+        update_sale_status(
+            self.user,
+            self.sale,
+            SaleStatus.CONFIRMED,
+        )
+        self.sale.refresh_from_db()
+        self.assertEqual(
+            self.sale.status, SaleStatus.CONFIRMED
+        )
+        movement = (
+            InventoryMovement.objects.filter(
+                product_variant=self.variant,
+                movement_type=MovementType.SALE,
+                reference_id=self.sale.pk,
+            ).first()
+        )
+        self.assertIsNotNone(movement)
+        self.assertEqual(movement.quantity, -2)
+
+    def test_pos_return_still_works(self):
+        """POS return path is unchanged.
+        Must follow full lifecycle:
+        CONFIRMED→PROCESSING→PACKAGED→SHIPPED
+        →OUT_OF_DELIVERY→DELIVERED→RETURNED."""
+        statuses = [
+            SaleStatus.CONFIRMED,
+            SaleStatus.PROCESSING,
+            SaleStatus.PACKAGED,
+            SaleStatus.SHIPPED,
+            SaleStatus.OUT_OF_DELIVERY,
+            SaleStatus.DELIVERED,
+            SaleStatus.RETURNED,
+        ]
+        for status in statuses:
+            update_sale_status(
+                self.user, self.sale, status,
+            )
+        self.sale.refresh_from_db()
+        self.assertEqual(
+            self.sale.status, SaleStatus.RETURNED
+        )
+        self.assertIsNotNone(
+            self.sale.return_transaction
+        )

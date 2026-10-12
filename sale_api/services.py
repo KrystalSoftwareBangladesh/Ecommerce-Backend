@@ -13,6 +13,10 @@ from .models import (
     get_next_sale_statuses,
 )
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
+from inventory_api.services.reservation import (
+    consume_reservations,
+    release_reservations,
+)
 from transaction_api.models import TransactionType
 from transaction_api.services import create_transaction, post_transaction
 
@@ -351,6 +355,78 @@ def _create_sale_return_transaction(user, sale):
     return post_transaction(user, accounting_transaction)
 
 
+def _create_storefront_transaction(
+    user, sale, receivable, product_revenue
+):
+    """
+    Create accounting transaction for a storefront
+    order confirmation.
+
+    Dr Accounts Receivable = subtotal (product)
+    Cr Product Revenue      = subtotal
+    Dr Accounts Receivable  = shipping
+    Cr Shipping Revenue     = shipping
+
+    Does NOT record cash — that happens at COD
+    collection.
+    """
+    shipping_revenue = (
+        get_or_create_shipping_revenue_account(
+            user=user
+        )
+    )
+    lines = [
+        {
+            'account': receivable,
+            'description': (
+                f'Product revenue for sale #{sale.id}'
+            ),
+            'debit_amount': sale.subtotal_amount,
+            'credit_amount': Decimal('0'),
+        },
+        {
+            'account': product_revenue,
+            'description': (
+                f'Product revenue for sale #{sale.id}'
+            ),
+            'debit_amount': Decimal('0'),
+            'credit_amount': sale.subtotal_amount,
+        },
+    ]
+    if sale.shipping_amount > 0:
+        lines.append({
+            'account': receivable,
+            'description': (
+                f'Shipping revenue for sale #{sale.id}'
+            ),
+            'debit_amount': sale.shipping_amount,
+            'credit_amount': Decimal('0'),
+        })
+        lines.append({
+            'account': shipping_revenue,
+            'description': (
+                f'Shipping revenue for sale #{sale.id}'
+            ),
+            'debit_amount': Decimal('0'),
+            'credit_amount': sale.shipping_amount,
+        })
+
+    txn = create_transaction(
+        user,
+        {
+            'transaction_date': sale.sale_date,
+            'transaction_type': TransactionType.SALE,
+            'reference': _build_sale_reference(sale),
+            'description': (
+                f'Storefront sale recorded for '
+                f'customer {sale.customer}.'
+            ),
+            'lines': lines,
+        },
+    )
+    return post_transaction(user, txn)
+
+
 def validate_stock(product_variant, quantity,):
     available = InventoryMovement.objects.filter(
         product_variant=product_variant,
@@ -489,42 +565,116 @@ def update_sale_status(
         )
 
     with transaction.atomic():
+        is_storefront = (
+            sale.channel == Sale.SaleChannel.WEBSITE
+        )
+
         if next_status == SaleStatus.CONFIRMED:
-            if payment_method is not None:
-                sale.payment_method = payment_method
-            resolved_account = _resolve_sale_account(
-                sale.payment_method,
-                account if account is not None else sale.account,
-            )
-            sale.account = resolved_account
-            _validate_sale_account(sale.account)
-            _validate_sale_totals(sale)
-            if sale.accounting_transaction_id is not None:
-                raise ValidationError(
-                    'This sale is already linked to an accounting transaction.'
+            if is_storefront:
+                # Storefront confirmation: consume
+                # reservations and use receivable
+                # accounting.
+                has_reservations = (
+                    sale.reservations.exists()
                 )
-            _deduct_sale_stock(user, sale)
-            sale.accounting_transaction = _create_sale_transaction(user, sale)
+                if has_reservations:
+                    consume_reservations(
+                        sale, user=user
+                    )
+                else:
+                    # No reservations — fall back to
+                    # direct stock deduction (POS
+                    # pattern) for edge cases.
+                    _deduct_sale_stock(user, sale)
+
+                receivable = (
+                    get_or_create_accounts_receivable_account(
+                        user=user
+                    )
+                )
+                product_revenue = (
+                    get_or_create_sales_revenue_account(
+                        user=user
+                    )
+                )
+                sale.accounting_transaction = (
+                    _create_storefront_transaction(
+                        user,
+                        sale,
+                        receivable,
+                        product_revenue,
+                    )
+                )
+                sale.account = receivable
+            else:
+                # POS confirmation: existing logic.
+                if payment_method is not None:
+                    sale.payment_method = payment_method
+                resolved_account = (
+                    _resolve_sale_account(
+                        sale.payment_method,
+                        (
+                            account
+                            if account is not None
+                            else sale.account
+                        ),
+                    )
+                )
+                sale.account = resolved_account
+                _validate_sale_account(sale.account)
+                _validate_sale_totals(sale)
+                if (
+                    sale.accounting_transaction_id
+                    is not None
+                ):
+                    raise ValidationError(
+                        'This sale is already linked '
+                        'to an accounting transaction.'
+                    )
+                _deduct_sale_stock(user, sale)
+                sale.accounting_transaction = (
+                    _create_sale_transaction(
+                        user, sale
+                    )
+                )
+
         elif next_status == SaleStatus.RETURNED:
+            if is_storefront:
+                raise ValidationError(
+                    'Storefront returns are not '
+                    'supported in v1. Please '
+                    'contact support.'
+                )
+            # POS return: existing logic.
             _validate_sale_account(sale.account)
             if sale.accounting_transaction_id is None:
                 raise ValidationError(
-                    'Confirmed sale is missing its accounting '
-                    'transaction link.'
+                    'Confirmed sale is missing its '
+                    'accounting transaction link.'
                 )
             if sale.return_transaction_id is not None:
                 raise ValidationError(
-                    'This sale already has a return transaction.'
+                    'This sale already has a return '
+                    'transaction.'
                 )
             _restock_returned_sale(user, sale)
-            sale.return_transaction = _create_sale_return_transaction(
-                user,
-                sale,
+            sale.return_transaction = (
+                _create_sale_return_transaction(
+                    user, sale
+                )
             )
+
+        elif next_status == SaleStatus.CANCELLED:
+            # Release any active reservations.
+            release_reservations(sale, user=user)
 
         sale.status = next_status
         sale.updated_by = user
-        update_fields = ['status', 'updated_by', 'updated_at']
+        update_fields = [
+            'status',
+            'updated_by',
+            'updated_at',
+        ]
         if next_status == SaleStatus.CONFIRMED:
             update_fields.extend([
                 'payment_method',
@@ -532,6 +682,8 @@ def update_sale_status(
                 'accounting_transaction',
             ])
         elif next_status == SaleStatus.RETURNED:
-            update_fields.append('return_transaction')
+            update_fields.append(
+                'return_transaction'
+            )
         sale.save(update_fields=update_fields)
         return sale

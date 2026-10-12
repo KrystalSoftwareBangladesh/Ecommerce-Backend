@@ -90,6 +90,9 @@ LOCAL_APPS = [
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
+# Checkout reservation expiry in minutes.
+CHECKOUT_RESERVATION_MINUTES = 30
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     # Outermost application middleware, so one request log covers the
