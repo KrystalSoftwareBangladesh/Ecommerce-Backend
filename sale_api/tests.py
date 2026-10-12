@@ -347,7 +347,6 @@ class SaleStatusApiTests(APITestCase):
             response.data['allowed_next_statuses'],
             [
                 {'value': SaleStatus.PROCESSING, 'label': 'Processing'},
-                {'value': SaleStatus.CANCELLED, 'label': 'Cancelled'},
             ]
         )
 

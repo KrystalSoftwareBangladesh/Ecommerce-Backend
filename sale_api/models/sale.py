@@ -28,10 +28,7 @@ SALE_STATUS_TRANSITIONS = {
         SaleStatus.CONFIRMED,
         SaleStatus.CANCELLED,
     ],
-    SaleStatus.CONFIRMED: [
-        SaleStatus.PROCESSING,
-        SaleStatus.CANCELLED,
-    ],
+    SaleStatus.CONFIRMED: [SaleStatus.PROCESSING],
     SaleStatus.PROCESSING: [SaleStatus.PACKAGED],
     SaleStatus.PACKAGED: [SaleStatus.SHIPPED],
     SaleStatus.SHIPPED: [SaleStatus.OUT_OF_DELIVERY],
@@ -144,6 +141,11 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         max_length=255,
         blank=True,
         null=True,
+        help_text=(
+            'Durable request fingerprint for idempotent '
+            'order creation. Canonical hash of all '
+            'meaningful request inputs.'
+        ),
     )
 
     class Meta:
