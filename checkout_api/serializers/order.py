@@ -204,14 +204,22 @@ class OrderDetailSerializer(serializers.Serializer):
         from sale_api.models import (
             get_next_sale_statuses,
         )
+        next_statuses = get_next_sale_statuses(
+            obj.status
+        )
+        # Storefront customers cannot initiate returns;
+        # return processing remains a staff/POS workflow.
+        if obj.channel == 'Website':
+            next_statuses = [
+                status for status in next_statuses
+                if status.value != 'RETURNED'
+            ]
         return [
             {
-                'value': s.value,
-                'label': s.label,
+                'value': status.value,
+                'label': status.label,
             }
-            for s in get_next_sale_statuses(
-                obj.status
-            )
+            for status in next_statuses
         ]
 
 
