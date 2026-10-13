@@ -539,6 +539,11 @@ def create_order(
             shipping_address_snapshot=(
                 _snapshot_address(address)
             ),
+            shipping_method_snapshot={
+                'id': shipping['method_id'],
+                'name': shipping['method_name'],
+                'code': shipping['method_code'],
+            },
             idempotency_key=idempotency_key,
             request_fingerprint=fingerprint,
             notes=notes,
