@@ -1,0 +1,6 @@
+Your order {{ invoice_number }} has been cancelled as requested.
+
+Order total: {{ currency }} {{ total_amount }}
+View your orders: {{ orders_url }}
+
+Best Computer Hub Team
