@@ -1,0 +1,24 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Order confirmation{% endblock %}
+
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 26px; line-height: 34px; color: #172033;">
+    Thank you for your order, {{ customer_name }}.
+</h1>
+<p style="font-size: 15px; line-height: 24px; color: #475467;">
+    We have received your order <strong>{{ invoice_number }}</strong>.
+</p>
+<p style="font-size: 15px; line-height: 24px; color: #475467;">
+    Order total: <strong>{{ currency }} {{ total_amount }}</strong>
+</p>
+<p style="font-size: 15px; line-height: 24px; color: #475467;">
+    Payment method: Cash on Delivery
+</p>
+<p style="font-size: 14px; line-height: 22px; color: #667085;">
+    We will update you as your order progresses.
+</p>
+<a href="{{ orders_url }}" style="display: inline-block; padding: 12px 20px; background-color: #1677ff; color: #ffffff; text-decoration: none; border-radius: 6px;">
+    View your orders
+</a>
+{% endblock %}
