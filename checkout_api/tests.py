@@ -1433,6 +1433,74 @@ class StorefrontOrderAPITest(OrderCreationTestBase):
             status.HTTP_401_UNAUTHORIZED,
         )
 
+    def _assert_confirm_rejected_without_side_effects(
+        self, idempotency_key
+    ):
+        from inventory_api.models import InventoryReservation
+        from sale_api.models import Sale
+
+        response = self.client.post(
+            "/api/v1/checkout/confirm/",
+            {
+                "shipping_address_id": self.address.id,
+                "shipping_method_id": self.method.id,
+                "idempotency_key": idempotency_key,
+            },
+            format="json",
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertFalse(response.data["success"])
+        self.assertFalse(Sale.objects.exists())
+        self.assertFalse(InventoryReservation.objects.exists())
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.status, CartStatus.ACTIVE)
+        return response
+
+    def test_confirm_out_of_stock_returns_400(self):
+        from inventory_api.models import InventoryMovement
+
+        InventoryMovement.objects.filter(
+            product_variant=self.variant,
+        ).delete()
+        response = (
+            self._assert_confirm_rejected_without_side_effects(
+                "api-out-of-stock-001"
+            )
+        )
+        self.assertIn(
+            "Insufficient stock",
+            str(response.data["errors"]),
+        )
+
+    def test_confirm_without_active_cod_method_returns_400(self):
+        self.cod_pm.is_active = False
+        self.cod_pm.save(update_fields=["is_active"])
+        response = (
+            self._assert_confirm_rejected_without_side_effects(
+                "api-no-cod-001"
+            )
+        )
+        self.assertIn(
+            "is not configured",
+            str(response.data["errors"]),
+        )
+
+    def test_confirm_with_misconfigured_cod_account_returns_400(self):
+        self.cod_pm.default_account = None
+        self.cod_pm.save(update_fields=["default_account"])
+        response = (
+            self._assert_confirm_rejected_without_side_effects(
+                "api-bad-cod-001"
+            )
+        )
+        self.assertIn(
+            "no default account",
+            str(response.data["errors"]),
+        )
+
 class CODCollectionServiceTest(OrderCreationTestBase):
     """Tests for atomic COD collection accounting."""
 

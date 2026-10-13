@@ -4,6 +4,9 @@ import json
 import logging
 
 from django.conf import settings
+from django.core.exceptions import (
+    ValidationError as DjangoValidationError,
+)
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
@@ -568,9 +571,15 @@ def create_order(
     shipping_charge = shipping['shipping_charge']
 
     # --- Step 6: Get COD payment method ---
-    cod_pm = get_or_create_cod_payment_method(
-        user=user
-    )
+    # sale_api and inventory_api raise Django's
+    # ValidationError, which DRF does not translate;
+    # re-raise as an API error so clients get a 400.
+    try:
+        cod_pm = get_or_create_cod_payment_method(
+            user=user
+        )
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.messages) from exc
 
     # --- Step 7: Create Sale ---
     discount = decimal.Decimal("0.00")
@@ -659,9 +668,12 @@ def create_order(
         }
         for item in resolved_items
     ]
-    reserve_stock(
-        sale, reserve_items, user=user
-    )
+    try:
+        reserve_stock(
+            sale, reserve_items, user=user
+        )
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.messages) from exc
 
     # --- Step 10: Mark cart CHECKED_OUT ---
     cart.status = CartStatus.CHECKED_OUT
