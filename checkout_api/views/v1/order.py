@@ -14,7 +14,7 @@ from checkout_api.serializers import (
     OrderCancelResponseSerializer,
 )
 from checkout_api.services import create_order, cancel_order
-from sale_api.models import Sale
+from sale_api.models import Sale, SaleStatus
 
 
 def _customer_orders(user):
@@ -89,14 +89,16 @@ class CustomerOrderCancelView(APIView):
 
     def post(self, request, pk):
         order = get_object_or_404(_customer_orders(request.user), pk=pk)
-        was_cancelled = order.status == Sale.Status.CANCELLED if hasattr(Sale, "Status") else False
+        if order.status == SaleStatus.CANCELLED:
+            return Response({
+                "id": order.id,
+                "status": order.status,
+                "message": "Order is already cancelled.",
+            })
+
         order = cancel_order(user=request.user, sale=order)
         return Response({
             "id": order.id,
             "status": order.status,
-            "message": (
-                "Order is already cancelled."
-                if was_cancelled
-                else "Order cancelled successfully."
-            ),
+            "message": "Order cancelled successfully.",
         })
