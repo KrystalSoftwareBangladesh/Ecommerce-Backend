@@ -64,6 +64,7 @@ Sale      ──> PaymentMethod ──> ChartOfAccount (default_account)
 Sale      ──> ChartOfAccount
 Sale      ──> AccountingTransaction        (accounting_transaction)
 Sale      ──> AccountingTransaction        (return_transaction)
+Sale      ──> AccountingTransaction        (collection_transaction — storefront COD collection)
 Sale   1──* SaleItem ──> ProductVariant
 
 InventoryMovement ──> ProductVariant       (+ movement_type, reference_type, reference_id)

@@ -8,6 +8,7 @@ from django.core.exceptions import (
     ValidationError as DjangoValidationError,
 )
 from django.db import IntegrityError, transaction
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
@@ -20,7 +21,12 @@ from email_api.services.email import EmailService
 from cart_api.models import Cart
 from cart_api.services.cart import get_active_cart
 from customer_api.models import CustomerAddress
+from inventory_api.models import (
+    InventoryReservation,
+    ReservationStatus,
+)
 from inventory_api.services.reservation import (
+    expire_reservations,
     release_reservations,
     reserve_stock,
 )
@@ -43,7 +49,9 @@ from shipping_api.services.shipping import (
 logger = logging.getLogger(__name__)
 
 
-def _queue_order_email_after_commit(sale_id, email_type):
+def _queue_order_email_after_commit(
+    sale_id, email_type, extra_context=None
+):
     """Queue email without allowing mail failures to undo an order."""
     try:
         sale = (
@@ -82,7 +90,11 @@ def _queue_order_email_after_commit(sale_id, email_type):
                 "orders_url": getattr(
                     settings, "FRONTEND_BASE_URL", ""
                 ),
+                **(extra_context or {}),
             },
+            # Order emails carry no secrets, so the context can be
+            # stored and the email resent if dispatch is lost.
+            persist_context=True,
         )
     except Exception:
         logger.exception(
@@ -539,6 +551,13 @@ def create_order(
     # --- Step 2: Cart validation ---
     cart = get_active_cart(user=user)
     if cart is None:
+        # A same-key request may have committed and checked the
+        # cart out since the lookup above; replay it, not an error.
+        existing = _find_idempotent_order(
+            customer, idempotency_key, fingerprint
+        )
+        if existing is not None:
+            return existing
         raise ValidationError(
             "No active cart found."
         )
@@ -773,3 +792,95 @@ def cancel_order(*, user, sale):
         )
     )
     return sale
+
+
+# ── Reservation expiry ───────────────────────
+
+
+def _expired_pending_orders(now):
+    """
+    PENDING storefront orders that hold reservations, none of
+    which is still active and unexpired.
+
+    Matches both orders whose reservations are ACTIVE but past
+    ``expires_at`` and orders whose reservations were already
+    released by the inventory expiry command.
+    """
+    reservations = InventoryReservation.objects.filter(
+        sale=OuterRef("pk"),
+    )
+    valid_reservations = reservations.filter(
+        status=ReservationStatus.ACTIVE,
+        expires_at__gt=now,
+    )
+    return (
+        Sale.objects.filter(
+            channel=Sale.SaleChannel.WEBSITE,
+            status=SaleStatus.PENDING,
+        )
+        .filter(Exists(reservations))
+        .exclude(Exists(valid_reservations))
+    )
+
+
+@transaction.atomic
+def _expire_pending_order(sale_id, now):
+    """
+    Cancel one expired PENDING order. Returns True if it was
+    cancelled.
+
+    The Sale row is locked first, as confirmation and customer
+    cancellation do, and the expiry is re-checked under the lock.
+    """
+    sale = (
+        Sale.objects.select_for_update(of=("self",))
+        .get(pk=sale_id)
+    )
+    if not _expired_pending_orders(now).filter(pk=sale.pk).exists():
+        return False
+
+    release_reservations(sale)
+
+    sale.status = SaleStatus.CANCELLED
+    sale.save(update_fields=["status", "updated_at"])
+
+    transaction.on_commit(
+        lambda: _queue_order_email_after_commit(
+            sale_id,
+            EmailType.ORDER_CANCELLED,
+            extra_context={"reservation_expired": True},
+        )
+    )
+    return True
+
+
+def expire_pending_orders(batch_size=100):
+    """
+    Cancel PENDING storefront orders whose stock reservation
+    expired before staff confirmed them, then release any other
+    expired reservations.
+
+    Safe to rerun: each order is cancelled in its own transaction,
+    and an order confirmed or cancelled meanwhile is skipped.
+
+    Returns ``(cancelled_orders, released_reservations)``.
+    """
+    now = timezone.now()
+    cancelled = 0
+    last_id = 0
+    while True:
+        sale_ids = list(
+            _expired_pending_orders(now)
+            .filter(pk__gt=last_id)
+            .order_by("pk")
+            .values_list("pk", flat=True)[:batch_size]
+        )
+        if not sale_ids:
+            break
+        last_id = sale_ids[-1]
+        for sale_id in sale_ids:
+            if _expire_pending_order(sale_id, now):
+                cancelled += 1
+
+    released = expire_reservations()
+    return cancelled, released

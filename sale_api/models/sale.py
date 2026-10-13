@@ -86,6 +86,15 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         null=True,
         blank=True,
     )
+    # Storefront COD: the cash-against-receivable entry posted when
+    # staff record that the payment was collected.
+    collection_transaction = models.ForeignKey(
+        'transaction_api.AccountingTransaction',
+        on_delete=models.SET_NULL,
+        related_name='collected_sales',
+        null=True,
+        blank=True,
+    )
     sale_date = models.DateField()
     invoice_number = models.CharField(
         max_length=50,

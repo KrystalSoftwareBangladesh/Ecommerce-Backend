@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from account_api.models import AccountType, ChartOfAccount
 from django.db import transaction
+from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
 from .models import (
@@ -19,7 +20,10 @@ from inventory_api.services.reservation import (
     release_reservations,
 )
 from product_api.models import ProductVariant
-from transaction_api.models import TransactionType
+from transaction_api.models import (
+    AccountingTransactionLine,
+    TransactionType,
+)
 from transaction_api.services import create_transaction, post_transaction
 
 
@@ -607,6 +611,21 @@ def update_sale_status(
                         "reservation. It cannot be confirmed; "
                         "review the order before retrying."
                     )
+                # Confirmation posts subtotal + shipping to
+                # receivable and COD collection settles the order
+                # total; refuse totals the two cannot agree on.
+                if (
+                    sale.discount_amount
+                    or sale.tax_amount
+                    or sale.total_amount
+                    != sale.subtotal_amount + sale.shipping_amount
+                ):
+                    raise ValidationError(
+                        "Storefront order total must equal subtotal "
+                        "plus shipping; discounts and taxes are not "
+                        "supported for storefront orders. Review the "
+                        "order before confirming."
+                    )
                 consume_reservations(sale, user=user)
 
                 receivable = (
@@ -759,6 +778,11 @@ def mark_cod_payment_collected(user, sale):
             "The COD payment method must have an active asset account."
         )
 
+    if locked_sale.accounting_transaction_id is None:
+        raise ValidationError(
+            "Order has no confirmation accounting entry."
+        )
+
     receivable = get_or_create_accounts_receivable_account(
         user=user
     )
@@ -766,6 +790,26 @@ def mark_cod_payment_collected(user, sale):
     if amount <= 0:
         raise ValidationError(
             "Order total must be greater than zero."
+        )
+
+    # Settle exactly what confirmation put on the receivable, and
+    # refuse if that no longer matches the order total.
+    posted = AccountingTransactionLine.objects.filter(
+        transaction_id=locked_sale.accounting_transaction_id,
+        account=receivable,
+    ).aggregate(
+        debit=Sum("debit_amount"),
+        credit=Sum("credit_amount"),
+    )
+    receivable_due = (
+        (posted["debit"] or Decimal("0.00"))
+        - (posted["credit"] or Decimal("0.00"))
+    )
+    if receivable_due != amount:
+        raise ValidationError(
+            f"Accounts Receivable posted at confirmation "
+            f"({receivable_due}) does not match the order total "
+            f"({amount}). Review the order before recording payment."
         )
 
     accounting_transaction = create_transaction(
@@ -802,12 +846,15 @@ def mark_cod_payment_collected(user, sale):
             ],
         },
     )
-    post_transaction(user, accounting_transaction)
+    locked_sale.collection_transaction = post_transaction(
+        user, accounting_transaction
+    )
 
     locked_sale.payment_status = PaymentStatus.COLLECTED
     locked_sale.updated_by = user
     locked_sale.save(
         update_fields=[
+            "collection_transaction",
             "payment_status",
             "updated_by",
             "updated_at",

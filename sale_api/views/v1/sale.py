@@ -1,5 +1,7 @@
 # sale_api/views/v1/sale.py
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import viewsets, status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
@@ -92,7 +94,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 request.user,
                 serializer.validated_data
             )
-        except Exception as e:
+        except (DjangoValidationError, DRFValidationError) as e:
             return Response({
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -120,7 +122,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     account=account,
                     payment_method=payment_method,
                 )
-        except Exception as e:
+        except (DjangoValidationError, DRFValidationError) as e:
             return Response({
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -149,7 +151,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 account=serializer.validated_data.get('account'),
                 payment_method=serializer.validated_data.get('payment_method'),
             )
-        except Exception as e:
+        except (DjangoValidationError, DRFValidationError) as e:
             return Response({
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -167,7 +169,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 request.user,
                 sale,
             )
-        except Exception as exc:
+        except (DjangoValidationError, DRFValidationError) as exc:
             return Response(
                 {'detail': str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,

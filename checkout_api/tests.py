@@ -25,6 +25,7 @@ from cart_api.models import Cart, CartItem
 from product_api.models import Product
 from category_api.models import Category
 from EcommerceBackend.core.choices import CartStatus
+from email_api.constants import EmailType
 
 from shipping_api.models import (
     ShippingZone,
@@ -1134,6 +1135,208 @@ class OrderCancellationTest(
         )
 
 
+class OrderExpiryTest(OrderCreationTestBase):
+    """Auto-cancellation of PENDING orders whose reservation
+    expired (approved 2026-10-13)."""
+
+    def _expire(self, sale):
+        from datetime import timedelta
+        from inventory_api.models import InventoryReservation
+
+        InventoryReservation.objects.filter(sale=sale).update(
+            expires_at=timezone.now() - timedelta(minutes=1)
+        )
+
+    def _available(self):
+        from inventory_api.services.reservation import (
+            get_available_stock,
+        )
+
+        return get_available_stock(self.variant)
+
+    def _reservation_statuses(self, sale):
+        from inventory_api.models import InventoryReservation
+
+        return set(
+            InventoryReservation.objects.filter(
+                sale=sale,
+            ).values_list("status", flat=True)
+        )
+
+    def test_expired_order_is_cancelled_and_stock_released(self):
+        from checkout_api.services import expire_pending_orders
+        from inventory_api.models import ReservationStatus
+        from sale_api.models import SaleStatus
+
+        sale = self._create_order()
+        self.assertEqual(self._available(), 48)
+        self._expire(sale)
+
+        with mock.patch(
+            "checkout_api.services.EmailService.queue"
+        ) as queue, self.captureOnCommitCallbacks(execute=True):
+            result = expire_pending_orders()
+
+        self.assertEqual(result, (1, 0))
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CANCELLED)
+        self.assertEqual(
+            self._reservation_statuses(sale),
+            {ReservationStatus.RELEASED},
+        )
+        self.assertEqual(self._available(), 50)
+        queue.assert_called_once()
+        kwargs = queue.call_args.kwargs
+        self.assertEqual(kwargs["email_type"], EmailType.ORDER_CANCELLED)
+        self.assertTrue(kwargs["context"]["reservation_expired"])
+
+    def test_unexpired_order_is_untouched(self):
+        from checkout_api.services import expire_pending_orders
+        from inventory_api.models import ReservationStatus
+        from sale_api.models import SaleStatus
+
+        sale = self._create_order()
+        self.assertEqual(expire_pending_orders(), (0, 0))
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.PENDING)
+        self.assertEqual(
+            self._reservation_statuses(sale),
+            {ReservationStatus.ACTIVE},
+        )
+
+    def test_rerun_is_idempotent(self):
+        from checkout_api.services import expire_pending_orders
+
+        self._expire(self._create_order())
+        self.assertEqual(expire_pending_orders(), (1, 0))
+        self.assertEqual(expire_pending_orders(), (0, 0))
+
+    def test_order_released_by_inventory_expiry_is_still_cancelled(
+        self,
+    ):
+        from checkout_api.services import expire_pending_orders
+        from inventory_api.services.reservation import (
+            expire_reservations,
+        )
+        from sale_api.models import SaleStatus
+
+        sale = self._create_order()
+        self._expire(sale)
+        self.assertEqual(expire_reservations(), 1)
+
+        self.assertEqual(expire_pending_orders(), (1, 0))
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CANCELLED)
+
+    def test_confirmed_order_is_not_cancelled(self):
+        from checkout_api.services import expire_pending_orders
+        from sale_api.models import SaleStatus
+        from sale_api.services import update_sale_status
+
+        sale = update_sale_status(
+            self.user, self._create_order(), SaleStatus.CONFIRMED
+        )
+        self._expire(sale)
+        self.assertEqual(expire_pending_orders(), (0, 0))
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CONFIRMED)
+        self.assertEqual(self._available(), 48)
+
+    def test_confirmation_after_expiry_is_rejected(self):
+        from django.core.exceptions import ValidationError
+        from inventory_api.models import InventoryMovement, MovementType
+        from sale_api.models import SaleStatus
+        from sale_api.services import update_sale_status
+
+        sale = self._create_order()
+        self._expire(sale)
+        with self.assertRaises(ValidationError):
+            update_sale_status(self.user, sale, SaleStatus.CONFIRMED)
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.PENDING)
+        self.assertIsNone(sale.accounting_transaction_id)
+        self.assertFalse(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+            ).exists()
+        )
+
+    def test_confirmation_after_auto_cancel_is_rejected(self):
+        from django.core.exceptions import ValidationError
+        from checkout_api.services import expire_pending_orders
+        from sale_api.models import SaleStatus
+        from sale_api.services import update_sale_status
+
+        sale = self._create_order()
+        self._expire(sale)
+        expire_pending_orders()
+        with self.assertRaisesMessage(
+            ValidationError, "Cannot change sale status"
+        ):
+            update_sale_status(self.user, sale, SaleStatus.CONFIRMED)
+
+    def test_management_command_and_task(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from checkout_api.tasks import expire_pending_orders_task
+
+        self._expire(self._create_order())
+        out = StringIO()
+        call_command("expire_pending_orders", stdout=out)
+        self.assertIn("Cancelled 1 expired orders", out.getvalue())
+        self.assertEqual(
+            expire_pending_orders_task(),
+            {"cancelled_orders": 0, "released_reservations": 0},
+        )
+
+
+class SameKeyRetryRaceTest(OrderCreationTestBase):
+    """
+    L3: a same-key retry whose first idempotency lookup ran before
+    the original request committed. The interleaving is simulated
+    by making that first lookup miss; this is not a concurrency
+    test.
+    """
+
+    def _create_with_first_lookup_missing(self, **kwargs):
+        from checkout_api import services
+
+        real_lookup = services._find_idempotent_order
+        calls = []
+
+        def lookup(*args):
+            calls.append(args)
+            if len(calls) == 1:
+                return None
+            return real_lookup(*args)
+
+        with mock.patch.object(
+            services, "_find_idempotent_order", side_effect=lookup
+        ):
+            return self._create_order(**kwargs)
+
+    def test_retry_after_cart_checkout_returns_original_order(self):
+        from sale_api.models import Sale
+
+        original = self._create_order(idempotency_key="l3-key")
+        replay = self._create_with_first_lookup_missing(
+            idempotency_key="l3-key"
+        )
+        self.assertEqual(replay.pk, original.pk)
+        self.assertEqual(Sale.objects.count(), 1)
+
+    def test_conflicting_retry_after_cart_checkout_is_409(self):
+        from checkout_api.exceptions import IdempotencyConflict
+
+        self._create_order(idempotency_key="l3-conflict")
+        with self.assertRaises(IdempotencyConflict) as raised:
+            self._create_with_first_lookup_missing(
+                idempotency_key="l3-conflict",
+                notes="different",
+            )
+        self.assertEqual(raised.exception.status_code, 409)
+
+
 class OrderCreateSerializerTest(TestCase):
     """Tests for OrderCreateSerializer."""
 
@@ -1580,47 +1783,208 @@ class StorefrontOrderAPITest(OrderCreationTestBase):
 class CODCollectionServiceTest(OrderCreationTestBase):
     """Tests for atomic COD collection accounting."""
 
-    def test_collection_posts_receivable_settlement(self):
-        from unittest.mock import patch
-        from sale_api.models import PaymentStatus, SaleStatus
+    def _deliver(self, sale):
+        from sale_api.models import SaleStatus
+        from sale_api.services import update_sale_status
+
+        for next_status in (
+            SaleStatus.CONFIRMED,
+            SaleStatus.PROCESSING,
+            SaleStatus.PACKAGED,
+            SaleStatus.SHIPPED,
+            SaleStatus.OUT_OF_DELIVERY,
+            SaleStatus.DELIVERED,
+        ):
+            sale = update_sale_status(self.user, sale, next_status)
+        return sale
+
+    def test_collection_posts_cash_against_receivable(self):
+        """Real accounting: confirmation debits receivable, COD
+        collection debits the COD cash account, credits receivable
+        by the same amount, and is linked to the sale."""
+        from django.db.models import Sum
+        from sale_api.models import PaymentStatus
+        from sale_api.services import (
+            get_or_create_accounts_receivable_account,
+            mark_cod_payment_collected,
+        )
+        from transaction_api.models import (
+            AccountingTransactionLine,
+            TransactionStatus,
+        )
+
+        sale = self._deliver(
+            self._create_order(
+                idempotency_key="cod-collect-service-001"
+            )
+        )
+        result = mark_cod_payment_collected(self.user, sale)
+
+        self.assertEqual(
+            result.payment_status, PaymentStatus.COLLECTED
+        )
+        result.refresh_from_db()
+        collection = result.collection_transaction
+        self.assertIsNotNone(collection)
+        self.assertNotEqual(
+            collection.pk, result.accounting_transaction_id
+        )
+        self.assertEqual(collection.status, TransactionStatus.POSTED)
+
+        receivable = get_or_create_accounts_receivable_account()
+        lines = {
+            line.account_id: line
+            for line in collection.lines.all()
+        }
+        self.assertEqual(
+            set(lines),
+            {self.cod_pm.default_account_id, receivable.id},
+        )
+        cash_line = lines[self.cod_pm.default_account_id]
+        self.assertEqual(
+            cash_line.debit_amount, decimal.Decimal("1060.00")
+        )
+        self.assertEqual(
+            lines[receivable.id].credit_amount,
+            decimal.Decimal("1060.00"),
+        )
+
+        # The order's receivable is fully settled.
+        totals = AccountingTransactionLine.objects.filter(
+            transaction_id__in=[
+                result.accounting_transaction_id,
+                collection.pk,
+            ],
+            account=receivable,
+        ).aggregate(
+            debit=Sum("debit_amount"),
+            credit=Sum("credit_amount"),
+        )
+        self.assertEqual(totals["debit"], totals["credit"])
+
+    def test_collection_rejects_total_that_differs_from_receivable(
+        self,
+    ):
+        from django.core.exceptions import ValidationError
+        from sale_api.models import PaymentStatus, Sale
+        from sale_api.services import mark_cod_payment_collected
+
+        sale = self._deliver(
+            self._create_order(
+                idempotency_key="cod-collect-mismatch-001"
+            )
+        )
+        Sale.objects.filter(pk=sale.pk).update(
+            total_amount=decimal.Decimal("1000.00")
+        )
+        with self.assertRaisesMessage(
+            ValidationError, "does not match the order total"
+        ):
+            mark_cod_payment_collected(self.user, sale)
+        sale.refresh_from_db()
+        self.assertEqual(sale.payment_status, PaymentStatus.UNPAID)
+        self.assertIsNone(sale.collection_transaction_id)
+
+    def test_collection_requires_confirmation_accounting(self):
+        from django.core.exceptions import ValidationError
+        from sale_api.models import SaleStatus
         from sale_api.services import mark_cod_payment_collected
 
         sale = self._create_order(
-            idempotency_key="cod-collect-service-001"
+            idempotency_key="cod-collect-unconfirmed-001"
         )
         sale.status = SaleStatus.DELIVERED
         sale.save(update_fields=["status"])
+        with self.assertRaisesMessage(
+            ValidationError, "no confirmation accounting entry"
+        ):
+            mark_cod_payment_collected(self.user, sale)
 
-        with patch(
-            "sale_api.services.create_transaction"
-        ) as create_transaction, patch(
-            "sale_api.services.post_transaction"
-        ) as post_transaction:
-            transaction_obj = object()
-            create_transaction.return_value = transaction_obj
-            post_transaction.return_value = transaction_obj
+    def test_confirmation_rejects_storefront_discount(self):
+        from django.core.exceptions import ValidationError
+        from inventory_api.models import (
+            InventoryReservation,
+            ReservationStatus,
+        )
+        from sale_api.models import Sale, SaleStatus
+        from sale_api.services import update_sale_status
 
-            result = mark_cod_payment_collected(
-                self.user, sale
+        sale = self._create_order(
+            idempotency_key="cod-discount-001"
+        )
+        Sale.objects.filter(pk=sale.pk).update(
+            discount_amount=decimal.Decimal("10.00"),
+            total_amount=sale.total_amount - 10,
+        )
+        with self.assertRaisesMessage(
+            ValidationError, "discounts and taxes are not supported"
+        ):
+            update_sale_status(
+                self.user, sale, SaleStatus.CONFIRMED
             )
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.PENDING)
+        self.assertIsNone(sale.accounting_transaction_id)
+        self.assertTrue(
+            InventoryReservation.objects.filter(
+                sale=sale, status=ReservationStatus.ACTIVE,
+            ).exists()
+        )
 
-        self.assertEqual(
-            result.payment_status,
-            PaymentStatus.COLLECTED,
+    def _grant_collect_permission(self):
+        from django.contrib.auth.models import Permission
+
+        self.user.user_permissions.add(
+            Permission.objects.get(
+                codename="collect_sale_payment",
+                content_type__app_label="sale_api",
+            )
         )
-        create_transaction.assert_called_once()
-        post_transaction.assert_called_once_with(
-            self.user, transaction_obj
+
+    def test_mark_paid_endpoint_requires_collect_permission(self):
+        sale = self._deliver(
+            self._create_order(idempotency_key="cod-api-403")
         )
-        lines = create_transaction.call_args.args[1]["lines"]
-        self.assertEqual(len(lines), 2)
-        self.assertEqual(
-            lines[0]["debit_amount"],
-            decimal.Decimal("1060.00"),
+        response = self.client.post(
+            f"/api/v1/sales/{sale.id}/mark-paid/", {}, format="json"
         )
         self.assertEqual(
-            lines[1]["credit_amount"],
-            decimal.Decimal("1060.00"),
+            response.status_code, status.HTTP_403_FORBIDDEN
+        )
+
+    def test_mark_paid_endpoint_collects_and_rejects_repeat(self):
+        self._grant_collect_permission()
+        sale = self._deliver(
+            self._create_order(idempotency_key="cod-api-ok")
+        )
+        url = f"/api/v1/sales/{sale.id}/mark-paid/"
+        first = self.client.post(url, {}, format="json")
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(first.data["payment_status"], "COLLECTED")
+
+        repeat = self.client.post(url, {}, format="json")
+        self.assertEqual(
+            repeat.status_code, status.HTTP_400_BAD_REQUEST
+        )
+        self.assertIn("already been collected", repeat.data["detail"])
+
+    def test_mark_paid_endpoint_unexpected_error_is_500(self):
+        self._grant_collect_permission()
+        sale = self._deliver(
+            self._create_order(idempotency_key="cod-api-500")
+        )
+        self.client.raise_request_exception = False
+        with mock.patch(
+            "sale_api.views.v1.sale.mark_cod_payment_collected",
+            side_effect=RuntimeError("boom"),
+        ):
+            response = self.client.post(
+                f"/api/v1/sales/{sale.id}/mark-paid/", {},
+                format="json",
+            )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     def test_collection_rejects_undelivered_order(self):
@@ -1673,6 +2037,29 @@ class StorefrontOrderEmailTemplateTest(TestCase):
                     template_name, context
                 )
                 self.assertTrue(rendered.strip())
+
+    def test_cancelled_email_explains_expiry(self):
+        from django.template.loader import render_to_string
+
+        context = {
+            "invoice_number": "SALE-20261013-000001",
+            "total_amount": "1060.00",
+            "currency": "BDT",
+            "orders_url": "https://example.com",
+        }
+        for template_name in (
+            "emails/order_cancelled.html",
+            "emails/order_cancelled.txt",
+        ):
+            with self.subTest(template=template_name):
+                expired = render_to_string(
+                    template_name,
+                    {**context, "reservation_expired": True},
+                )
+                self.assertIn("not confirmed in time", expired)
+                self.assertNotIn("as requested", expired)
+                requested = render_to_string(template_name, context)
+                self.assertIn("as requested", requested)
 
 
 

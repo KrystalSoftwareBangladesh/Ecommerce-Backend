@@ -1,4 +1,4 @@
-Your order {{ invoice_number }} has been cancelled as requested.
+{% if reservation_expired %}Your order {{ invoice_number }} has been cancelled because it was not confirmed in time. Please place a new order if you still need these items.{% else %}Your order {{ invoice_number }} has been cancelled as requested.{% endif %}
 
 Order total: {{ currency }} {{ total_amount }}
 View your orders: {{ orders_url }}

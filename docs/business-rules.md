@@ -79,6 +79,43 @@ Sales may:
 
 Stock must be validated before sale completion.
 
+Available stock is active inventory movements minus active, unexpired
+storefront reservations. POS confirmation and storefront reservation both
+lock the product variant rows (in primary-key order) before checking it, so
+a POS sale cannot take stock reserved for a storefront order and concurrent
+sales cannot oversell.
+
+### Storefront orders
+
+API contract: [checkout-api.md](checkout-api.md).
+
+- Placing an order reserves stock for `CHECKOUT_RESERVATION_MINUTES`
+  (30). Staff confirmation consumes the reservation and deducts stock.
+- An order whose reservation expires while it is still PENDING is
+  **cancelled automatically** by the `expire-pending-orders` Celery Beat
+  task (approved 2026-10-13): stock is released, status becomes
+  `CANCELLED`, and the customer is emailed to place a new order. An expired
+  order can never be confirmed.
+- Customers may cancel only their own PENDING orders. Status changes lock
+  the Sale row, so a cancellation cannot overwrite a confirmation.
+- Discounts and taxes are not supported on storefront orders: confirmation
+  is refused unless total = subtotal + shipping.
+- Confirmation debits Accounts Receivable and credits product and shipping
+  revenue. COD collection (`collect_sale_payment` permission, DELIVERED
+  orders only, once) debits the COD payment method's asset account and
+  credits Accounts Receivable by the amount posted at confirmation; it is
+  refused if that differs from the order total. The collection entry is
+  linked as `Sale.collection_transaction`.
+
+### Emails
+
+Order emails are queued after the order commits; a mail failure never
+affects the order. An email stuck in PENDING for 15 minutes is
+re-dispatched (at most 3 times) only if its template context was stored,
+which is done for order emails but not for emails carrying tokens. An email
+stuck in PROCESSING is marked FAILED and never resent automatically, since
+it may already have been delivered.
+
 ---
 
 ## Accounting

@@ -471,6 +471,56 @@ class SaleStatusApiTests(APITestCase):
         self.assertEqual(result['default_account_id'], self.cash_account.id)
         self.assertEqual(result['default_account']['id'], self.cash_account.id)
 
+    def test_update_status_validation_error_still_returns_400(self):
+        response = self.client.post(
+            f'/api/v1/sales/{self.sale.id}/update-status/',
+            {'status': SaleStatus.SHIPPED},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Cannot change sale status', response.data['detail'])
+
+    def test_unexpected_errors_are_not_reported_as_400(self):
+        from unittest.mock import patch
+
+        self.client.raise_request_exception = False
+        cases = [
+            (
+                'sale_api.views.v1.sale.update_sale_status',
+                'post',
+                f'/api/v1/sales/{self.sale.id}/update-status/',
+                {'status': SaleStatus.CONFIRMED},
+            ),
+            (
+                'sale_api.views.v1.sale.update_sale',
+                'patch',
+                f'/api/v1/sales/{self.sale.id}/',
+                {'notes': 'changed'},
+            ),
+            (
+                'sale_api.views.v1.sale.create_sale',
+                'post',
+                '/api/v1/sales/',
+                {
+                    'customer': self.customer.id,
+                    'sale_date': '2026-03-06',
+                    'items': [{
+                        'product_variant_id': self.variant.id,
+                        'quantity': 1,
+                        'unit_price': '450.00',
+                    }],
+                },
+            ),
+        ]
+        for target, method, url, payload in cases:
+            with self.subTest(target=target), patch(
+                target, side_effect=RuntimeError('boom')
+            ):
+                response = getattr(self.client, method)(
+                    url, payload, format='json'
+                )
+                self.assertEqual(response.status_code, 500)
+
 
 class AccountProvisioningTests(TestCase):
     """Tests for account provisioning functions."""

@@ -267,6 +267,17 @@ CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
 
 # Celery
 CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS
+# Run by a separate `celery beat` process; see docs/deployment.md.
+CELERY_BEAT_SCHEDULE = {
+    "expire-pending-orders": {
+        "task": "checkout_api.tasks.expire_pending_orders_task",
+        "schedule": 5 * 60,
+    },
+    "recover-stale-email-logs": {
+        "task": "email_api.tasks.recover_stale_email_logs_task",
+        "schedule": 10 * 60,
+    },
+}
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

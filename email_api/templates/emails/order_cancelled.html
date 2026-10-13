@@ -7,7 +7,11 @@
     Your order was cancelled.
 </h1>
 <p style="font-size: 15px; line-height: 24px; color: #475467;">
+    {% if reservation_expired %}
+    Order <strong>{{ invoice_number }}</strong> has been cancelled because it was not confirmed in time. Please place a new order if you still need these items.
+    {% else %}
     Order <strong>{{ invoice_number }}</strong> has been cancelled as requested.
+    {% endif %}
 </p>
 <p style="font-size: 15px; line-height: 24px; color: #475467;">
     Order total: <strong>{{ currency }} {{ total_amount }}</strong>
