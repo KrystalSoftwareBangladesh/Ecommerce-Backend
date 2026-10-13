@@ -10,6 +10,7 @@ from .models import (
     Sale,
     SaleItem,
     SaleStatus,
+    PaymentStatus,
     get_next_sale_statuses,
 )
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
@@ -720,7 +721,7 @@ def mark_cod_payment_collected(user, sale):
             "Order must be delivered before payment can be collected."
         )
 
-    if locked_sale.payment_status == "COLLECTED":
+    if locked_sale.payment_status == PaymentStatus.COLLECTED:
         raise ValidationError(
             "Payment has already been collected."
         )
@@ -779,7 +780,7 @@ def mark_cod_payment_collected(user, sale):
     )
     post_transaction(user, accounting_transaction)
 
-    locked_sale.payment_status = "COLLECTED"
+    locked_sale.payment_status = PaymentStatus.COLLECTED
     locked_sale.updated_by = user
     locked_sale.save(
         update_fields=[
