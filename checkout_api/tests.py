@@ -1338,6 +1338,7 @@ class StorefrontOrderAPITest(OrderCreationTestBase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["status"], "PENDING")
         self.assertEqual(response.data["payment_status"], "UNPAID")
+        self.assertTrue(response.data["invoice_number"])
         self.assertEqual(
             response.data["shipping_method"],
             {
