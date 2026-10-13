@@ -13,8 +13,10 @@ from sale_api.serializers import (
     SaleStatusUpdateSerializer
 )
 from sale_api.services import (
-    create_sale, update_sale, update_sale_status
+    create_sale, update_sale, update_sale_status,
+    mark_cod_payment_collected,
 )
+from EcommerceBackend.core.permission import CustomPermissionAccessMixin
 
 
 class SaleFilter(django_filters.FilterSet):
@@ -48,7 +50,10 @@ class SaleFilter(django_filters.FilterSet):
     )
 )
 @extend_schema(tags=["Sales"])
-class SaleViewSet(\n    CustomPermissionAccessMixin, viewsets.ModelViewSet\n):\n    custom_permissions = {\n        'mark_cod_paid': 'collect_sale_payment',\n    }
+class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
+    custom_permissions = {
+        'mark_cod_paid': 'collect_sale_payment',
+    }
     queryset = Sale.objects.none()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = SaleFilter
