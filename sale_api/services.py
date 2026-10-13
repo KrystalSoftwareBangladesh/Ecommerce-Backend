@@ -578,15 +578,13 @@ def update_sale_status(
                 has_reservations = (
                     sale.reservations.exists()
                 )
-                if has_reservations:
-                    consume_reservations(
-                        sale, user=user
+                if not has_reservations:
+                    raise ValidationError(
+                        "Storefront order has no inventory "
+                        "reservation. It cannot be confirmed; "
+                        "review the order before retrying."
                     )
-                else:
-                    # No reservations — fall back to
-                    # direct stock deduction (POS
-                    # pattern) for edge cases.
-                    _deduct_sale_stock(user, sale)
+                consume_reservations(sale, user=user)
 
                 receivable = (
                     get_or_create_accounts_receivable_account(
