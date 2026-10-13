@@ -48,7 +48,7 @@ class SaleFilter(django_filters.FilterSet):
     )
 )
 @extend_schema(tags=["Sales"])
-class SaleViewSet(viewsets.ModelViewSet):
+class SaleViewSet(\n    CustomPermissionAccessMixin, viewsets.ModelViewSet\n):\n    custom_permissions = {\n        'mark_cod_paid': 'collect_sale_payment',\n    }
     queryset = Sale.objects.none()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = SaleFilter
@@ -149,6 +149,30 @@ class SaleViewSet(viewsets.ModelViewSet):
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='mark-paid',
+    )
+    def mark_cod_paid(self, request, pk=None):
+        sale = self.get_object()
+        try:
+            sale = mark_cod_payment_collected(
+                request.user,
+                sale,
+            )
+        except Exception as exc:
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({
+            'id': sale.id,
+            'status': sale.status,
+            'payment_status': sale.payment_status,
+            'message': 'Payment collected.',
+        })
 
     @action(detail=False, methods=['get'], url_path='channels')
     def channels(self, request):
