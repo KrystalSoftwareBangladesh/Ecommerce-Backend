@@ -687,3 +687,108 @@ def update_sale_status(
             )
         sale.save(update_fields=update_fields)
         return sale
+
+@transaction.atomic
+def mark_cod_payment_collected(user, sale):
+    """
+    Record COD collection after a website order is delivered.
+
+    Debit the configured COD asset account and credit
+    Accounts Receivable. Repeated collection is rejected.
+    """
+    locked_sale = (
+        Sale.objects.select_for_update()
+        .select_related("payment_method", "payment_method__default_account")
+        .get(pk=sale.pk)
+    )
+
+    if locked_sale.channel != Sale.SaleChannel.WEBSITE:
+        raise ValidationError(
+            "Only storefront COD orders can be marked paid here."
+        )
+
+    if (
+        locked_sale.payment_method is None
+        or locked_sale.payment_method.code != COD_PAYMENT_METHOD_CODE
+    ):
+        raise ValidationError(
+            "This order is not a Cash on Delivery order."
+        )
+
+    if locked_sale.status != SaleStatus.DELIVERED:
+        raise ValidationError(
+            "Order must be delivered before payment can be collected."
+        )
+
+    if locked_sale.payment_status == "COLLECTED":
+        raise ValidationError(
+            "Payment has already been collected."
+        )
+
+    cash_account = locked_sale.payment_method.default_account
+    if (
+        cash_account is None
+        or not cash_account.is_active
+        or cash_account.deleted_at is not None
+        or cash_account.account_type != AccountType.ASSET
+    ):
+        raise ValidationError(
+            "The COD payment method must have an active asset account."
+        )
+
+    receivable = get_or_create_accounts_receivable_account(
+        user=user
+    )
+    amount = locked_sale.total_amount
+    if amount <= 0:
+        raise ValidationError(
+            "Order total must be greater than zero."
+        )
+
+    accounting_transaction = create_transaction(
+        user,
+        {
+            "transaction_date": locked_sale.sale_date,
+            "transaction_type": TransactionType.SALE,
+            "reference": _build_sale_reference(locked_sale),
+            "description": (
+                f"COD payment collected for sale "
+                f"#{locked_sale.id}."
+            ),
+            "lines": [
+                {
+                    "account": cash_account,
+                    "description": (
+                        f"COD collection for sale "
+                        f"#{locked_sale.id}"
+                    ),
+                    "debit_amount": amount,
+                    "credit_amount": Decimal("0.00"),
+                },
+                {
+                    "account": receivable,
+                    "description": (
+                        f"Accounts receivable settled "
+                        f"for sale #{locked_sale.id}"
+                    ),
+                    "debit_amount": Decimal("0.00"),
+                    "credit_amount": amount,
+                },
+            ],
+        },
+    )
+    accounting_transaction = post_transaction(
+        user, accounting_transaction
+    )
+
+    locked_sale.payment_status = "COLLECTED"
+    locked_sale.updated_by = user
+    locked_sale.save(
+        update_fields=[
+            "payment_status",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+    return locked_sale
+
