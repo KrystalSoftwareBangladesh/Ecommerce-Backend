@@ -42,7 +42,7 @@ EMAIL_TEMPLATE_REGISTRY = {
         "html": "emails/password_reset.html",
     },
     EmailType.ORDER_CONFIRMATION: {
-        "subject": "Your Best Computer Hub order is confirmed",
+        "subject": "We received your Best Computer Hub order",
         "text": "emails/order_confirmation.txt",
         "html": "emails/order_confirmation.html",
     },
