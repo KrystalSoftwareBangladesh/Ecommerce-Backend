@@ -749,7 +749,9 @@ def mark_cod_payment_collected(user, sale):
         {
             "transaction_date": locked_sale.sale_date,
             "transaction_type": TransactionType.SALE,
-            "reference": _build_sale_reference(\n                locked_sale, suffix="COD-COLLECTED"\n            ),
+            "reference": _build_sale_reference(
+                locked_sale, suffix="COD-COLLECTED"
+            ),
             "description": (
                 f"COD payment collected for sale "
                 f"#{locked_sale.id}."
