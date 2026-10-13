@@ -524,32 +524,36 @@ def create_order(
     )
 
     try:
-        sale = Sale.objects.create(
-            customer=customer,
-            payment_method=cod_pm,
-            sale_date=timezone.now().date(),
-            channel=Sale.SaleChannel.WEBSITE,
-            status=SaleStatus.PENDING,
-            payment_status=PaymentStatus.UNPAID,
-            subtotal_amount=subtotal,
-            discount_amount=discount,
-            tax_amount=tax,
-            shipping_amount=shipping_charge,
-            total_amount=grand_total,
-            shipping_address_snapshot=(
-                _snapshot_address(address)
-            ),
-            shipping_method_snapshot={
-                'id': shipping['method_id'],
-                'name': shipping['method_name'],
-                'code': shipping['method_code'],
-            },
-            idempotency_key=idempotency_key,
-            request_fingerprint=fingerprint,
-            notes=notes,
-            created_by=user,
-            updated_by=user,
-        )
+        # The nested atomic block creates a savepoint.
+        # A uniqueness race must not poison the outer
+        # order transaction before we read the winner.
+        with transaction.atomic():
+            sale = Sale.objects.create(
+                customer=customer,
+                payment_method=cod_pm,
+                sale_date=timezone.now().date(),
+                channel=Sale.SaleChannel.WEBSITE,
+                status=SaleStatus.PENDING,
+                payment_status=PaymentStatus.UNPAID,
+                subtotal_amount=subtotal,
+                discount_amount=discount,
+                tax_amount=tax,
+                shipping_amount=shipping_charge,
+                total_amount=grand_total,
+                shipping_address_snapshot=(
+                    _snapshot_address(address)
+                ),
+                shipping_method_snapshot={
+                    'id': shipping['method_id'],
+                    'name': shipping['method_name'],
+                    'code': shipping['method_code'],
+                },
+                idempotency_key=idempotency_key,
+                request_fingerprint=fingerprint,
+                notes=notes,
+                created_by=user,
+                updated_by=user,
+            )
     except IntegrityError:
         # Concurrent insert with same
         # idempotency_key. Fetch and compare
