@@ -17,6 +17,7 @@ from checkout_api.exceptions import IdempotencyConflict
 from EcommerceBackend.core.choices import CartStatus
 from email_api.constants import EmailType
 from email_api.services.email import EmailService
+from cart_api.models import Cart
 from cart_api.services.cart import get_active_cart
 from customer_api.models import CustomerAddress
 from inventory_api.services.reservation import (
@@ -465,6 +466,29 @@ def _snapshot_address(address):
     }
 
 
+def _find_idempotent_order(customer, idempotency_key, fingerprint):
+    """
+    Return the order already created with this key, raise a
+    conflict if the key was used with different inputs, or
+    return None if the key is unused.
+    """
+    existing = Sale.objects.filter(
+        customer=customer,
+        idempotency_key=idempotency_key,
+    ).first()
+
+    if existing is None:
+        return None
+    if existing.request_fingerprint == fingerprint:
+        # Same key, same inputs — return existing order.
+        return existing
+    # Same key, different inputs — conflict.
+    raise IdempotencyConflict(
+        "This idempotency key was already used "
+        "with different order details."
+    )
+
+
 @transaction.atomic
 def create_order(
     *,
@@ -506,28 +530,32 @@ def create_order(
     )
 
     customer = user.customer_profile
-    existing = Sale.objects.filter(
-        customer=customer,
-        idempotency_key=idempotency_key,
-    ).first()
-
+    existing = _find_idempotent_order(
+        customer, idempotency_key, fingerprint
+    )
     if existing is not None:
-        if (
-            existing.request_fingerprint
-            == fingerprint
-        ):
-            # Same key, same inputs — return
-            # existing order.
-            return existing
-        # Same key, different inputs — conflict.
-        raise IdempotencyConflict(
-            "This idempotency key was already used "
-            "with different order details."
-        )
+        return existing
 
     # --- Step 2: Cart validation ---
     cart = get_active_cart(user=user)
     if cart is None:
+        raise ValidationError(
+            "No active cart found."
+        )
+
+    # Lock the cart so concurrent checkouts of the same cart run
+    # one at a time, then re-read it: a request that waited here
+    # must not create a second order from a cart that was just
+    # checked out.
+    cart = Cart.objects.select_for_update().get(pk=cart.pk)
+    # The order that just checked this cart out may have used the
+    # same key; return it (or the conflict) rather than an error.
+    existing = _find_idempotent_order(
+        customer, idempotency_key, fingerprint
+    )
+    if existing is not None:
+        return existing
+    if cart.status != CartStatus.ACTIVE or not cart.is_active:
         raise ValidationError(
             "No active cart found."
         )

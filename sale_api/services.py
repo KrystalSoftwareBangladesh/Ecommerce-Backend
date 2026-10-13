@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from account_api.models import AccountType, ChartOfAccount
 from django.db import transaction
-from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
 from .models import (
@@ -16,8 +15,10 @@ from .models import (
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
 from inventory_api.services.reservation import (
     consume_reservations,
+    get_available_stock,
     release_reservations,
 )
+from product_api.models import ProductVariant
 from transaction_api.models import TransactionType
 from transaction_api.services import create_transaction, post_transaction
 
@@ -429,9 +430,9 @@ def _create_storefront_transaction(
 
 
 def validate_stock(product_variant, quantity,):
-    available = InventoryMovement.objects.filter(
-        product_variant=product_variant,
-    ).aggregate(stock=Sum('quantity'))['stock'] or 0
+    # Active movements minus active, unexpired storefront
+    # reservations, so a POS sale cannot take reserved stock.
+    available = get_available_stock(product_variant)
     if available < quantity:
         raise ValidationError(f'Insufficient stock for {product_variant}.')
 
@@ -522,13 +523,26 @@ def update_sale(user, sale, data):
 
 
 def _deduct_sale_stock(user, sale):
-    for item in sale.items.all():
+    # Lock variant rows in primary-key order, as the storefront
+    # reservation services do, so concurrent POS confirmations and
+    # reservations for the same variant are serialised.
+    items = list(sale.items.order_by('product_variant_id'))
+    locked_variants = {}
+    for item in items:
+        pk = item.product_variant_id
+        if pk not in locked_variants:
+            locked_variants[pk] = (
+                ProductVariant.objects.select_for_update().get(pk=pk)
+            )
+
+    for item in items:
+        variant = locked_variants[item.product_variant_id]
         validate_stock(
-            item.product_variant,
+            variant,
             item.quantity,
         )
         InventoryMovement.objects.create(
-            product_variant=item.product_variant,
+            product_variant=variant,
             quantity=-item.quantity,
             movement_type=MovementType.SALE,
             reference_type=ReferenceType.ORDER,

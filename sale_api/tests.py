@@ -1136,6 +1136,86 @@ class POSRegressionTest(TestCase):
         self.assertIsNotNone(movement)
         self.assertEqual(movement.quantity, -2)
 
+    def _reserve_for_storefront(self, quantity, expires_in_minutes=30):
+        from datetime import timedelta
+        from django.utils import timezone
+        from inventory_api.models import (
+            InventoryReservation,
+            ReservationStatus,
+        )
+
+        web_sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=date.today(),
+            channel=Sale.SaleChannel.WEBSITE,
+            subtotal_amount=Decimal('0.00'),
+            total_amount=Decimal('0.00'),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        return InventoryReservation.objects.create(
+            product_variant=self.variant,
+            sale=web_sale,
+            quantity=quantity,
+            status=ReservationStatus.ACTIVE,
+            expires_at=(
+                timezone.now()
+                + timedelta(minutes=expires_in_minutes)
+            ),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+
+    def _assert_pos_confirmation_rejected(self):
+        from django.core.exceptions import ValidationError
+
+        with self.assertRaisesMessage(
+            ValidationError, 'Insufficient stock'
+        ):
+            update_sale_status(
+                self.user, self.sale, SaleStatus.CONFIRMED
+            )
+        self.sale.refresh_from_db()
+        self.assertEqual(self.sale.status, SaleStatus.PENDING)
+        self.assertIsNone(self.sale.accounting_transaction_id)
+        self.assertFalse(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+                reference_id=self.sale.pk,
+            ).exists()
+        )
+
+    def test_pos_confirmation_cannot_take_reserved_stock(self):
+        from inventory_api.services.reservation import (
+            get_available_stock,
+        )
+
+        # Leave one unit unreserved; the POS sale needs two.
+        self._reserve_for_storefront(
+            get_available_stock(self.variant) - 1
+        )
+        self._assert_pos_confirmation_rejected()
+
+    def test_expired_reservation_does_not_block_pos(self):
+        from inventory_api.services.reservation import (
+            get_available_stock,
+        )
+
+        self._reserve_for_storefront(
+            get_available_stock(self.variant),
+            expires_in_minutes=-1,
+        )
+        sale = update_sale_status(
+            self.user, self.sale, SaleStatus.CONFIRMED
+        )
+        self.assertEqual(sale.status, SaleStatus.CONFIRMED)
+
+    def test_inactive_movements_do_not_count_as_stock(self):
+        InventoryMovement.objects.filter(
+            product_variant=self.variant,
+        ).update(is_active=False)
+        self._assert_pos_confirmation_rejected()
+
     def test_stale_second_confirmation_does_not_repost(self):
         """Confirming again with a PENDING copy loaded before the
         first confirmation must not deduct stock or post twice."""

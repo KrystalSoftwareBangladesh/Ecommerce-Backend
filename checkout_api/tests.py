@@ -12,6 +12,7 @@ from django.test import (
     TransactionTestCase,
     skipUnlessDBFeature,
 )
+from django.utils import timezone
 from rest_framework.exceptions import (
     ValidationError as DRFValidationError,
 )
@@ -1545,6 +1546,37 @@ class StorefrontOrderAPITest(OrderCreationTestBase):
             str(response.data["errors"]),
         )
 
+    def test_confirm_same_key_different_inputs_returns_409(self):
+        from sale_api.models import Sale
+
+        payload = {
+            "shipping_address_id": self.address.id,
+            "shipping_method_id": self.method.id,
+            "idempotency_key": "api-conflict-001",
+        }
+        first = self.client.post(
+            "/api/v1/checkout/confirm/", payload, format="json"
+        )
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+
+        conflicting = self.client.post(
+            "/api/v1/checkout/confirm/",
+            {**payload, "notes": "Leave at the gate."},
+            format="json",
+        )
+        self.assertEqual(
+            conflicting.status_code, status.HTTP_409_CONFLICT
+        )
+        self.assertFalse(conflicting.data["success"])
+        self.assertEqual(Sale.objects.count(), 1)
+
+        # The original inputs still replay the original order.
+        retry = self.client.post(
+            "/api/v1/checkout/confirm/", payload, format="json"
+        )
+        self.assertEqual(retry.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(retry.data["id"], first.data["id"])
+
 class CODCollectionServiceTest(OrderCreationTestBase):
     """Tests for atomic COD collection accounting."""
 
@@ -1645,13 +1677,13 @@ class StorefrontOrderEmailTemplateTest(TestCase):
 
 
 @skipUnlessDBFeature("has_select_for_update_of")
-class OrderCancelConfirmRaceTest(TransactionTestCase):
+class ConcurrentOrderTestBase(TransactionTestCase):
     """
-    Run customer cancellation and staff confirmation at the same
-    time on separate database connections.
+    Run two order operations at the same time on separate
+    database connections.
 
     The first action commits nothing until ``release`` is set, so
-    the second action really contends for the same Sale row.
+    the second action really contends for the same rows.
     Needs PostgreSQL row locks; skipped on SQLite.
     """
 
@@ -1674,7 +1706,7 @@ class OrderCancelConfirmRaceTest(TransactionTestCase):
     def _run_holding_lock(self, action, locked, release, outcome):
         try:
             with transaction.atomic():
-                action()
+                outcome["result"] = action()
                 locked.set()
                 release.wait(timeout=10)
         except Exception as exc:
@@ -1685,7 +1717,7 @@ class OrderCancelConfirmRaceTest(TransactionTestCase):
 
     def _run(self, action, done, outcome):
         try:
-            action()
+            outcome["result"] = action()
         except Exception as exc:
             outcome["error"] = exc
         finally:
@@ -1719,7 +1751,66 @@ class OrderCancelConfirmRaceTest(TransactionTestCase):
             if second_thread.ident is not None:
                 second_thread.join(timeout=10)
         self.assertNotIn("error", first_outcome)
+        self.first_outcome = first_outcome
         return blocked, second_outcome
+
+    def _create_pos_sale(self, quantity, invoice_number):
+        from account_api.models import AccountType, ChartOfAccount
+        from sale_api.models import PaymentMethod, Sale, SaleItem
+
+        payment_method = PaymentMethod.objects.filter(
+            code="CASH-RACE",
+        ).first()
+        if payment_method is None:
+            payment_method = PaymentMethod.objects.create(
+                code="CASH-RACE",
+                name="Cash race",
+                default_account=ChartOfAccount.objects.create(
+                    name="Cash race",
+                    account_type=AccountType.ASSET,
+                ),
+            )
+        line_total = decimal.Decimal("500.00") * quantity
+        sale = Sale.objects.create(
+            customer=self.profile,
+            sale_date=timezone.now().date(),
+            channel=Sale.SaleChannel.WALK_IN,
+            payment_method=payment_method,
+            invoice_number=invoice_number,
+            subtotal_amount=line_total,
+            total_amount=line_total,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product_variant=self.variant,
+            quantity=quantity,
+            unit_price=decimal.Decimal("500.00"),
+            line_total=line_total,
+        )
+        return sale
+
+    def _confirm(self, sale_id):
+        from sale_api.models import Sale, SaleStatus
+        from sale_api.services import update_sale_status
+
+        return update_sale_status(
+            self.user,
+            Sale.objects.get(pk=sale_id),
+            SaleStatus.CONFIRMED,
+        )
+
+    def _available_stock(self):
+        from inventory_api.services.reservation import (
+            get_available_stock,
+        )
+
+        return get_available_stock(self.variant)
+
+
+class OrderCancelConfirmRaceTest(ConcurrentOrderTestBase):
+    """Customer cancellation racing staff confirmation."""
 
     def test_cancel_waits_for_confirmation_and_is_rejected(self):
         from checkout_api.services import cancel_order
@@ -1802,4 +1893,163 @@ class OrderCancelConfirmRaceTest(TransactionTestCase):
                 ).values_list("status", flat=True)
             ),
             {ReservationStatus.RELEASED},
+        )
+
+
+class CheckoutInventoryRaceTest(ConcurrentOrderTestBase):
+    """
+    POS confirmations, storefront reservations and checkouts of
+    one cart racing each other. ``OrderCreationTestBase`` gives the
+    variant 50 units of stock and the cart 2 units of it.
+    """
+
+    def test_concurrent_pos_confirmations_cannot_oversell(self):
+        from inventory_api.models import InventoryMovement, MovementType
+        from sale_api.models import SaleStatus
+
+        first = self._create_pos_sale(30, "RACE-POS-A")
+        second = self._create_pos_sale(30, "RACE-POS-B")
+
+        blocked, second_outcome = self._race(
+            lambda: self._confirm(first.pk),
+            lambda: self._confirm(second.pk),
+        )
+
+        self.assertTrue(blocked)
+        self.assertIsInstance(
+            second_outcome.get("error"), DjangoValidationError
+        )
+        second.refresh_from_db()
+        self.assertEqual(second.status, SaleStatus.PENDING)
+        self.assertIsNone(second.accounting_transaction_id)
+        self.assertEqual(
+            InventoryMovement.objects.filter(
+                product_variant=self.variant,
+                movement_type=MovementType.SALE,
+            ).count(),
+            1,
+        )
+        self.assertEqual(self._available_stock(), 20)
+
+    def test_concurrent_confirmations_of_one_pos_sale_post_once(self):
+        from inventory_api.models import InventoryMovement, MovementType
+        from sale_api.models import Sale, SaleStatus
+        from sale_api.services import update_sale_status
+        from transaction_api.models import AccountingTransaction
+
+        sale = self._create_pos_sale(5, "RACE-POS-ONCE")
+        stale = Sale.objects.get(pk=sale.pk)
+
+        blocked, second_outcome = self._race(
+            lambda: self._confirm(sale.pk),
+            lambda: update_sale_status(
+                self.user, stale, SaleStatus.CONFIRMED
+            ),
+        )
+
+        self.assertTrue(blocked)
+        self.assertNotIn("error", second_outcome)
+        self.assertEqual(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+                reference_id=sale.pk,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AccountingTransaction.objects.filter(
+                reference=sale.invoice_number,
+            ).count(),
+            1,
+        )
+        self.assertEqual(self._available_stock(), 45)
+
+    def test_storefront_reservation_waits_for_pos_confirmation(self):
+        from sale_api.models import Sale
+
+        pos_sale = self._create_pos_sale(49, "RACE-POS-FIRST")
+
+        blocked, checkout_outcome = self._race(
+            lambda: self._confirm(pos_sale.pk),
+            lambda: self._create_order(idempotency_key="race-after-pos"),
+        )
+
+        self.assertTrue(blocked)
+        self.assertIsInstance(
+            checkout_outcome.get("error"), DRFValidationError
+        )
+        self.assertFalse(
+            Sale.objects.filter(
+                channel=Sale.SaleChannel.WEBSITE,
+            ).exists()
+        )
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.status, CartStatus.ACTIVE)
+        self.assertEqual(self._available_stock(), 1)
+
+    def test_pos_confirmation_waits_for_storefront_reservation(self):
+        from inventory_api.models import InventoryMovement, MovementType
+        from sale_api.models import SaleStatus
+
+        pos_sale = self._create_pos_sale(49, "RACE-POS-SECOND")
+
+        blocked, pos_outcome = self._race(
+            lambda: self._create_order(idempotency_key="race-before-pos"),
+            lambda: self._confirm(pos_sale.pk),
+        )
+
+        self.assertTrue(blocked)
+        self.assertIsInstance(
+            pos_outcome.get("error"), DjangoValidationError
+        )
+        pos_sale.refresh_from_db()
+        self.assertEqual(pos_sale.status, SaleStatus.PENDING)
+        self.assertFalse(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+            ).exists()
+        )
+        self.assertEqual(self._available_stock(), 48)
+
+    def test_concurrent_checkouts_of_one_cart_create_one_order(self):
+        from inventory_api.models import InventoryReservation
+        from sale_api.models import Sale
+
+        blocked, second_outcome = self._race(
+            lambda: self._create_order(idempotency_key="race-cart-a"),
+            lambda: self._create_order(idempotency_key="race-cart-b"),
+        )
+
+        self.assertTrue(blocked)
+        self.assertIsInstance(
+            second_outcome.get("error"), DRFValidationError
+        )
+        self.assertEqual(
+            Sale.objects.filter(
+                channel=Sale.SaleChannel.WEBSITE,
+            ).count(),
+            1,
+        )
+        self.assertEqual(InventoryReservation.objects.count(), 1)
+        self.assertEqual(self._available_stock(), 48)
+
+    def test_concurrent_same_key_checkouts_return_one_order(self):
+        from sale_api.models import Sale
+
+        blocked, second_outcome = self._race(
+            lambda: self._create_order(idempotency_key="race-same"),
+            lambda: self._create_order(idempotency_key="race-same"),
+        )
+
+        self.assertTrue(blocked)
+        self.assertNotIn("error", second_outcome)
+        self.assertEqual(
+            second_outcome["result"].pk,
+            self.first_outcome["result"].pk,
+        )
+        self.assertEqual(
+            Sale.objects.filter(
+                channel=Sale.SaleChannel.WEBSITE,
+            ).count(),
+            1,
         )
