@@ -1507,3 +1507,26 @@ class CODCollectionServiceTest(OrderCreationTestBase):
                 mark_cod_payment_collected(self.user, sale)
             create_transaction.assert_not_called()
 
+class StorefrontOrderEmailTemplateTest(TestCase):
+    def test_order_email_templates_render(self):
+        from django.template.loader import render_to_string
+
+        context = {
+            "customer_name": "Test Customer",
+            "invoice_number": "SALE-20261013-000001",
+            "total_amount": decimal.Decimal("1060.00"),
+            "currency": "BDT",
+            "orders_url": "https://example.com",
+        }
+        for template_name in (
+            "emails/order_confirmation.html",
+            "emails/order_confirmation.txt",
+            "emails/order_cancelled.html",
+            "emails/order_cancelled.txt",
+        ):
+            with self.subTest(template=template_name):
+                rendered = render_to_string(
+                    template_name, context
+                )
+                self.assertTrue(rendered.strip())
+
