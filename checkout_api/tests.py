@@ -1432,3 +1432,77 @@ class StorefrontOrderAPITest(OrderCreationTestBase):
             status.HTTP_401_UNAUTHORIZED,
         )
 
+class CODCollectionServiceTest(OrderCreationTestBase):
+    """Tests for atomic COD collection accounting."""
+
+    def test_collection_posts_receivable_settlement(self):
+        from unittest.mock import patch
+        from sale_api.models import PaymentStatus, SaleStatus
+        from sale_api.services import mark_cod_payment_collected
+
+        sale = self._create_order(
+            idempotency_key="cod-collect-service-001"
+        )
+        sale.status = SaleStatus.DELIVERED
+        sale.save(update_fields=["status"])
+
+        with patch(
+            "sale_api.services.create_transaction"
+        ) as create_transaction, patch(
+            "sale_api.services.post_transaction"
+        ) as post_transaction:
+            transaction_obj = object()
+            create_transaction.return_value = transaction_obj
+            post_transaction.return_value = transaction_obj
+
+            result = mark_cod_payment_collected(
+                self.user, sale
+            )
+
+        self.assertEqual(
+            result.payment_status,
+            PaymentStatus.COLLECTED,
+        )
+        create_transaction.assert_called_once()
+        post_transaction.assert_called_once_with(
+            self.user, transaction_obj
+        )
+        lines = create_transaction.call_args.args[1]["lines"]
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(
+            lines[0]["debit_amount"],
+            decimal.Decimal("1060.00"),
+        )
+        self.assertEqual(
+            lines[1]["credit_amount"],
+            decimal.Decimal("1060.00"),
+        )
+
+    def test_collection_rejects_undelivered_order(self):
+        from django.core.exceptions import ValidationError
+        from sale_api.services import mark_cod_payment_collected
+
+        sale = self._create_order(
+            idempotency_key="cod-collect-undelivered-001"
+        )
+        with self.assertRaises(ValidationError):
+            mark_cod_payment_collected(self.user, sale)
+
+    def test_collection_rejects_duplicate_collection(self):
+        from django.core.exceptions import ValidationError
+        from sale_api.models import PaymentStatus, SaleStatus
+        from sale_api.services import mark_cod_payment_collected
+        from unittest.mock import patch
+
+        sale = self._create_order(
+            idempotency_key="cod-collect-duplicate-001"
+        )
+        sale.status = SaleStatus.DELIVERED
+        sale.payment_status = PaymentStatus.COLLECTED
+        sale.save(update_fields=["status", "payment_status"])
+
+        with patch("sale_api.services.create_transaction") as create_transaction:
+            with self.assertRaises(ValidationError):
+                mark_cod_payment_collected(self.user, sale)
+            create_transaction.assert_not_called()
+
