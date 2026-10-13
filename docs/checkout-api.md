@@ -7,9 +7,11 @@ take and return JSON, and require a logged-in customer:
 Authorization: Bearer <access token>     # SimpleJWT
 ```
 
-Without a valid token every endpoint returns **401**. Money values are
-strings with two decimals (`"1060.00"`), currency BDT. Payment is Cash on
-Delivery only.
+Without a valid token every endpoint returns **401**. Money values in
+`POST /checkout/validate/`, `POST /checkout/confirm/` and
+`GET /orders/{id}/` are JSON numbers (two decimal places, e.g.
+`1060.00`); in `GET /orders/` the list summary `total_amount` is a JSON
+string (`"1060.00"`). Currency is BDT. Payment is Cash on Delivery only.
 
 ## Error format
 
@@ -45,15 +47,15 @@ Response **200**, both when the checkout is valid and when it is not:
   "is_valid": true,
   "cart": { "id": 7, "items": [
     { "id": 3, "product_id": 12, "product_name": "Widget",
-      "quantity": 2, "unit_price": "500.00", "line_total": "1000.00" } ] },
-  "pricing": { "subtotal": "1000.00", "shipping_charge": "60.00",
-               "discount_total": "0.00", "tax_total": "0.00",
-               "grand_total": "1060.00" },
+      "quantity": 2, "unit_price": 500.00, "line_total": 1000.00 } ] },
+  "pricing": { "subtotal": 1000.00, "shipping_charge": 60.00,
+               "discount_total": 0.00, "tax_total": 0.00,
+               "grand_total": 1060.00 },
   "shipping": { "address_id": 5, "method_id": 2, "method_name": "Standard",
                 "method_code": "standard", "zone_name": "Dhaka Metro",
-                "zone_code": "dhaka-metro", "base_charge": "60.00",
+                "zone_code": "dhaka-metro", "base_charge": 60.00,
                 "is_free_shipping": false,
-                "free_shipping_threshold": "2000.00" },
+                "free_shipping_threshold": 2000.00 },
   "errors": []
 }
 ```
@@ -92,7 +94,11 @@ Responses:
   errors, double clicks).
 - Same key + same `shipping_address_id`, `shipping_method_id` and `notes`
   returns the original order with **201**, even after the cart was checked
-  out and even if the retry overlaps the original request.
+  out and even if the retry overlaps the original request. If the original
+  order was already cancelled (e.g. stock reservation expired), the retry
+  still returns **201** with `status: "CANCELLED"`. The frontend must
+  inspect the returned `status` — a **201** does not always mean the order
+  is actionable.
 - Same key + any different input returns **409**. Make a new key when the
   customer changes the address, method or notes.
 - Keys are per customer.
@@ -133,15 +139,15 @@ the response is a plain array.
   "items": [ { "id": 77,
                "product_variant": { "id": 30, "sku": "WDG-001", "name": null },
                "product_name": "Widget", "quantity": 2,
-               "unit_price": "500.00", "line_total": "1000.00" } ],
+               "unit_price": 500.00, "line_total": 1000.00 } ],
   "shipping_address": { "first_name": "Jane", "last_name": "Doe",
                         "company": "", "address_1": "123 Test St",
                         "address_2": "", "city": "Dhaka", "state": "",
                         "postcode": "1205", "country": "Bangladesh",
                         "phone": "+8801700000000" },
-  "pricing": { "subtotal": "1000.00", "shipping_charge": "60.00",
-               "discount_total": "0.00", "tax_total": "0.00",
-               "grand_total": "1060.00" },
+  "pricing": { "subtotal": 1000.00, "shipping_charge": 60.00,
+               "discount_total": 0.00, "tax_total": 0.00,
+               "grand_total": 1060.00 },
   "shipping_method": { "id": 2, "name": "Standard", "code": "standard" },
   "notes": "",
   "created_at": "2026-10-13T09:15:02.123456Z",
