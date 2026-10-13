@@ -704,6 +704,14 @@ def cancel_order(*, user, sale):
 
     Returns the cancelled sale.
     """
+    # Lock the row and validate against the committed status
+    # so a concurrent staff confirmation cannot be overwritten.
+    sale = (
+        Sale.objects.select_for_update(of=("self",))
+        .select_related("customer")
+        .get(pk=sale.pk)
+    )
+
     if sale.channel != Sale.SaleChannel.WEBSITE:
         raise ValidationError(
             "Only storefront orders can be cancelled here."

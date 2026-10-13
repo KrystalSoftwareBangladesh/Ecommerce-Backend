@@ -556,16 +556,25 @@ def update_sale_status(
     account=None,
     payment_method=None,
 ):
-    if sale.status == next_status:
-        return sale
-
-    allowed_statuses = get_next_sale_statuses(sale.status)
-    if next_status not in allowed_statuses:
-        raise ValidationError(
-            f'Cannot change sale status from {sale.status} to {next_status}.'
-        )
-
     with transaction.atomic():
+        # Lock the row and check the transition against the
+        # committed status, not the caller's possibly stale
+        # instance, so concurrent transitions cannot overwrite
+        # each other.
+        sale = (
+            Sale.objects.select_for_update(of=('self',))
+            .get(pk=sale.pk)
+        )
+        if sale.status == next_status:
+            return sale
+
+        allowed_statuses = get_next_sale_statuses(sale.status)
+        if next_status not in allowed_statuses:
+            raise ValidationError(
+                f'Cannot change sale status from {sale.status} '
+                f'to {next_status}.'
+            )
+
         is_storefront = (
             sale.channel == Sale.SaleChannel.WEBSITE
         )

@@ -1,7 +1,20 @@
 # checkout_api/tests.py
 import decimal
+from threading import Event, Thread
+from unittest import mock
 
-from django.test import TestCase
+from django.core.exceptions import (
+    ValidationError as DjangoValidationError,
+)
+from django.db import connection, transaction
+from django.test import (
+    TestCase,
+    TransactionTestCase,
+    skipUnlessDBFeature,
+)
+from rest_framework.exceptions import (
+    ValidationError as DRFValidationError,
+)
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -1088,6 +1101,37 @@ class OrderCancellationTest(
             sale.status, SaleStatus.CANCELLED
         )
 
+    def test_stale_cancel_cannot_overwrite_confirmation(self):
+        """A cancel holding a PENDING copy loaded before staff
+        confirmed must not cancel the confirmed order."""
+        from rest_framework.exceptions import ValidationError
+        from checkout_api.services import cancel_order
+        from inventory_api.models import (
+            InventoryReservation,
+            ReservationStatus,
+        )
+        from sale_api.models import Sale, SaleStatus
+        from sale_api.services import update_sale_status
+
+        sale = self._create_order()
+        stale = Sale.objects.get(pk=sale.pk)
+        update_sale_status(self.user, sale, SaleStatus.CONFIRMED)
+
+        with self.assertRaises(ValidationError):
+            cancel_order(user=self.user, sale=stale)
+
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CONFIRMED)
+        self.assertIsNotNone(sale.accounting_transaction_id)
+        self.assertEqual(
+            set(
+                InventoryReservation.objects.filter(
+                    sale=sale,
+                ).values_list("status", flat=True)
+            ),
+            {ReservationStatus.CONSUMED},
+        )
+
 
 class OrderCreateSerializerTest(TestCase):
     """Tests for OrderCreateSerializer."""
@@ -1598,3 +1642,164 @@ class StorefrontOrderEmailTemplateTest(TestCase):
                 )
                 self.assertTrue(rendered.strip())
 
+
+
+@skipUnlessDBFeature("has_select_for_update_of")
+class OrderCancelConfirmRaceTest(TransactionTestCase):
+    """
+    Run customer cancellation and staff confirmation at the same
+    time on separate database connections.
+
+    The first action commits nothing until ``release`` is set, so
+    the second action really contends for the same Sale row.
+    Needs PostgreSQL row locks; skipped on SQLite.
+    """
+
+    # Flushing would drop the COD payment method seeded by
+    # migration 0012; restore it before every test.
+    serialized_rollback = True
+
+    _create_order = OrderCreationTestBase._create_order
+
+    def setUp(self):
+        # Order emails are dispatched on commit; keep the broker
+        # out of these tests.
+        patcher = mock.patch(
+            "checkout_api.services._queue_order_email_after_commit"
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        OrderCreationTestBase.setUp(self)
+
+    def _run_holding_lock(self, action, locked, release, outcome):
+        try:
+            with transaction.atomic():
+                action()
+                locked.set()
+                release.wait(timeout=10)
+        except Exception as exc:
+            outcome["error"] = exc
+        finally:
+            locked.set()
+            connection.close()
+
+    def _run(self, action, done, outcome):
+        try:
+            action()
+        except Exception as exc:
+            outcome["error"] = exc
+        finally:
+            done.set()
+            connection.close()
+
+    def _race(self, first, second):
+        """
+        Run ``first`` and keep its transaction open, then start
+        ``second``. Return whether ``second`` was still waiting a
+        second later, plus both outcomes.
+        """
+        locked, release, done = Event(), Event(), Event()
+        first_outcome, second_outcome = {}, {}
+        first_thread = Thread(
+            target=self._run_holding_lock,
+            args=(first, locked, release, first_outcome),
+        )
+        second_thread = Thread(
+            target=self._run,
+            args=(second, done, second_outcome),
+        )
+        first_thread.start()
+        try:
+            self.assertTrue(locked.wait(timeout=10))
+            second_thread.start()
+            blocked = not done.wait(timeout=1)
+        finally:
+            release.set()
+            first_thread.join(timeout=10)
+            if second_thread.ident is not None:
+                second_thread.join(timeout=10)
+        self.assertNotIn("error", first_outcome)
+        return blocked, second_outcome
+
+    def test_cancel_waits_for_confirmation_and_is_rejected(self):
+        from checkout_api.services import cancel_order
+        from inventory_api.models import (
+            InventoryReservation,
+            ReservationStatus,
+        )
+        from sale_api.models import Sale, SaleStatus
+        from sale_api.services import update_sale_status
+
+        sale = self._create_order()
+        stale = Sale.objects.get(pk=sale.pk)
+
+        blocked, cancel_outcome = self._race(
+            lambda: update_sale_status(
+                self.user,
+                Sale.objects.get(pk=sale.pk),
+                SaleStatus.CONFIRMED,
+            ),
+            lambda: cancel_order(user=self.user, sale=stale),
+        )
+
+        self.assertTrue(blocked)
+        self.assertIsInstance(
+            cancel_outcome.get("error"), DRFValidationError
+        )
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CONFIRMED)
+        self.assertIsNotNone(sale.accounting_transaction_id)
+        self.assertEqual(
+            set(
+                InventoryReservation.objects.filter(
+                    sale=sale,
+                ).values_list("status", flat=True)
+            ),
+            {ReservationStatus.CONSUMED},
+        )
+
+    def test_confirm_waits_for_cancellation_and_is_rejected(self):
+        from checkout_api.services import cancel_order
+        from inventory_api.models import (
+            InventoryMovement,
+            InventoryReservation,
+            MovementType,
+            ReservationStatus,
+        )
+        from sale_api.models import Sale, SaleStatus
+        from sale_api.services import update_sale_status
+
+        sale = self._create_order()
+        stale = Sale.objects.get(pk=sale.pk)
+
+        blocked, confirm_outcome = self._race(
+            lambda: cancel_order(
+                user=self.user,
+                sale=Sale.objects.get(pk=sale.pk),
+            ),
+            lambda: update_sale_status(
+                self.user, stale, SaleStatus.CONFIRMED
+            ),
+        )
+
+        self.assertTrue(blocked)
+        self.assertIsInstance(
+            confirm_outcome.get("error"), DjangoValidationError
+        )
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CANCELLED)
+        self.assertIsNone(sale.accounting_transaction_id)
+        self.assertFalse(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+                reference_id=sale.pk,
+            ).exists()
+        )
+        self.assertEqual(
+            set(
+                InventoryReservation.objects.filter(
+                    sale=sale,
+                ).values_list("status", flat=True)
+            ),
+            {ReservationStatus.RELEASED},
+        )

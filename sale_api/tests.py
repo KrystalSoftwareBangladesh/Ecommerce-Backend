@@ -994,6 +994,55 @@ class StorefrontConfirmationTest(TestCase):
             self.sale.status, SaleStatus.CONFIRMED
         )
 
+    def test_stale_cancel_after_confirmation_rejected(self):
+        """A PENDING copy loaded before confirmation must not
+        cancel the confirmed order."""
+        from django.core.exceptions import ValidationError
+
+        stale = Sale.objects.get(pk=self.sale.pk)
+        update_sale_status(
+            self.user, self.sale, SaleStatus.CONFIRMED
+        )
+        with self.assertRaises(ValidationError):
+            update_sale_status(
+                self.user, stale, SaleStatus.CANCELLED
+            )
+        self.sale.refresh_from_db()
+        self.assertEqual(self.sale.status, SaleStatus.CONFIRMED)
+        self.reservation.refresh_from_db()
+        self.assertEqual(
+            self.reservation.status,
+            self.ReservationStatus.CONSUMED,
+        )
+
+    def test_stale_confirmation_after_cancel_rejected(self):
+        """A PENDING copy loaded before cancellation must not
+        confirm, consume stock or post accounting."""
+        from django.core.exceptions import ValidationError
+
+        stale = Sale.objects.get(pk=self.sale.pk)
+        update_sale_status(
+            self.user, self.sale, SaleStatus.CANCELLED
+        )
+        with self.assertRaises(ValidationError):
+            update_sale_status(
+                self.user, stale, SaleStatus.CONFIRMED
+            )
+        self.sale.refresh_from_db()
+        self.assertEqual(self.sale.status, SaleStatus.CANCELLED)
+        self.assertIsNone(self.sale.accounting_transaction_id)
+        self.assertFalse(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+                reference_id=self.sale.pk,
+            ).exists()
+        )
+        self.reservation.refresh_from_db()
+        self.assertEqual(
+            self.reservation.status,
+            self.ReservationStatus.RELEASED,
+        )
+
 
 class POSRegressionTest(TestCase):
     """Verify existing POS behavior is unchanged."""
@@ -1086,6 +1135,29 @@ class POSRegressionTest(TestCase):
         )
         self.assertIsNotNone(movement)
         self.assertEqual(movement.quantity, -2)
+
+    def test_stale_second_confirmation_does_not_repost(self):
+        """Confirming again with a PENDING copy loaded before the
+        first confirmation must not deduct stock or post twice."""
+        stale = Sale.objects.get(pk=self.sale.pk)
+        first = update_sale_status(
+            self.user, self.sale, SaleStatus.CONFIRMED
+        )
+        second = update_sale_status(
+            self.user, stale, SaleStatus.CONFIRMED
+        )
+        self.assertEqual(second.status, SaleStatus.CONFIRMED)
+        self.assertEqual(
+            second.accounting_transaction_id,
+            first.accounting_transaction_id,
+        )
+        self.assertEqual(
+            InventoryMovement.objects.filter(
+                movement_type=MovementType.SALE,
+                reference_id=self.sale.pk,
+            ).count(),
+            1,
+        )
 
     def test_pos_return_still_works(self):
         """POS return path is unchanged.
