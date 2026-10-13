@@ -1,0 +1,9 @@
+Thank you for your order, {{ customer_name }}.
+
+We have received your order {{ invoice_number }}.
+Order total: {{ currency }} {{ total_amount }}
+Payment method: Cash on Delivery
+
+View your orders: {{ orders_url }}
+
+Best Computer Hub Team

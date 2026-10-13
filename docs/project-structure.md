@@ -32,9 +32,14 @@ Ecommerce-Backend/
 │   ├── api-request-logging-plan.md
 │   ├── business-rules.md
 │   ├── category-import-api.md
+│   ├── checkout-api.md                # storefront checkout/order API contract
 │   ├── content-security-scanner-plan.md
 │   ├── conventions.md
+│   ├── deployment.md                  # Celery worker + Beat requirements
 │   ├── domain-model.md
+│   ├── phase-4-implementation-plan.md
+│   ├── phase-4-implementation-spec.md
+│   ├── phase-4-order-creation-audit.md
 │   ├── project-structure.md
 │   └── testing.md
 │
@@ -87,10 +92,13 @@ Ecommerce-Backend/
 │   ├── admin.py
 │   └── tests.py
 │
-├── checkout_api/                      # no models — validation only
-│   ├── services.py
-│   ├── serializers/checkout.py
-│   ├── views/v1/checkout.py
+├── checkout_api/                      # no models — storefront checkout/orders
+│   ├── services.py                    # validate, create, cancel, expire orders
+│   ├── exceptions.py                  # IdempotencyConflict (409)
+│   ├── tasks.py                       # expire_pending_orders_task (Beat)
+│   ├── management/commands/expire_pending_orders.py
+│   ├── serializers/{checkout.py,order.py}
+│   ├── views/v1/{checkout.py,order.py}
 │   ├── urls/{__init__.py,v1.py}
 │   └── tests.py
 │

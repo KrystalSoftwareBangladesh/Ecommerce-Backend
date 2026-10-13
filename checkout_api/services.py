@@ -1,14 +1,107 @@
 import decimal
+import hashlib
+import json
+import logging
+
+from django.conf import settings
+from django.core.exceptions import (
+    ValidationError as DjangoValidationError,
+)
+from django.db import IntegrityError, transaction
+from django.db.models import Exists, OuterRef
+from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
 
+from checkout_api.exceptions import IdempotencyConflict
+
+from EcommerceBackend.core.choices import CartStatus
+from email_api.constants import EmailType
+from email_api.services.email import EmailService
+from cart_api.models import Cart
 from cart_api.services.cart import get_active_cart
 from customer_api.models import CustomerAddress
-from shipping_api.services.shipping import (
-    match_zone,
-    calculate_shipping_charge,
+from inventory_api.models import (
+    InventoryReservation,
+    ReservationStatus,
+)
+from inventory_api.services.reservation import (
+    expire_reservations,
+    release_reservations,
+    reserve_stock,
+)
+from sale_api.models import (
+    PaymentStatus,
+    Sale,
+    SaleItem,
+    SaleStatus,
+)
+from sale_api.services import (
+    get_or_create_cod_payment_method,
 )
 from shipping_api.models import ShippingRate
+from shipping_api.services.shipping import (
+    calculate_shipping_charge,
+    match_zone,
+)
+
+
+logger = logging.getLogger(__name__)
+
+
+def _queue_order_email_after_commit(
+    sale_id, email_type, extra_context=None
+):
+    """Queue email without allowing mail failures to undo an order."""
+    try:
+        sale = (
+            Sale.objects.select_related(
+                "customer__user",
+            )
+            .get(pk=sale_id)
+        )
+        user = sale.customer.user
+        recipient = user.email
+        if not recipient:
+            logger.warning(
+                "Skipping order email for sale %s: customer has no email.",
+                sale_id,
+            )
+            return
+
+        EmailService.queue(
+            email_type=email_type,
+            recipient=recipient,
+            related_user=user,
+            metadata={"sale_id": sale.id},
+            idempotency_key=(
+                f"sale-{sale.id}-{email_type.lower()}"
+            ),
+            context={
+                "customer_name": (
+                    getattr(user, "full_name", None)
+                    or user.username
+                ),
+                "invoice_number": (
+                    sale.invoice_number or f"#{sale.id}"
+                ),
+                "total_amount": sale.total_amount,
+                "currency": "BDT",
+                "orders_url": getattr(
+                    settings, "FRONTEND_BASE_URL", ""
+                ),
+                **(extra_context or {}),
+            },
+            # Order emails carry no secrets, so the context can be
+            # stored and the email resent if dispatch is lost.
+            persist_context=True,
+        )
+    except Exception:
+        logger.exception(
+            "Could not queue %s email for sale %s.",
+            email_type,
+            sale_id,
+        )
 
 
 def _validate_cart(user):
@@ -303,3 +396,491 @@ def validate_checkout(*, user, shipping_address_id,
         "shipping": shipping_data,
         "errors": [],
     }
+
+
+# ── Order creation and cancellation ──────────
+
+
+def _build_fingerprint(
+    shipping_address_id,
+    shipping_method_id,
+    notes,
+):
+    """
+    Build a canonical SHA-256 fingerprint of the
+    meaningful request inputs.
+
+    The fingerprint is deterministic: the same
+    inputs always produce the same hash.
+    """
+    canonical = json.dumps(
+        {
+            'shipping_address_id': (
+                shipping_address_id
+            ),
+            'shipping_method_id': (
+                shipping_method_id
+            ),
+            'notes': (notes or '').strip(),
+        },
+        sort_keys=True,
+        separators=(',', ':'),
+    )
+    return hashlib.sha256(
+        canonical.encode()
+    ).hexdigest()
+
+
+def _resolve_variant(product):
+    """
+    Resolve a product to exactly one eligible
+    active variant.
+
+    Returns the ProductVariant or raises
+    ValidationError.
+    """
+    active_variants = (
+        product.variants.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+        )
+    )
+    count = active_variants.count()
+    if count == 0:
+        raise ValidationError(
+            f"Product '{product.name}' has no "
+            "available variants."
+        )
+    if count == 1:
+        return active_variants.first()
+    raise ValidationError(
+        f"Product '{product.name}' has multiple "
+        "variants. Please select one."
+    )
+
+
+def _snapshot_address(address):
+    """
+    Return a JSON-safe dict of the address fields
+    for persistence on the Sale.
+    """
+    return {
+        'first_name': address.first_name,
+        'last_name': address.last_name,
+        'company': address.company,
+        'address_1': address.address_1,
+        'address_2': address.address_2,
+        'city': address.city,
+        'state': address.state,
+        'postcode': address.postcode,
+        'country': address.country,
+        'phone': address.phone,
+    }
+
+
+def _find_idempotent_order(customer, idempotency_key, fingerprint):
+    """
+    Return the order already created with this key, raise a
+    conflict if the key was used with different inputs, or
+    return None if the key is unused.
+    """
+    existing = Sale.objects.filter(
+        customer=customer,
+        idempotency_key=idempotency_key,
+    ).first()
+
+    if existing is None:
+        return None
+    if existing.request_fingerprint == fingerprint:
+        # Same key, same inputs — return existing order.
+        return existing
+    # Same key, different inputs — conflict.
+    raise IdempotencyConflict(
+        "This idempotency key was already used "
+        "with different order details."
+    )
+
+
+@transaction.atomic
+def create_order(
+    *,
+    user,
+    shipping_address_id,
+    shipping_method_id,
+    idempotency_key,
+    notes='',
+):
+    """
+    Create a storefront order from the user's
+    active cart.
+
+    Idempotency is checked FIRST, before any cart
+    validation.
+
+    - Same idempotency_key + same fingerprint:
+      return existing order.
+    - Same idempotency_key + different fingerprint:
+      raise conflict (409 at API layer).
+    - No existing order: create new.
+
+    The entire operation is atomic — any failure
+    rolls back all changes.
+    """
+    # --- Step 0: Validate idempotency key ---
+    if not idempotency_key or not str(
+        idempotency_key
+    ).strip():
+        raise ValidationError(
+            "idempotency_key is required."
+        )
+
+    # --- Step 1: Idempotency (before cart) ---
+    fingerprint = _build_fingerprint(
+        shipping_address_id,
+        shipping_method_id,
+        notes,
+    )
+
+    customer = user.customer_profile
+    existing = _find_idempotent_order(
+        customer, idempotency_key, fingerprint
+    )
+    if existing is not None:
+        return existing
+
+    # --- Step 2: Cart validation ---
+    cart = get_active_cart(user=user)
+    if cart is None:
+        # A same-key request may have committed and checked the
+        # cart out since the lookup above; replay it, not an error.
+        existing = _find_idempotent_order(
+            customer, idempotency_key, fingerprint
+        )
+        if existing is not None:
+            return existing
+        raise ValidationError(
+            "No active cart found."
+        )
+
+    # Lock the cart so concurrent checkouts of the same cart run
+    # one at a time, then re-read it: a request that waited here
+    # must not create a second order from a cart that was just
+    # checked out.
+    cart = Cart.objects.select_for_update().get(pk=cart.pk)
+    # The order that just checked this cart out may have used the
+    # same key; return it (or the conflict) rather than an error.
+    existing = _find_idempotent_order(
+        customer, idempotency_key, fingerprint
+    )
+    if existing is not None:
+        return existing
+    if cart.status != CartStatus.ACTIVE or not cart.is_active:
+        raise ValidationError(
+            "No active cart found."
+        )
+
+    cart_items = _validate_cart_items(cart)
+    product_errors = _validate_products(cart_items)
+    if product_errors:
+        raise ValidationError(product_errors)
+
+    # --- Step 3: Resolve variants and prices ---
+    resolved_items = []
+    subtotal = decimal.Decimal("0.00")
+    for item in cart_items:
+        product = item.product
+        variant = _resolve_variant(product)
+        unit_price = (
+            product.current_selling_price
+        )
+        line_total = (
+            unit_price * item.quantity
+        )
+        subtotal += line_total
+        resolved_items.append({
+            'product_variant': variant,
+            'quantity': item.quantity,
+            'unit_price': unit_price,
+            'line_total': line_total,
+            'product_name': product.name,
+            'variant_sku': variant.sku,
+        })
+
+    # --- Step 4: Validate address ---
+    address = _validate_address(
+        user, shipping_address_id
+    )
+
+    # --- Step 5: Validate shipping ---
+    shipping = _resolve_shipping(
+        address, shipping_method_id, subtotal
+    )
+    shipping_charge = shipping['shipping_charge']
+
+    # --- Step 6: Get COD payment method ---
+    # sale_api and inventory_api raise Django's
+    # ValidationError, which DRF does not translate;
+    # re-raise as an API error so clients get a 400.
+    try:
+        cod_pm = get_or_create_cod_payment_method(
+            user=user
+        )
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.messages) from exc
+
+    # --- Step 7: Create Sale ---
+    discount = decimal.Decimal("0.00")
+    tax = decimal.Decimal("0.00")
+    grand_total = (
+        subtotal - discount
+        + tax + shipping_charge
+    )
+
+    try:
+        # The nested atomic block creates a savepoint.
+        # A uniqueness race must not poison the outer
+        # order transaction before we read the winner.
+        with transaction.atomic():
+            sale = Sale.objects.create(
+                customer=customer,
+                payment_method=cod_pm,
+                sale_date=timezone.now().date(),
+                channel=Sale.SaleChannel.WEBSITE,
+                status=SaleStatus.PENDING,
+                payment_status=PaymentStatus.UNPAID,
+                subtotal_amount=subtotal,
+                discount_amount=discount,
+                tax_amount=tax,
+                shipping_amount=shipping_charge,
+                total_amount=grand_total,
+                shipping_address_snapshot=(
+                    _snapshot_address(address)
+                ),
+                shipping_method_snapshot={
+                    'id': shipping['method_id'],
+                    'name': shipping['method_name'],
+                    'code': shipping['method_code'],
+                },
+                idempotency_key=idempotency_key,
+                request_fingerprint=fingerprint,
+                notes=notes,
+                created_by=user,
+                updated_by=user,
+            )
+    except IntegrityError:
+        # Concurrent insert with same
+        # idempotency_key. Fetch and compare
+        # fingerprints.
+        existing = Sale.objects.filter(
+            customer=customer,
+            idempotency_key=idempotency_key,
+        ).first()
+        if existing is not None:
+            if (
+                existing.request_fingerprint
+                == fingerprint
+            ):
+                return existing
+            raise IdempotencyConflict(
+                "This idempotency key was already used "
+                "with different order details."
+            )
+        raise
+
+    # Assign the same invoice format used by existing POS sales.
+    sale.invoice_number = (
+        f"SALE-{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
+    )
+    sale.save(update_fields=["invoice_number", "updated_at"])
+
+    # --- Step 8: Create SaleItems ---
+    for item in resolved_items:
+        SaleItem.objects.create(
+            sale=sale,
+            product_variant=(
+                item['product_variant']
+            ),
+            quantity=item['quantity'],
+            unit_price=item['unit_price'],
+            line_total=item['line_total'],
+        )
+
+    # --- Step 9: Reserve inventory ---
+    reserve_items = [
+        {
+            'product_variant': (
+                item['product_variant']
+            ),
+            'quantity': item['quantity'],
+        }
+        for item in resolved_items
+    ]
+    try:
+        reserve_stock(
+            sale, reserve_items, user=user
+        )
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.messages) from exc
+
+    # --- Step 10: Mark cart CHECKED_OUT ---
+    cart.status = CartStatus.CHECKED_OUT
+    cart.updated_by = user
+    cart.save(
+        update_fields=[
+            'status',
+            'updated_by',
+            'updated_at',
+        ]
+    )
+
+    transaction.on_commit(
+        lambda sale_id=sale.id: _queue_order_email_after_commit(
+            sale_id, EmailType.ORDER_CONFIRMATION
+        )
+    )
+    return sale
+
+
+@transaction.atomic
+def cancel_order(*, user, sale):
+    """
+    Cancel a pending storefront order.
+
+    Only PENDING orders can be cancelled.
+    Releases active reservations idempotently.
+
+    Returns the cancelled sale.
+    """
+    # Lock the row and validate against the committed status
+    # so a concurrent staff confirmation cannot be overwritten.
+    sale = (
+        Sale.objects.select_for_update(of=("self",))
+        .select_related("customer")
+        .get(pk=sale.pk)
+    )
+
+    if sale.channel != Sale.SaleChannel.WEBSITE:
+        raise ValidationError(
+            "Only storefront orders can be cancelled here."
+        )
+
+    if sale.customer.user_id != user.id:
+        raise ValidationError(
+            "You do not have permission to cancel this order."
+        )
+
+    if sale.status != SaleStatus.PENDING:
+        raise ValidationError(
+            "Only pending orders can be cancelled."
+        )
+
+    release_reservations(sale, user=user)
+
+    sale.status = SaleStatus.CANCELLED
+    sale.updated_by = user
+    sale.save(
+        update_fields=[
+            'status',
+            'updated_by',
+            'updated_at',
+        ]
+    )
+
+    transaction.on_commit(
+        lambda sale_id=sale.id: _queue_order_email_after_commit(
+            sale_id, EmailType.ORDER_CANCELLED
+        )
+    )
+    return sale
+
+
+# ── Reservation expiry ───────────────────────
+
+
+def _expired_pending_orders(now):
+    """
+    PENDING storefront orders that hold reservations, none of
+    which is still active and unexpired.
+
+    Matches both orders whose reservations are ACTIVE but past
+    ``expires_at`` and orders whose reservations were already
+    released by the inventory expiry command.
+    """
+    reservations = InventoryReservation.objects.filter(
+        sale=OuterRef("pk"),
+    )
+    valid_reservations = reservations.filter(
+        status=ReservationStatus.ACTIVE,
+        expires_at__gt=now,
+    )
+    return (
+        Sale.objects.filter(
+            channel=Sale.SaleChannel.WEBSITE,
+            status=SaleStatus.PENDING,
+        )
+        .filter(Exists(reservations))
+        .exclude(Exists(valid_reservations))
+    )
+
+
+@transaction.atomic
+def _expire_pending_order(sale_id, now):
+    """
+    Cancel one expired PENDING order. Returns True if it was
+    cancelled.
+
+    The Sale row is locked first, as confirmation and customer
+    cancellation do, and the expiry is re-checked under the lock.
+    """
+    sale = (
+        Sale.objects.select_for_update(of=("self",))
+        .get(pk=sale_id)
+    )
+    if not _expired_pending_orders(now).filter(pk=sale.pk).exists():
+        return False
+
+    release_reservations(sale)
+
+    sale.status = SaleStatus.CANCELLED
+    sale.save(update_fields=["status", "updated_at"])
+
+    transaction.on_commit(
+        lambda: _queue_order_email_after_commit(
+            sale_id,
+            EmailType.ORDER_CANCELLED,
+            extra_context={"reservation_expired": True},
+        )
+    )
+    return True
+
+
+def expire_pending_orders(batch_size=100):
+    """
+    Cancel PENDING storefront orders whose stock reservation
+    expired before staff confirmed them, then release any other
+    expired reservations.
+
+    Safe to rerun: each order is cancelled in its own transaction,
+    and an order confirmed or cancelled meanwhile is skipped.
+
+    Returns ``(cancelled_orders, released_reservations)``.
+    """
+    now = timezone.now()
+    cancelled = 0
+    last_id = 0
+    while True:
+        sale_ids = list(
+            _expired_pending_orders(now)
+            .filter(pk__gt=last_id)
+            .order_by("pk")
+            .values_list("pk", flat=True)[:batch_size]
+        )
+        if not sale_ids:
+            break
+        last_id = sale_ids[-1]
+        for sale_id in sale_ids:
+            if _expire_pending_order(sale_id, now):
+                cancelled += 1
+
+    released = expire_reservations()
+    return cancelled, released

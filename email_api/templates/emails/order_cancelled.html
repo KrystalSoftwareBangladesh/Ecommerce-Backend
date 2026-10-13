@@ -1,0 +1,22 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Order cancelled{% endblock %}
+
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 26px; line-height: 34px; color: #172033;">
+    Your order was cancelled.
+</h1>
+<p style="font-size: 15px; line-height: 24px; color: #475467;">
+    {% if reservation_expired %}
+    Order <strong>{{ invoice_number }}</strong> has been cancelled because it was not confirmed in time. Please place a new order if you still need these items.
+    {% else %}
+    Order <strong>{{ invoice_number }}</strong> has been cancelled as requested.
+    {% endif %}
+</p>
+<p style="font-size: 15px; line-height: 24px; color: #475467;">
+    Order total: <strong>{{ currency }} {{ total_amount }}</strong>
+</p>
+<a href="{{ orders_url }}" style="display: inline-block; padding: 12px 20px; background-color: #1677ff; color: #ffffff; text-decoration: none; border-radius: 6px;">
+    Visit Best Computer Hub
+</a>
+{% endblock %}
