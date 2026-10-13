@@ -625,6 +625,16 @@ def cancel_order(*, user, sale):
 
     Returns the cancelled sale.
     """
+    if sale.channel != Sale.SaleChannel.WEBSITE:
+        raise ValidationError(
+            "Only storefront orders can be cancelled here."
+        )
+
+    if sale.customer.user_id != user.id:
+        raise ValidationError(
+            "You do not have permission to cancel this order."
+        )
+
     if sale.status != SaleStatus.PENDING:
         raise ValidationError(
             "Only pending orders can be cancelled."
