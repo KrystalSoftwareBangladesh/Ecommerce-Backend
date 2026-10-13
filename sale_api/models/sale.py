@@ -137,6 +137,14 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         default=dict,
         blank=True,
     )
+    shipping_method_snapshot = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            'Snapshot of the selected shipping method '
+            'at order placement.'
+        ),
+    )
     idempotency_key = models.CharField(
         max_length=255,
         blank=True,
