@@ -777,9 +777,7 @@ def mark_cod_payment_collected(user, sale):
             ],
         },
     )
-    accounting_transaction = post_transaction(
-        user, accounting_transaction
-    )
+    post_transaction(user, accounting_transaction)
 
     locked_sale.payment_status = "COLLECTED"
     locked_sale.updated_by = user
