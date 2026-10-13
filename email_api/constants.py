@@ -41,4 +41,14 @@ EMAIL_TEMPLATE_REGISTRY = {
         "text": "emails/password_reset.txt",
         "html": "emails/password_reset.html",
     },
+    EmailType.ORDER_CONFIRMATION: {
+        "subject": "Your Best Computer Hub order is confirmed",
+        "text": "emails/order_confirmation.txt",
+        "html": "emails/order_confirmation.html",
+    },
+    EmailType.ORDER_CANCELLED: {
+        "subject": "Your Best Computer Hub order was cancelled",
+        "text": "emails/order_cancelled.txt",
+        "html": "emails/order_cancelled.html",
+    },
 }
