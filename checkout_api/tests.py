@@ -1321,3 +1321,114 @@ class OrderListSerializerTest(
         )
         self.assertNotIn('notes', data)
         self.assertNotIn('channel', data)
+
+class StorefrontOrderAPITest(OrderCreationTestBase):
+    """Authenticated customer-facing order endpoint tests."""
+
+    def test_confirm_endpoint_creates_order(self):
+        response = self.client.post(
+            "/api/v1/checkout/confirm/",
+            {
+                "shipping_address_id": self.address.id,
+                "shipping_method_id": self.method.id,
+                "idempotency_key": "api-confirm-001",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["status"], "PENDING")
+        self.assertEqual(response.data["payment_status"], "UNPAID")
+        self.assertEqual(
+            response.data["shipping_method"],
+            {
+                "id": self.method.id,
+                "name": self.method.name,
+                "code": self.method.code,
+            },
+        )
+
+    def test_confirm_retry_returns_same_order(self):
+        payload = {
+            "shipping_address_id": self.address.id,
+            "shipping_method_id": self.method.id,
+            "idempotency_key": "api-confirm-retry-001",
+        }
+        first = self.client.post(
+            "/api/v1/checkout/confirm/", payload, format="json"
+        )
+        second = self.client.post(
+            "/api/v1/checkout/confirm/", payload, format="json"
+        )
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(first.data["id"], second.data["id"])
+
+    def test_order_detail_is_private_to_customer(self):
+        sale = self._create_order(
+            idempotency_key="private-order-001"
+        )
+        other_user = User.objects.create_user(
+            username="other-order-user",
+            email="other-order@example.com",
+            password="testpass123",
+        )
+        CustomerProfile.objects.create(
+            user=other_user,
+            customer_type="WEBSITE",
+        )
+        self.client.force_authenticate(user=other_user)
+        response = self.client.get(
+            f"/api/v1/orders/{sale.id}/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_order_list_only_contains_current_customers_orders(self):
+        sale = self._create_order(
+            idempotency_key="private-list-order-001"
+        )
+        response = self.client.get("/api/v1/orders/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [item["id"] for item in response.data],
+            [sale.id],
+        )
+
+    def test_customer_can_cancel_pending_order(self):
+        from inventory_api.models import (
+            InventoryMovement,
+            MovementType,
+            InventoryReservation,
+            ReservationStatus,
+        )
+        InventoryMovement.objects.create(
+            product_variant=self.variant,
+            quantity=50,
+            movement_type=MovementType.OPENING,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        sale = self._create_order(
+            idempotency_key="api-cancel-order-001"
+        )
+        response = self.client.post(
+            f"/api/v1/orders/{sale.id}/cancel/",
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "CANCELLED")
+        self.assertFalse(
+            InventoryReservation.objects.filter(
+                sale=sale,
+                status=ReservationStatus.ACTIVE,
+            ).exists()
+        )
+
+    def test_unauthenticated_order_list_is_rejected(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get("/api/v1/orders/")
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
