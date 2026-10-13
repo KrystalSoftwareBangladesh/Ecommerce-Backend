@@ -36,7 +36,6 @@ from shipping_api.services.shipping import (
 )
 
 
-
 logger = logging.getLogger(__name__)
 
 

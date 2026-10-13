@@ -687,6 +687,7 @@ def update_sale_status(
         sale.save(update_fields=update_fields)
         return sale
 
+
 @transaction.atomic
 def mark_cod_payment_collected(user, sale):
     """
@@ -790,4 +791,3 @@ def mark_cod_payment_collected(user, sale):
         ]
     )
     return locked_sale
-
