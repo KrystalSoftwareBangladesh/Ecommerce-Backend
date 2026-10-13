@@ -144,10 +144,7 @@ class OrderDetailSerializer(serializers.Serializer):
     items = serializers.SerializerMethodField()
     shipping_address = serializers.SerializerMethodField()
     pricing = serializers.SerializerMethodField()
-    shipping_method = OrderShippingMethodSerializer(
-        source='payment_method',
-        allow_null=True,
-    )
+    shipping_method = serializers.SerializerMethodField()
     notes = serializers.CharField(
         allow_blank=True, allow_null=True
     )
@@ -184,6 +181,12 @@ class OrderDetailSerializer(serializers.Serializer):
         snapshot = (
             obj.shipping_address_snapshot or {}
         )
+        return snapshot
+
+    def get_shipping_method(self, obj):
+        snapshot = obj.shipping_method_snapshot or {}
+        if not snapshot:
+            return None
         return snapshot
 
     def get_pricing(self, obj):
