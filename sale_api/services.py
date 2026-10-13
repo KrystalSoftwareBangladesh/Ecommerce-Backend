@@ -696,8 +696,8 @@ def mark_cod_payment_collected(user, sale):
     Accounts Receivable. Repeated collection is rejected.
     """
     locked_sale = (
-        Sale.objects.select_for_update()
-        .select_related("payment_method", "payment_method__default_account")
+        Sale.objects.select_for_update(of=("self",))
+        .select_related("payment_method")
         .get(pk=sale.pk)
     )
 
