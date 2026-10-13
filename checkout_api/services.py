@@ -632,6 +632,12 @@ def create_order(
             )
         raise
 
+    # Assign the same invoice format used by existing POS sales.
+    sale.invoice_number = (
+        f"SALE-{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
+    )
+    sale.save(update_fields=["invoice_number", "updated_at"])
+
     # --- Step 8: Create SaleItems ---
     for item in resolved_items:
         SaleItem.objects.create(
