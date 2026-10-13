@@ -156,7 +156,8 @@ class OrderDetailSerializer(serializers.Serializer):
 
     def get_items(self, obj):
         sale_items = obj.items.select_related(
-            'product_variant'
+            'product_variant',
+            'product_variant__product',
         ).all()
         result = []
         for item in sale_items:
