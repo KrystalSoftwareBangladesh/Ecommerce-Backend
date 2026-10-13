@@ -9,6 +9,8 @@ from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
 
+from checkout_api.exceptions import IdempotencyConflict
+
 from EcommerceBackend.core.choices import CartStatus
 from email_api.constants import EmailType
 from email_api.services.email import EmailService
@@ -516,10 +518,9 @@ def create_order(
             # existing order.
             return existing
         # Same key, different inputs — conflict.
-        raise ValidationError(
-            "An order with this idempotency key "
-            "already exists with different "
-            "parameters."
+        raise IdempotencyConflict(
+            "This idempotency key was already used "
+            "with different order details."
         )
 
     # --- Step 2: Cart validation ---
@@ -625,10 +626,9 @@ def create_order(
                 == fingerprint
             ):
                 return existing
-            raise ValidationError(
-                "An order with this idempotency "
-                "key already exists with "
-                "different parameters."
+            raise IdempotencyConflict(
+                "This idempotency key was already used "
+                "with different order details."
             )
         raise
 
