@@ -1,13 +1,17 @@
 import decimal
 import hashlib
 import json
+import logging
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
 
 from EcommerceBackend.core.choices import CartStatus
+from email_api.constants import EmailType
+from email_api.services.email import EmailService
 from cart_api.services.cart import get_active_cart
 from customer_api.models import CustomerAddress
 from inventory_api.services.reservation import (
@@ -28,6 +32,59 @@ from shipping_api.services.shipping import (
     calculate_shipping_charge,
     match_zone,
 )
+
+
+
+logger = logging.getLogger(__name__)
+
+
+def _queue_order_email_after_commit(sale_id, email_type):
+    """Queue email without allowing mail failures to undo an order."""
+    try:
+        sale = (
+            Sale.objects.select_related(
+                "customer__user",
+            )
+            .get(pk=sale_id)
+        )
+        user = sale.customer.user
+        recipient = user.email
+        if not recipient:
+            logger.warning(
+                "Skipping order email for sale %s: customer has no email.",
+                sale_id,
+            )
+            return
+
+        EmailService.queue(
+            email_type=email_type,
+            recipient=recipient,
+            related_user=user,
+            metadata={"sale_id": sale.id},
+            idempotency_key=(
+                f"sale-{sale.id}-{email_type.lower()}"
+            ),
+            context={
+                "customer_name": (
+                    getattr(user, "full_name", None)
+                    or user.username
+                ),
+                "invoice_number": (
+                    sale.invoice_number or f"#{sale.id}"
+                ),
+                "total_amount": sale.total_amount,
+                "currency": "BDT",
+                "orders_url": getattr(
+                    settings, "FRONTEND_BASE_URL", ""
+                ),
+            },
+        )
+    except Exception:
+        logger.exception(
+            "Could not queue %s email for sale %s.",
+            email_type,
+            sale_id,
+        )
 
 
 def _validate_cart(user):
@@ -612,6 +669,11 @@ def create_order(
         ]
     )
 
+    transaction.on_commit(
+        lambda sale_id=sale.id: _queue_order_email_after_commit(
+            sale_id, EmailType.ORDER_CONFIRMATION
+        )
+    )
     return sale
 
 
@@ -652,4 +714,9 @@ def cancel_order(*, user, sale):
         ]
     )
 
+    transaction.on_commit(
+        lambda sale_id=sale.id: _queue_order_email_after_commit(
+            sale_id, EmailType.ORDER_CANCELLED
+        )
+    )
     return sale
