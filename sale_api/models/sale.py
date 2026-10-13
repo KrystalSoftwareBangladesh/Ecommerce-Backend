@@ -168,6 +168,12 @@ class Sale(TimeStampedModel, UserStampedModel, SoftDeleteModel):
     )
 
     class Meta:
+        permissions = [
+            (
+                'collect_sale_payment',
+                'Can collect sale payment',
+            ),
+        ]
         unique_together = (
             ('invoice_number',),
             ('customer', 'idempotency_key'),
