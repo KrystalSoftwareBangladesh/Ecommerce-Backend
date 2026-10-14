@@ -63,9 +63,20 @@ jobs:
 
             echo "🧹 Collecting static files"
             python manage.py collectstatic --noinput
-
+            
+            echo "🔍 Checking deployment user"
+            whoami
+            
+            echo "🔍 Checking systemctl path"
+            command -v systemctl
+            
+            echo "🔍 Checking sudo permissions"
+            sudo -n -l
+            
             echo "♻️ Restarting Gunicorn"
-            sudo systemctl restart gunicorn-best-computer-hub.service
+            sudo -n /usr/bin/systemctl restart gunicorn-best-computer-hub.service
+            
+            echo "✅ Gunicorn restarted successfully"
 
             echo "✅ Production deployment completed successfully"
 
