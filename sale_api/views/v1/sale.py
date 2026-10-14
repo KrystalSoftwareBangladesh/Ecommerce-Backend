@@ -1,5 +1,7 @@
 # sale_api/views/v1/sale.py
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import viewsets, status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,8 +15,10 @@ from sale_api.serializers import (
     SaleStatusUpdateSerializer
 )
 from sale_api.services import (
-    create_sale, update_sale, update_sale_status
+    create_sale, update_sale, update_sale_status,
+    mark_cod_payment_collected,
 )
+from EcommerceBackend.core.permission import CustomPermissionAccessMixin
 
 
 class SaleFilter(django_filters.FilterSet):
@@ -48,7 +52,10 @@ class SaleFilter(django_filters.FilterSet):
     )
 )
 @extend_schema(tags=["Sales"])
-class SaleViewSet(viewsets.ModelViewSet):
+class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
+    custom_permissions = {
+        'mark_cod_paid': 'collect_sale_payment',
+    }
     queryset = Sale.objects.none()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = SaleFilter
@@ -87,7 +94,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                 request.user,
                 serializer.validated_data
             )
-        except Exception as e:
+        except (DjangoValidationError, DRFValidationError) as e:
             return Response({
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -115,7 +122,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                     account=account,
                     payment_method=payment_method,
                 )
-        except Exception as e:
+        except (DjangoValidationError, DRFValidationError) as e:
             return Response({
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -144,11 +151,35 @@ class SaleViewSet(viewsets.ModelViewSet):
                 account=serializer.validated_data.get('account'),
                 payment_method=serializer.validated_data.get('payment_method'),
             )
-        except Exception as e:
+        except (DjangoValidationError, DRFValidationError) as e:
             return Response({
                 'detail': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='mark-paid',
+    )
+    def mark_cod_paid(self, request, pk=None):
+        sale = self.get_object()
+        try:
+            sale = mark_cod_payment_collected(
+                request.user,
+                sale,
+            )
+        except (DjangoValidationError, DRFValidationError) as exc:
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({
+            'id': sale.id,
+            'status': sale.status,
+            'payment_status': sale.payment_status,
+            'message': 'Payment collected.',
+        })
 
     @action(detail=False, methods=['get'], url_path='channels')
     def channels(self, request):

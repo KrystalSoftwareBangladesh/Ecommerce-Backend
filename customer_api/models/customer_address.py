@@ -85,13 +85,6 @@ class CustomerAddress(
             models.Index(fields=["customer", "address_type"]),
             models.Index(fields=["customer", "is_active"]),
         ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["customer", "address_type"],
-                condition=models.Q(is_active=True),
-                name="unique_active_customer_address_type",
-            ),
-        ]
         verbose_name = "Customer Address"
         verbose_name_plural = "Customer Addresses"
 

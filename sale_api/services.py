@@ -10,10 +10,20 @@ from .models import (
     Sale,
     SaleItem,
     SaleStatus,
+    PaymentStatus,
     get_next_sale_statuses,
 )
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
-from transaction_api.models import TransactionType
+from inventory_api.services.reservation import (
+    consume_reservations,
+    get_available_stock,
+    release_reservations,
+)
+from product_api.models import ProductVariant
+from transaction_api.models import (
+    AccountingTransactionLine,
+    TransactionType,
+)
 from transaction_api.services import create_transaction, post_transaction
 
 
@@ -53,6 +63,145 @@ def get_or_create_sales_revenue_account(user=None):
             created_by=user,
             updated_by=user,
         )
+
+
+SHIPPING_REVENUE_ACCOUNT_NAME = 'Shipping Revenue'
+SHIPPING_REVENUE_ACCOUNT_DESCRIPTION = (
+    'System-managed revenue account used when '
+    'recording shipping charges on orders.'
+)
+
+ACCOUNTS_RECEIVABLE_ACCOUNT_NAME = (
+    'Accounts Receivable'
+)
+ACCOUNTS_RECEIVABLE_ACCOUNT_DESCRIPTION = (
+    'System-managed asset account used for '
+    'COD orders pending payment collection.'
+)
+
+COD_PAYMENT_METHOD_CODE = 'COD'
+COD_PAYMENT_METHOD_NAME = 'Cash on Delivery'
+
+
+def _get_or_create_account(
+    name, account_type, description, user=None
+):
+    """
+    Shared helper for safe account provisioning.
+
+    Looks up by name + account_type.
+    - If found and active: reuse it.
+    - If found but inactive or soft-deleted: raise
+      ValidationError. Do not silently reactivate.
+    - If not found: create it.
+    Uses select_for_update() for concurrency safety.
+    """
+    with transaction.atomic():
+        account = (
+            ChartOfAccount.objects
+            .select_for_update()
+            .filter(
+                name=name,
+                account_type=account_type,
+            )
+            .order_by('id')
+            .first()
+        )
+
+        if account:
+            if not account.is_active:
+                raise ValidationError(
+                    f"Account '{name}' ({account_type}) "
+                    "exists but is inactive. "
+                    "Reactivate it or create a new one."
+                )
+            if account.deleted_at is not None:
+                raise ValidationError(
+                    f"Account '{name}' ({account_type}) "
+                    "exists but is soft-deleted. "
+                    "Restore it or create a new one."
+                )
+            return account
+
+        return ChartOfAccount.objects.create(
+            name=name,
+            account_type=account_type,
+            description=description,
+            created_by=user,
+            updated_by=user,
+        )
+
+
+def get_or_create_shipping_revenue_account(
+    user=None,
+):
+    return _get_or_create_account(
+        name=SHIPPING_REVENUE_ACCOUNT_NAME,
+        account_type=AccountType.REVENUE,
+        description=SHIPPING_REVENUE_ACCOUNT_DESCRIPTION,
+        user=user,
+    )
+
+
+def get_or_create_accounts_receivable_account(
+    user=None,
+):
+    return _get_or_create_account(
+        name=ACCOUNTS_RECEIVABLE_ACCOUNT_NAME,
+        account_type=AccountType.ASSET,
+        description=ACCOUNTS_RECEIVABLE_ACCOUNT_DESCRIPTION,
+        user=user,
+    )
+
+
+def get_or_create_cod_payment_method(user=None):
+    """
+    Return the COD PaymentMethod.
+
+    Raises ValidationError if:
+    - No PaymentMethod with code 'COD' exists.
+    - The PaymentMethod has no default_account.
+    - The default_account is not an active ASSET.
+    """
+    from .models import PaymentMethod
+
+    pm = PaymentMethod.objects.filter(
+        code=COD_PAYMENT_METHOD_CODE,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).first()
+
+    if pm is None:
+        raise ValidationError(
+            f"Payment method '{COD_PAYMENT_METHOD_CODE}' "
+            "is not configured. Please contact support."
+        )
+
+    if pm.default_account is None:
+        raise ValidationError(
+            f"Payment method '{COD_PAYMENT_METHOD_CODE}' "
+            "has no default account configured."
+        )
+
+    account = pm.default_account
+    if (
+        not account.is_active
+        or account.deleted_at is not None
+    ):
+        raise ValidationError(
+            f"Payment method "
+            f"'{COD_PAYMENT_METHOD_CODE}' "
+            "references an inactive account."
+        )
+
+    if account.account_type != AccountType.ASSET:
+        raise ValidationError(
+            f"Payment method "
+            f"'{COD_PAYMENT_METHOD_CODE}' "
+            "must reference an ASSET account."
+        )
+
+    return pm
 
 
 def _is_blank_invoice_number(value):
@@ -212,10 +361,82 @@ def _create_sale_return_transaction(user, sale):
     return post_transaction(user, accounting_transaction)
 
 
+def _create_storefront_transaction(
+    user, sale, receivable, product_revenue
+):
+    """
+    Create accounting transaction for a storefront
+    order confirmation.
+
+    Dr Accounts Receivable = subtotal (product)
+    Cr Product Revenue      = subtotal
+    Dr Accounts Receivable  = shipping
+    Cr Shipping Revenue     = shipping
+
+    Does NOT record cash — that happens at COD
+    collection.
+    """
+    shipping_revenue = (
+        get_or_create_shipping_revenue_account(
+            user=user
+        )
+    )
+    lines = [
+        {
+            'account': receivable,
+            'description': (
+                f'Product revenue for sale #{sale.id}'
+            ),
+            'debit_amount': sale.subtotal_amount,
+            'credit_amount': Decimal('0'),
+        },
+        {
+            'account': product_revenue,
+            'description': (
+                f'Product revenue for sale #{sale.id}'
+            ),
+            'debit_amount': Decimal('0'),
+            'credit_amount': sale.subtotal_amount,
+        },
+    ]
+    if sale.shipping_amount > 0:
+        lines.append({
+            'account': receivable,
+            'description': (
+                f'Shipping revenue for sale #{sale.id}'
+            ),
+            'debit_amount': sale.shipping_amount,
+            'credit_amount': Decimal('0'),
+        })
+        lines.append({
+            'account': shipping_revenue,
+            'description': (
+                f'Shipping revenue for sale #{sale.id}'
+            ),
+            'debit_amount': Decimal('0'),
+            'credit_amount': sale.shipping_amount,
+        })
+
+    txn = create_transaction(
+        user,
+        {
+            'transaction_date': sale.sale_date,
+            'transaction_type': TransactionType.SALE,
+            'reference': _build_sale_reference(sale),
+            'description': (
+                f'Storefront sale recorded for '
+                f'customer {sale.customer}.'
+            ),
+            'lines': lines,
+        },
+    )
+    return post_transaction(user, txn)
+
+
 def validate_stock(product_variant, quantity,):
-    available = InventoryMovement.objects.filter(
-        product_variant=product_variant,
-    ).aggregate(stock=Sum('quantity'))['stock'] or 0
+    # Active movements minus active, unexpired storefront
+    # reservations, so a POS sale cannot take reserved stock.
+    available = get_available_stock(product_variant)
     if available < quantity:
         raise ValidationError(f'Insufficient stock for {product_variant}.')
 
@@ -306,13 +527,26 @@ def update_sale(user, sale, data):
 
 
 def _deduct_sale_stock(user, sale):
-    for item in sale.items.all():
+    # Lock variant rows in primary-key order, as the storefront
+    # reservation services do, so concurrent POS confirmations and
+    # reservations for the same variant are serialised.
+    items = list(sale.items.order_by('product_variant_id'))
+    locked_variants = {}
+    for item in items:
+        pk = item.product_variant_id
+        if pk not in locked_variants:
+            locked_variants[pk] = (
+                ProductVariant.objects.select_for_update().get(pk=pk)
+            )
+
+    for item in items:
+        variant = locked_variants[item.product_variant_id]
         validate_stock(
-            item.product_variant,
+            variant,
             item.quantity,
         )
         InventoryMovement.objects.create(
-            product_variant=item.product_variant,
+            product_variant=variant,
             quantity=-item.quantity,
             movement_type=MovementType.SALE,
             reference_type=ReferenceType.ORDER,
@@ -340,52 +574,148 @@ def update_sale_status(
     account=None,
     payment_method=None,
 ):
-    if sale.status == next_status:
-        return sale
+    with transaction.atomic():
+        # Lock the row and check the transition against the
+        # committed status, not the caller's possibly stale
+        # instance, so concurrent transitions cannot overwrite
+        # each other.
+        sale = (
+            Sale.objects.select_for_update(of=('self',))
+            .get(pk=sale.pk)
+        )
+        if sale.status == next_status:
+            return sale
 
-    allowed_statuses = get_next_sale_statuses(sale.status)
-    if next_status not in allowed_statuses:
-        raise ValidationError(
-            f'Cannot change sale status from {sale.status} to {next_status}.'
+        allowed_statuses = get_next_sale_statuses(sale.status)
+        if next_status not in allowed_statuses:
+            raise ValidationError(
+                f'Cannot change sale status from {sale.status} '
+                f'to {next_status}.'
+            )
+
+        is_storefront = (
+            sale.channel == Sale.SaleChannel.WEBSITE
         )
 
-    with transaction.atomic():
         if next_status == SaleStatus.CONFIRMED:
-            if payment_method is not None:
-                sale.payment_method = payment_method
-            resolved_account = _resolve_sale_account(
-                sale.payment_method,
-                account if account is not None else sale.account,
-            )
-            sale.account = resolved_account
-            _validate_sale_account(sale.account)
-            _validate_sale_totals(sale)
-            if sale.accounting_transaction_id is not None:
-                raise ValidationError(
-                    'This sale is already linked to an accounting transaction.'
+            if is_storefront:
+                # Storefront confirmation: consume
+                # reservations and use receivable
+                # accounting.
+                has_reservations = (
+                    sale.reservations.exists()
                 )
-            _deduct_sale_stock(user, sale)
-            sale.accounting_transaction = _create_sale_transaction(user, sale)
+                if not has_reservations:
+                    raise ValidationError(
+                        "Storefront order has no inventory "
+                        "reservation. It cannot be confirmed; "
+                        "review the order before retrying."
+                    )
+                # Confirmation posts subtotal + shipping to
+                # receivable and COD collection settles the order
+                # total; refuse totals the two cannot agree on.
+                if (
+                    sale.discount_amount
+                    or sale.tax_amount
+                    or sale.total_amount
+                    != sale.subtotal_amount + sale.shipping_amount
+                ):
+                    raise ValidationError(
+                        "Storefront order total must equal subtotal "
+                        "plus shipping; discounts and taxes are not "
+                        "supported for storefront orders. Review the "
+                        "order before confirming."
+                    )
+                consume_reservations(sale, user=user)
+
+                receivable = (
+                    get_or_create_accounts_receivable_account(
+                        user=user
+                    )
+                )
+                product_revenue = (
+                    get_or_create_sales_revenue_account(
+                        user=user
+                    )
+                )
+                sale.accounting_transaction = (
+                    _create_storefront_transaction(
+                        user,
+                        sale,
+                        receivable,
+                        product_revenue,
+                    )
+                )
+                sale.account = receivable
+            else:
+                # POS confirmation: existing logic.
+                if payment_method is not None:
+                    sale.payment_method = payment_method
+                resolved_account = (
+                    _resolve_sale_account(
+                        sale.payment_method,
+                        (
+                            account
+                            if account is not None
+                            else sale.account
+                        ),
+                    )
+                )
+                sale.account = resolved_account
+                _validate_sale_account(sale.account)
+                _validate_sale_totals(sale)
+                if (
+                    sale.accounting_transaction_id
+                    is not None
+                ):
+                    raise ValidationError(
+                        'This sale is already linked '
+                        'to an accounting transaction.'
+                    )
+                _deduct_sale_stock(user, sale)
+                sale.accounting_transaction = (
+                    _create_sale_transaction(
+                        user, sale
+                    )
+                )
+
         elif next_status == SaleStatus.RETURNED:
+            if is_storefront:
+                raise ValidationError(
+                    'Storefront returns are not '
+                    'supported in v1. Please '
+                    'contact support.'
+                )
+            # POS return: existing logic.
             _validate_sale_account(sale.account)
             if sale.accounting_transaction_id is None:
                 raise ValidationError(
-                    'Confirmed sale is missing its accounting '
-                    'transaction link.'
+                    'Confirmed sale is missing its '
+                    'accounting transaction link.'
                 )
             if sale.return_transaction_id is not None:
                 raise ValidationError(
-                    'This sale already has a return transaction.'
+                    'This sale already has a return '
+                    'transaction.'
                 )
             _restock_returned_sale(user, sale)
-            sale.return_transaction = _create_sale_return_transaction(
-                user,
-                sale,
+            sale.return_transaction = (
+                _create_sale_return_transaction(
+                    user, sale
+                )
             )
+
+        elif next_status == SaleStatus.CANCELLED:
+            # Release any active reservations.
+            release_reservations(sale, user=user)
 
         sale.status = next_status
         sale.updated_by = user
-        update_fields = ['status', 'updated_by', 'updated_at']
+        update_fields = [
+            'status',
+            'updated_by',
+            'updated_at',
+        ]
         if next_status == SaleStatus.CONFIRMED:
             update_fields.extend([
                 'payment_method',
@@ -393,6 +723,141 @@ def update_sale_status(
                 'accounting_transaction',
             ])
         elif next_status == SaleStatus.RETURNED:
-            update_fields.append('return_transaction')
+            update_fields.append(
+                'return_transaction'
+            )
         sale.save(update_fields=update_fields)
         return sale
+
+
+@transaction.atomic
+def mark_cod_payment_collected(user, sale):
+    """
+    Record COD collection after a website order is delivered.
+
+    Debit the configured COD asset account and credit
+    Accounts Receivable. Repeated collection is rejected.
+    """
+    locked_sale = (
+        Sale.objects.select_for_update(of=("self",))
+        .select_related("payment_method")
+        .get(pk=sale.pk)
+    )
+
+    if locked_sale.channel != Sale.SaleChannel.WEBSITE:
+        raise ValidationError(
+            "Only storefront COD orders can be marked paid here."
+        )
+
+    if (
+        locked_sale.payment_method is None
+        or locked_sale.payment_method.code != COD_PAYMENT_METHOD_CODE
+    ):
+        raise ValidationError(
+            "This order is not a Cash on Delivery order."
+        )
+
+    if locked_sale.status != SaleStatus.DELIVERED:
+        raise ValidationError(
+            "Order must be delivered before payment can be collected."
+        )
+
+    if locked_sale.payment_status == PaymentStatus.COLLECTED:
+        raise ValidationError(
+            "Payment has already been collected."
+        )
+
+    cash_account = locked_sale.payment_method.default_account
+    if (
+        cash_account is None
+        or not cash_account.is_active
+        or cash_account.deleted_at is not None
+        or cash_account.account_type != AccountType.ASSET
+    ):
+        raise ValidationError(
+            "The COD payment method must have an active asset account."
+        )
+
+    if locked_sale.accounting_transaction_id is None:
+        raise ValidationError(
+            "Order has no confirmation accounting entry."
+        )
+
+    receivable = get_or_create_accounts_receivable_account(
+        user=user
+    )
+    amount = locked_sale.total_amount
+    if amount <= 0:
+        raise ValidationError(
+            "Order total must be greater than zero."
+        )
+
+    # Settle exactly what confirmation put on the receivable, and
+    # refuse if that no longer matches the order total.
+    posted = AccountingTransactionLine.objects.filter(
+        transaction_id=locked_sale.accounting_transaction_id,
+        account=receivable,
+    ).aggregate(
+        debit=Sum("debit_amount"),
+        credit=Sum("credit_amount"),
+    )
+    receivable_due = (
+        (posted["debit"] or Decimal("0.00"))
+        - (posted["credit"] or Decimal("0.00"))
+    )
+    if receivable_due != amount:
+        raise ValidationError(
+            f"Accounts Receivable posted at confirmation "
+            f"({receivable_due}) does not match the order total "
+            f"({amount}). Review the order before recording payment."
+        )
+
+    accounting_transaction = create_transaction(
+        user,
+        {
+            "transaction_date": locked_sale.sale_date,
+            "transaction_type": TransactionType.SALE,
+            "reference": _build_sale_reference(
+                locked_sale, suffix="COD-COLLECTED"
+            ),
+            "description": (
+                f"COD payment collected for sale "
+                f"#{locked_sale.id}."
+            ),
+            "lines": [
+                {
+                    "account": cash_account,
+                    "description": (
+                        f"COD collection for sale "
+                        f"#{locked_sale.id}"
+                    ),
+                    "debit_amount": amount,
+                    "credit_amount": Decimal("0.00"),
+                },
+                {
+                    "account": receivable,
+                    "description": (
+                        f"Accounts receivable settled "
+                        f"for sale #{locked_sale.id}"
+                    ),
+                    "debit_amount": Decimal("0.00"),
+                    "credit_amount": amount,
+                },
+            ],
+        },
+    )
+    locked_sale.collection_transaction = post_transaction(
+        user, accounting_transaction
+    )
+
+    locked_sale.payment_status = PaymentStatus.COLLECTED
+    locked_sale.updated_by = user
+    locked_sale.save(
+        update_fields=[
+            "collection_transaction",
+            "payment_status",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+    return locked_sale

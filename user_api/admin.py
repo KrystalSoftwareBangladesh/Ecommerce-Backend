@@ -6,8 +6,9 @@ from user_api.models import User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['id', 'full_name', 'username', 'email', 'is_deleted']
-    list_per_page = 10
+    list_display = [
+        'id', 'full_name', 'username', 'email', 'is_deleted', 'date_joined']
+    list_per_page = 15
     list_display_links = ('full_name', 'username', 'email')
     search_fields = [
         "username",

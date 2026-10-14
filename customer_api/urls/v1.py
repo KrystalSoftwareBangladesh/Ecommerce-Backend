@@ -1,7 +1,13 @@
+# customer_api/urls/v1.py
 from rest_framework.routers import DefaultRouter
 from customer_api.views import v1
 
 router = DefaultRouter()
 router.register(r"customers", v1.CustomerViewSet, basename="customer")
+router.register(
+    r"customer-addresses",
+    v1.CustomerAddressViewSet,
+    basename="customer-address",
+)
 
 urlpatterns = router.urls

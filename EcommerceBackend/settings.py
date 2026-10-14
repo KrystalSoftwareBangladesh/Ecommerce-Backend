@@ -18,6 +18,14 @@ from .env import (
     ALLOWED_HOSTS_SETTINGS,
     CORS_ALLOWED_ORIGINS_SETTINGS,
     CSRF_TRUSTED_ORIGINS_SETTINGS,
+    SMTP_HOST_SETTINGS,
+    SMTP_PASSWORD_SETTINGS,
+    SMTP_PORT_SETTINGS,
+    SMTP_USE_TLS_SETTINGS,
+    SMTP_USERNAME_SETTINGS,
+    EMAIL_FROM_SETTINGS,
+    CELERY_BROKER_URL_SETTINGS,
+    FRONTEND_BASE_URL_SETTINGS,
 )
 from . import env
 
@@ -76,8 +84,14 @@ LOCAL_APPS = [
     'request_log_api',
     'blog_api',
     'banner_api',
+    'email_api',
+    'shipping_api',
+    'checkout_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# Checkout reservation expiry in minutes.
+CHECKOUT_RESERVATION_MINUTES = 30
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -199,6 +213,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Frontend
+FRONTEND_BASE_URL = FRONTEND_BASE_URL_SETTINGS
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -248,3 +264,28 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
+
+# Celery
+CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS
+# Run by a separate `celery beat` process; see docs/deployment.md.
+CELERY_BEAT_SCHEDULE = {
+    "expire-pending-orders": {
+        "task": "checkout_api.tasks.expire_pending_orders_task",
+        "schedule": 5 * 60,
+    },
+    "recover-stale-email-logs": {
+        "task": "email_api.tasks.recover_stale_email_logs_task",
+        "schedule": 10 * 60,
+    },
+}
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = SMTP_HOST_SETTINGS
+EMAIL_PORT = SMTP_PORT_SETTINGS
+EMAIL_HOST_USER = SMTP_USERNAME_SETTINGS
+EMAIL_HOST_PASSWORD = SMTP_PASSWORD_SETTINGS
+EMAIL_USE_TLS = SMTP_USE_TLS_SETTINGS
+DEFAULT_FROM_EMAIL = EMAIL_FROM_SETTINGS
+EMAIL_TIMEOUT = 30
+PASSWORD_RESET_TIMEOUT = 3600  # 1 hour, in seconds

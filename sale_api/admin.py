@@ -28,10 +28,16 @@ class SaleAdmin(admin.ModelAdmin):
         'invoice_number',
         'channel',
         'status',
+        'payment_status',
         'total_amount',
     ]
-    list_filter = ['channel', 'status', 'sale_date']
-    search_fields = ['invoice_number']
+    list_filter = [
+        'channel',
+        'status',
+        'payment_status',
+        'sale_date',
+    ]
+    search_fields = ['invoice_number', 'idempotency_key']
 
 
 @admin.register(SaleItem)

@@ -57,6 +57,14 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
+### Run Celery Worker & Beat
+```bash
+celery -A EcommerceBackend worker --loglevel=info
+```
+```bash
+celery -A EcommerceBackend beat --loglevel=info
+```
+
 ### Seeding Data
 Export categories
 ```bash

@@ -225,9 +225,16 @@ Full specification: [api-request-logging-plan.md](api-request-logging-plan.md).
 
 ### Background jobs, caching, email, signals
 
-**None are present.** There is no Celery, no task queue, no cron, no cache
-backend, no email backend and no Django signal handlers anywhere in the
-codebase. Introducing any of these is an architectural change — ask first.
+- **Celery** with a Redis broker (`EcommerceBackend/celery.py`,
+  `CELERY_BROKER_URL`). Tasks: `email_api.tasks.send_email_task`, and two
+  periodic tasks run by **Celery Beat** from `CELERY_BEAT_SCHEDULE` —
+  `checkout_api.tasks.expire_pending_orders_task` (every 5 min) and
+  `email_api.tasks.recover_stale_email_logs_task` (every 10 min). See
+  [deployment.md](deployment.md).
+- **Email**: SMTP backend; every email is an `EmailLog` row sent by the
+  worker after commit.
+- No cache backend and no Django signal handlers. Adding either is an
+  architectural change — ask first.
 
 ### File and media handling
 
@@ -249,8 +256,11 @@ codebase. Introducing any of these is an architectural change — ask first.
 - `deploy_bestcomputerhub_dev.yml` — on push to `dev`, scp the tree to the
   dev server, then `pip install -r requirements.txt`, `migrate`,
   `collectstatic`, restart gunicorn.
+- `deploy_bestcomputerhub_prod.yml` — the same steps on push to `prod`.
 - `deploy_zayrahlife_dev.yml.disable` and `deploy_bikkhato_dev.yml.disable`
   are the same workflow, currently disabled.
+- The workflows restart only Gunicorn. The Celery worker and Beat are
+  managed on the server; see [deployment.md](deployment.md).
 
 ---
 

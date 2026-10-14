@@ -49,3 +49,53 @@ class InventoryMovement(TimeStampedModel, UserStampedModel, SoftDeleteModel):
             models.Index(fields=['product_variant']),
             models.Index(fields=['movement_type']),
         ]
+
+
+class ReservationStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    CONSUMED = 'CONSUMED', 'Consumed'
+    RELEASED = 'RELEASED', 'Released'
+
+
+class InventoryReservation(
+    TimeStampedModel, UserStampedModel
+):
+    product_variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        related_name='reservations',
+    )
+    sale = models.ForeignKey(
+        'sale_api.Sale',
+        on_delete=models.CASCADE,
+        related_name='reservations',
+    )
+    quantity = models.PositiveIntegerField()
+    status = models.CharField(
+        max_length=20,
+        choices=ReservationStatus.choices,
+        default=ReservationStatus.ACTIVE,
+        db_index=True,
+    )
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = 'Inventory Reservation'
+        verbose_name_plural = 'Inventory Reservations'
+        indexes = [
+            models.Index(
+                fields=['product_variant', 'status'],
+            ),
+            models.Index(
+                fields=['sale', 'status'],
+            ),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        return (
+            f"Reservation #{self.pk}: "
+            f"{self.quantity} of "
+            f"{self.product_variant} "
+            f"({self.status})"
+        )

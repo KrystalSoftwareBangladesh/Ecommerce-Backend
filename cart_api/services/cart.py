@@ -27,21 +27,6 @@ def get_active_cart(*, user):
     ).first()
 
 
-# @transaction.atomic
-# def get_or_create_active_cart(*, user):
-#     """
-#     Return the user's active cart.
-#     Create one if it does not exist.
-#     """
-#     cart = get_active_cart(user=user)
-
-#     if cart:
-#         return cart
-
-#     return Cart.objects.create(
-#         created_by=user,
-#         updated_by=user,
-#     )
 @transaction.atomic
 def get_or_create_active_cart(
     *,
@@ -132,7 +117,7 @@ def checkout_cart(
             "Only active carts can be checked out."
         )
 
-    if not cart.items.filter(is_active=True).exists():
+    if not cart.cart_items.filter(is_active=True).exists():
         raise ValidationError(
             "Cannot checkout an empty cart."
         )
