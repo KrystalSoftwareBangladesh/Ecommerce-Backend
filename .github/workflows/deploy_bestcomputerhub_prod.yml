@@ -65,7 +65,7 @@ jobs:
             python manage.py collectstatic --noinput
 
             echo "♻️ Restarting Gunicorn"
-            sudo systemctl restart gunicorn-best-computer-hub.service
+            sudo -n /usr/bin/systemctl restart gunicorn-best-computer-hub.service
 
             echo "✅ Production deployment completed successfully"
 
