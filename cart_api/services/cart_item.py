@@ -1,11 +1,13 @@
 # cart_api/services/cart_item.py
 from django.db import transaction
+from django.db.models import Prefetch
 
 from rest_framework.exceptions import ValidationError
 
 from EcommerceBackend.core.choices import CartStatus
 from cart_api.models import CartItem
 from cart_api.services.cart import get_or_create_active_cart
+from product_api.models import ProductImage
 
 
 def list_cart_items(*, user):
@@ -14,9 +16,22 @@ def list_cart_items(*, user):
     """
     cart = get_or_create_active_cart(user=user)
 
+    default_image_qs = ProductImage.objects.filter(
+        is_default=True,
+        is_active=True,
+        deleted_at__isnull=True,
+    )
+
     return (
         cart.cart_items.filter(is_active=True)
         .select_related("product")
+        .prefetch_related(
+            Prefetch(
+                "product__images",
+                queryset=default_image_qs,
+                to_attr="_default_images",
+            ),
+        )
         .order_by("created_at")
     )
 
