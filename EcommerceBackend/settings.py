@@ -242,6 +242,7 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    "idempotency-key",
     # Read by request_log_api.middleware.RequestLogMiddleware.
     "x-request-id",
     "x-anonymous-id",
