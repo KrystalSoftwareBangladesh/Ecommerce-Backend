@@ -22,9 +22,12 @@ class TokenSerializer(serializers.Serializer):
         credential = attrs["credential"].strip().lower()
         password = attrs["password"]
 
-        user = self._get_user(credential, password)
+        user = self._get_user(credential)
         if not user:
-            raise AuthenticationFailed("Invalid credentials")
+            raise AuthenticationFailed("User not found")
+
+        if not user.check_password(password):
+            raise AuthenticationFailed("Invalid password")
 
         refresh = RefreshToken.for_user(user)
 
@@ -38,15 +41,11 @@ class TokenSerializer(serializers.Serializer):
             "message": "Login successful",
         }
 
-    def _get_user(self, credential, password):
-        user = (
+    def _get_user(self, credential):
+        return (
             User.objects.filter(email=credential).first()
             or User.objects.filter(username=credential).first()
         )
-
-        if user and user.check_password(password):
-            return user
-        return None
 
 
 class ChangePasswordSerializer(serializers.Serializer):
