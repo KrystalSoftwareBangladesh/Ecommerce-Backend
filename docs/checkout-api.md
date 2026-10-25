@@ -106,7 +106,10 @@ stock is reserved at confirmation.
 ## 2. Place the order — `POST /checkout/confirm/`
 
 Creates the order from the active cart, reserves stock and checks the cart
-out. The order starts as `PENDING` / `UNPAID`.
+out. The order starts as `PENDING` / `UNPAID`. A product that has no
+variant is sold through a default variant created on first sale (SKU
+`P-<product id>`); a product whose variant has no inventory ledger is sold
+**untracked** — see *Stock reservation and expiry* below.
 
 Request:
 
@@ -122,7 +125,7 @@ Responses:
 | Status | When |
 |---|---|
 | **201** | Order created, **or** an identical retry (same key, same inputs) — body is the order detail (section 4), same `id` as the first response. |
-| **400** | Field errors; no active cart (`"No active cart found."`); empty cart; inactive or unpriced product; product with no or several active variants; invalid address; no shipping zone or rate; **out of stock** (`"Insufficient stock for …"`); COD payment not configured. Nothing is created. |
+| **400** | Field errors; no active cart (`"No active cart found."`); empty cart; inactive or unpriced product; product with several active variants; invalid address; no shipping zone or rate; **out of stock** (`"Insufficient stock for …"`, stock-tracked products only); COD payment not configured. Nothing is created. |
 | **409** | The `idempotency_key` was already used with different inputs. Nothing is created. |
 | **401** | Not authenticated. |
 
@@ -150,6 +153,17 @@ Stock is held for 30 minutes (`CHECKOUT_RESERVATION_MINUTES`). If staff
 have not confirmed the order by then, it is **cancelled automatically**
 (status `CANCELLED`) and the customer gets an email asking them to place a
 new order. Cancellation happens within about 5 minutes of expiry.
+
+**Untracked products (approved 2026-10-25).** Stock is only reserved for a
+variant that has an inventory ledger (at least one active inventory
+movement). A variant with no ledger — every imported catalogue product
+until its opening stock is recorded — is sold *untracked*: no reservation
+is created, the order never expires, and staff confirmation records no
+stock movement. Once opening stock exists for the variant, new orders are
+reserved and deducted as usual; a pending untracked order confirmed after
+stock was recorded is stock-checked and deducted at confirmation. The
+frontend needs no change: `product_variant.sku` in the order detail is the
+default `P-<product id>` for such products.
 
 ## 3. Order list — `GET /orders/`
 
