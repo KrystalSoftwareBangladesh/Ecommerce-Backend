@@ -18,6 +18,21 @@ class ShippingZoneListSerializer(serializers.ModelSerializer):
         ]
 
 
+class ShippingZoneOptionSerializer(serializers.ModelSerializer):
+    """Storefront-facing zone, used to pick a delivery area."""
+
+    class Meta:
+        model = ShippingZone
+        fields = [
+            "id",
+            "name",
+            "code",
+            "description",
+            "is_default",
+            "display_order",
+        ]
+
+
 class ShippingZoneDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingZone

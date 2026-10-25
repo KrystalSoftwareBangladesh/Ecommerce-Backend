@@ -4,6 +4,7 @@ from rest_framework import status
 
 from user_api.models import User
 from customer_api.models import CustomerProfile, CustomerAddress
+from shipping_api.models import ShippingZone
 
 
 class CustomerAddressAPITestCase(TestCase):
@@ -95,6 +96,60 @@ class CustomerAddressAPITestCase(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
             resp.data["address_type"], "SHIPPING"
+        )
+
+    def test_create_address_with_shipping_zone(self):
+        """A shipping address can carry its delivery zone."""
+        zone = ShippingZone.objects.create(
+            name="Inside Dhaka", code="inside-dhaka"
+        )
+        resp = self._create_address(
+            address_type="SHIPPING", shipping_zone=zone.id
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data["shipping_zone"], zone.id)
+        self.assertEqual(
+            resp.data["shipping_zone_name"], "Inside Dhaka"
+        )
+        self.assertEqual(
+            resp.data["shipping_zone_code"], "inside-dhaka"
+        )
+
+    def test_create_address_without_zone_defaults_null(self):
+        resp = self._create_address(address_type="SHIPPING")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(resp.data["shipping_zone"])
+        self.assertIsNone(resp.data["shipping_zone_name"])
+
+    def test_create_address_rejects_inactive_zone(self):
+        zone = ShippingZone.objects.create(
+            name="Old", code="old", is_active=False
+        )
+        resp = self._create_address(
+            address_type="SHIPPING", shipping_zone=zone.id
+        )
+        self.assertEqual(
+            resp.status_code, status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_partial_update_sets_zone(self):
+        """Tagging a legacy address with a zone via PATCH."""
+        zone = ShippingZone.objects.create(
+            name="Outside Dhaka", code="outside-dhaka"
+        )
+        created = self._create_address(address_type="SHIPPING")
+        addr_id = created.data["id"]
+        resp = self.client.patch(
+            f"{self.list_url}{addr_id}/",
+            {"shipping_zone": zone.id},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["shipping_zone"], zone.id)
+        list_resp = self.client.get(self.list_url)
+        results = list_resp.data.get("results", list_resp.data)
+        self.assertEqual(
+            results[0]["shipping_zone_name"], "Outside Dhaka"
         )
 
     def test_create_two_shipping_addresses(self):

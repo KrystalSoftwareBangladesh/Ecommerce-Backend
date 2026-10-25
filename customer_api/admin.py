@@ -60,10 +60,18 @@ class CustomerAddressAdmin(admin.ModelAdmin):
         "last_name",
         "city",
         "country",
+        "shipping_zone",
         "is_active",
         "created_at",
     ]
-    list_filter = ["address_type", "is_active", "country", "created_at"]
+    list_filter = [
+        "address_type",
+        "shipping_zone",
+        "is_active",
+        "country",
+        "created_at",
+    ]
+    list_select_related = ["customer__user", "shipping_zone"]
     search_fields = [
         "customer__user__first_name",
         "customer__user__last_name",

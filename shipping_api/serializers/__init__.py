@@ -3,6 +3,7 @@ from .shipping_zone import (
     ShippingZoneListSerializer,
     ShippingZoneDetailSerializer,
     ShippingZoneCreateUpdateSerializer,
+    ShippingZoneOptionSerializer,
 )
 from .shipping_method import (
     ShippingMethodListSerializer,
@@ -22,6 +23,7 @@ __all__ = [
     "ShippingZoneListSerializer",
     "ShippingZoneDetailSerializer",
     "ShippingZoneCreateUpdateSerializer",
+    "ShippingZoneOptionSerializer",
     "ShippingMethodListSerializer",
     "ShippingMethodDetailSerializer",
     "ShippingMethodCreateUpdateSerializer",

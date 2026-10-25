@@ -340,6 +340,38 @@ class ShippingZoneValidationTest(
             response.data["errors"][0],
         )
 
+    def test_address_zone_overrides_city_rule(self):
+        """The customer's chosen delivery area wins."""
+        outside = ShippingZone.objects.create(
+            name="Outside Dhaka",
+            code="outside-dhaka",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        ShippingRate.objects.create(
+            zone=outside,
+            method=self.method,
+            base_charge=decimal.Decimal("120.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.address.shipping_zone = outside
+        self.address.save()
+        response = self.client.post(
+            self.url,
+            self._payload(),
+            format="json",
+        )
+        self.assertTrue(response.data["is_valid"])
+        self.assertEqual(
+            response.data["shipping"]["zone_code"],
+            "outside-dhaka",
+        )
+        self.assertEqual(
+            response.data["pricing"]["shipping_charge"],
+            decimal.Decimal("120.00"),
+        )
+
     def test_method_not_available_for_zone(self):
         other_method = ShippingMethod.objects.create(
             name="Express",

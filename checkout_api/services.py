@@ -164,7 +164,10 @@ def _validate_address(user, address_id):
     Returns the CustomerAddress or raises.
     """
     try:
-        address = CustomerAddress.objects.get(
+        address = CustomerAddress.objects.select_related(
+            "customer",
+            "shipping_zone",
+        ).get(
             id=address_id,
             address_type=(
                 CustomerAddress.AddressType.SHIPPING
@@ -194,6 +197,7 @@ def _resolve_shipping(address, method_id, subtotal):
     zone = match_zone(
         city=address.city,
         postcode=address.postcode,
+        zone=address.shipping_zone,
     )
     if zone is None:
         raise ValidationError(

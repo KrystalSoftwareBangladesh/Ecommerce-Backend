@@ -100,6 +100,12 @@ API contract: [checkout-api.md](checkout-api.md).
   the Sale row, so a cancellation cannot overwrite a confirmation.
 - Discounts and taxes are not supported on storefront orders: confirmation
   is refused unless total = subtotal + shipping.
+- The shipping zone of an order is resolved from the delivery address in
+  this order of precedence (approved 2026-10-25): the zone the customer
+  chose for the address (`CustomerAddress.shipping_zone`, when still
+  active) → postcode rule → city rule → the default zone. Shipping charges
+  are always the zone's `ShippingRate` for the chosen method, computed on
+  the backend; the storefront never sends a charge.
 - Confirmation debits Accounts Receivable and credits product and shipping
   revenue. COD collection (`collect_sale_payment` permission, DELIVERED
   orders only, once) debits the COD payment method's asset account and

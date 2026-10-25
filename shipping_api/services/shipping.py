@@ -24,17 +24,28 @@ from shipping_api.models import (
 )
 
 
-def match_zone(*, city, postcode):
+def match_zone(*, city, postcode, zone=None):
     """
     Match an address to a shipping zone.
 
     Matching precedence:
+    0. The zone explicitly chosen for the address
+       (``CustomerAddress.shipping_zone``), when it is
+       still active and not deleted.
     1. Exact postcode rule (case-insensitive, trimmed).
     2. Exact city rule (case-insensitive, trimmed).
     3. The single default zone (is_default=True).
 
     Returns the matched ShippingZone or None.
     """
+    # 0. Explicit zone on the address
+    if (
+        zone is not None
+        and zone.is_active
+        and zone.deleted_at is None
+    ):
+        return zone
+
     city = (city or "").strip()
     postcode = (postcode or "").strip()
 
@@ -160,7 +171,10 @@ def get_shipping_options(*, user, address_id):
     """
     # 1. Validate address
     try:
-        address = CustomerAddress.objects.get(
+        address = CustomerAddress.objects.select_related(
+            "customer",
+            "shipping_zone",
+        ).get(
             id=address_id,
             address_type=(
                 CustomerAddress.AddressType.SHIPPING
@@ -182,6 +196,7 @@ def get_shipping_options(*, user, address_id):
     zone = match_zone(
         city=address.city,
         postcode=address.postcode,
+        zone=address.shipping_zone,
     )
 
     if zone is None:

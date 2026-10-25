@@ -28,6 +28,45 @@ Every error response uses the project envelope:
   `errors` is a list of strings and `message` is `"Validation failed."`.
   **Show `errors[0]` to the customer.**
 
+## 0. Delivery area and shipping address
+
+Before pricing, the storefront asks the customer where the order is going
+and which address to use. Two endpoints support that step:
+
+### `GET /shipping/zones/available/`
+
+Active shipping zones (delivery areas such as *Inside Dhaka* / *Outside
+Dhaka*), ordered by `display_order`. **Not paginated** — a plain array.
+
+```json
+[ { "id": 1, "name": "Inside Dhaka", "code": "inside-dhaka",
+    "description": "", "is_default": false, "display_order": 1 },
+  { "id": 2, "name": "Outside Dhaka", "code": "outside-dhaka",
+    "description": "", "is_default": true, "display_order": 2 } ]
+```
+
+### `POST` / `PATCH /customer-addresses/`
+
+A shipping address may carry the chosen zone in `shipping_zone` (zone id,
+nullable). Only active zones are accepted; an inactive or deleted zone id
+returns **400**. Reads return `shipping_zone`, `shipping_zone_name` and (on
+detail) `shipping_zone_code`, all `null` for addresses saved before this
+field existed.
+
+```json
+{ "address_type": "SHIPPING", "first_name": "Jane", "last_name": "Doe",
+  "address_1": "123 Test St", "city": "Dhaka", "postcode": "1205",
+  "country": "Bangladesh", "phone": "+8801700000000",
+  "shipping_zone": 1 }
+```
+
+**Zone resolution** for `/shipping/options/`, `/checkout/validate/` and
+`/checkout/confirm/` is, in order: the address's `shipping_zone` (if still
+active) → postcode rule → city rule → default zone. The storefront flow is
+therefore: pick a zone → create the address with that zone, or `PATCH` an
+untagged saved address with it → `GET /shipping/options/?address_id=` →
+validate → confirm.
+
 ## 1. Validate checkout — `POST /checkout/validate/`
 
 Prices the current cart for an address and shipping method. Creates

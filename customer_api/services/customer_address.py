@@ -21,7 +21,7 @@ def list_addresses(*, customer_profile):
         customer=customer_profile,
         is_active=True,
         deleted_at__isnull=True,
-    )
+    ).select_related("shipping_zone")
 
 
 def create_address(*, customer_profile, user, validated_data):
