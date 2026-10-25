@@ -17,6 +17,7 @@ from inventory_api.models import InventoryMovement, MovementType, ReferenceType
 from inventory_api.services.reservation import (
     consume_reservations,
     get_available_stock,
+    is_stock_tracked,
     release_reservations,
 )
 from product_api.models import ProductVariant
@@ -555,6 +556,53 @@ def _deduct_sale_stock(user, sale):
         )
 
 
+def _settle_storefront_stock(user, sale):
+    """
+    Deduct stock for a storefront order that is being confirmed.
+
+    Items reserved at checkout are settled by consuming their
+    reservations (the existing path; an expired or released
+    reservation still blocks confirmation). Items that were placed
+    without a reservation because their variant had no inventory
+    ledger at checkout are handled here:
+
+    - the variant has since gained a ledger (opening stock was
+      recorded): stock is checked and deducted like a POS sale, so
+      the ledger stays right for the unit this order ships;
+    - the variant still has no ledger: nothing is recorded.
+    """
+    if sale.reservations.exists():
+        consume_reservations(sale, user=user)
+
+    reserved_variant_ids = set(
+        sale.reservations.values_list(
+            'product_variant_id', flat=True
+        )
+    )
+    unreserved_items = [
+        item
+        for item in sale.items.order_by('product_variant_id')
+        if item.product_variant_id not in reserved_variant_ids
+    ]
+    for item in unreserved_items:
+        variant = (
+            ProductVariant.objects.select_for_update()
+            .get(pk=item.product_variant_id)
+        )
+        if not is_stock_tracked(variant):
+            continue
+        validate_stock(variant, item.quantity)
+        InventoryMovement.objects.create(
+            product_variant=variant,
+            quantity=-item.quantity,
+            movement_type=MovementType.SALE,
+            reference_type=ReferenceType.ORDER,
+            reference_id=sale.id,
+            created_by=user,
+            updated_by=user,
+        )
+
+
 def _restock_returned_sale(user, sale):
     for item in sale.items.all():
         InventoryMovement.objects.create(
@@ -599,18 +647,9 @@ def update_sale_status(
 
         if next_status == SaleStatus.CONFIRMED:
             if is_storefront:
-                # Storefront confirmation: consume
-                # reservations and use receivable
-                # accounting.
-                has_reservations = (
-                    sale.reservations.exists()
-                )
-                if not has_reservations:
-                    raise ValidationError(
-                        "Storefront order has no inventory "
-                        "reservation. It cannot be confirmed; "
-                        "review the order before retrying."
-                    )
+                # Storefront confirmation: settle stock
+                # (reservations, or untracked items) and
+                # use receivable accounting.
                 # Confirmation posts subtotal + shipping to
                 # receivable and COD collection settles the order
                 # total; refuse totals the two cannot agree on.
@@ -626,7 +665,7 @@ def update_sale_status(
                         "supported for storefront orders. Review the "
                         "order before confirming."
                     )
-                consume_reservations(sale, user=user)
+                _settle_storefront_stock(user, sale)
 
                 receivable = (
                     get_or_create_accounts_receivable_account(

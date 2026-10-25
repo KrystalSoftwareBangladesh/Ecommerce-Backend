@@ -28,6 +28,22 @@ from inventory_api.models import (
 )
 
 
+def is_stock_tracked(product_variant):
+    """
+    Return True once the variant has an inventory ledger.
+
+    A variant is stock-tracked as soon as it has an active inventory
+    movement (opening balance, purchase, sale, ...). Imported catalogue
+    products have no ledger: they are sold without a reservation or a
+    stock deduction until opening stock is recorded, after which the
+    normal reservation and deduction rules apply.
+    """
+    return InventoryMovement.objects.filter(
+        product_variant=product_variant,
+        is_active=True,
+    ).exists()
+
+
 def get_available_stock(
     product_variant, exclude_sale=None
 ):

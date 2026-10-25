@@ -954,6 +954,92 @@ class StorefrontConfirmationTest(TestCase):
                 SaleStatus.CONFIRMED,
             )
 
+    def _unreserved_sale(self, quantity=3):
+        """A storefront sale placed without a reservation."""
+        sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=date.today(),
+            status=SaleStatus.PENDING,
+            channel=Sale.SaleChannel.WEBSITE,
+            subtotal_amount=Decimal('100.00') * quantity,
+            shipping_amount=Decimal('50.00'),
+            total_amount=(
+                Decimal('100.00') * quantity + Decimal('50.00')
+            ),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product_variant=self.variant,
+            quantity=quantity,
+            unit_price=Decimal('100.00'),
+            line_total=Decimal('100.00') * quantity,
+        )
+        return sale
+
+    def test_storefront_confirmation_untracked_item_records_nothing(
+        self,
+    ):
+        # The variant never had stock recorded: the order was
+        # placed untracked and confirms without touching stock.
+        self.reservation.delete()
+        self.sale.delete()
+        InventoryMovement.objects.filter(
+            product_variant=self.variant,
+        ).delete()
+        sale = self._unreserved_sale()
+
+        update_sale_status(
+            self.user, sale, SaleStatus.CONFIRMED,
+        )
+
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CONFIRMED)
+        self.assertIsNotNone(sale.accounting_transaction_id)
+        self.assertFalse(
+            InventoryMovement.objects.filter(
+                product_variant=self.variant,
+            ).exists()
+        )
+
+    def test_storefront_confirmation_deducts_item_tracked_after_order(
+        self,
+    ):
+        # Opening stock (100 in setUp) was recorded after the
+        # order was placed without a reservation: confirmation
+        # deducts it like a POS sale.
+        sale = self._unreserved_sale(quantity=3)
+
+        update_sale_status(
+            self.user, sale, SaleStatus.CONFIRMED,
+        )
+
+        movement = InventoryMovement.objects.get(
+            product_variant=self.variant,
+            movement_type=MovementType.SALE,
+            reference_id=sale.id,
+        )
+        self.assertEqual(movement.quantity, -3)
+        self.assertEqual(
+            movement.reference_type, ReferenceType.ORDER
+        )
+
+    def test_storefront_confirmation_unreserved_item_checks_stock(
+        self,
+    ):
+        from django.core.exceptions import ValidationError
+        # Only the setUp reservation (2) is outstanding, so 98
+        # units are available; 99 must be refused.
+        sale = self._unreserved_sale(quantity=99)
+
+        with self.assertRaises(ValidationError):
+            update_sale_status(
+                self.user, sale, SaleStatus.CONFIRMED,
+            )
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.PENDING)
+
     def test_storefront_return_rejected(self):
         # Must confirm first.
         update_sale_status(
