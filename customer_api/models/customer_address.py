@@ -78,6 +78,18 @@ class CustomerAddress(
         blank=True,
         default="",
     )
+    shipping_zone = models.ForeignKey(
+        "shipping_api.ShippingZone",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="addresses",
+        help_text=(
+            "Delivery area chosen by the customer for this "
+            "address (e.g. inside or outside Dhaka). Takes "
+            "precedence over city/postcode zone rules."
+        ),
+    )
 
     class Meta:
         ordering = ["address_type", "-created_at"]

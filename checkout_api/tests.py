@@ -340,6 +340,38 @@ class ShippingZoneValidationTest(
             response.data["errors"][0],
         )
 
+    def test_address_zone_overrides_city_rule(self):
+        """The customer's chosen delivery area wins."""
+        outside = ShippingZone.objects.create(
+            name="Outside Dhaka",
+            code="outside-dhaka",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        ShippingRate.objects.create(
+            zone=outside,
+            method=self.method,
+            base_charge=decimal.Decimal("120.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.address.shipping_zone = outside
+        self.address.save()
+        response = self.client.post(
+            self.url,
+            self._payload(),
+            format="json",
+        )
+        self.assertTrue(response.data["is_valid"])
+        self.assertEqual(
+            response.data["shipping"]["zone_code"],
+            "outside-dhaka",
+        )
+        self.assertEqual(
+            response.data["pricing"]["shipping_charge"],
+            decimal.Decimal("120.00"),
+        )
+
     def test_method_not_available_for_zone(self):
         other_method = ShippingMethod.objects.create(
             name="Express",
@@ -938,10 +970,8 @@ class OrderCreationTest(OrderCreationTestBase):
                 idempotency_key='multi-var'
             )
 
-    def test_no_variant_raises(self):
-        from rest_framework.exceptions import (
-            ValidationError,
-        )
+    def _remove_variants(self):
+        """Leave the product with no variant and no ledger."""
         from product_api.models import ProductVariant
         from inventory_api.models import (
             InventoryMovement,
@@ -953,10 +983,145 @@ class OrderCreationTest(OrderCreationTestBase):
         ProductVariant.objects.filter(
             product=self.product,
         ).delete()
-        with self.assertRaises(ValidationError):
-            self._create_order(
-                idempotency_key='no-var'
-            )
+
+    def test_no_variant_creates_default_variant(self):
+        from product_api.models import ProductVariant
+        from inventory_api.models import (
+            InventoryReservation,
+        )
+        from sale_api.models import SaleItem
+        self._remove_variants()
+
+        sale = self._create_order(
+            idempotency_key='no-var'
+        )
+
+        variants = ProductVariant.objects.filter(
+            product=self.product,
+        )
+        self.assertEqual(variants.count(), 1)
+        default = variants.first()
+        self.assertEqual(
+            default.sku, f"P-{self.product.pk}"
+        )
+        self.assertIsNone(default.color)
+        self.assertIsNone(default.size)
+        item = SaleItem.objects.get(sale=sale)
+        self.assertEqual(
+            item.product_variant_id, default.pk
+        )
+        self.assertEqual(item.quantity, 2)
+        # No ledger, so nothing is reserved and the
+        # order can never expire.
+        self.assertFalse(
+            InventoryReservation.objects.filter(
+                sale=sale,
+            ).exists()
+        )
+        self.assertEqual(
+            sale.total_amount,
+            decimal.Decimal('1060.00'),
+        )
+
+    def test_default_variant_is_reused(self):
+        from product_api.models import ProductVariant
+        from EcommerceBackend.core.choices import (
+            CartStatus,
+        )
+        self._remove_variants()
+        first = self._create_order(
+            idempotency_key='default-1'
+        )
+        cart = Cart.objects.create(
+            created_by=self.user,
+            updated_by=self.user,
+            status=CartStatus.ACTIVE,
+        )
+        CartItem.objects.create(
+            cart=cart, product=self.product, quantity=1,
+        )
+        second = self._create_order(
+            idempotency_key='default-2'
+        )
+        self.assertNotEqual(first.pk, second.pk)
+        self.assertEqual(
+            ProductVariant.objects.filter(
+                product=self.product,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            first.items.get().product_variant_id,
+            second.items.get().product_variant_id,
+        )
+
+    def test_default_variant_sku_avoids_collision(self):
+        from product_api.models import ProductVariant
+        self._remove_variants()
+        other = Product.objects.create(
+            name='Other',
+            slug='other-collide',
+            current_selling_price=(
+                decimal.Decimal('10.00')
+            ),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        ProductVariant.objects.create(
+            product=other,
+            sku=f"p-{self.product.pk}",
+        )
+        sale = self._create_order(
+            idempotency_key='collide'
+        )
+        self.assertEqual(
+            sale.items.get().product_variant.sku,
+            f"P-{self.product.pk}-2",
+        )
+
+    def test_untracked_variant_is_not_reserved(self):
+        from inventory_api.models import (
+            InventoryMovement,
+            InventoryReservation,
+        )
+        # Variant exists but has never had stock
+        # recorded: sold untracked.
+        InventoryMovement.objects.filter(
+            product_variant=self.variant,
+        ).delete()
+        sale = self._create_order(
+            idempotency_key='untracked'
+        )
+        self.assertEqual(
+            sale.items.get().product_variant_id,
+            self.variant.pk,
+        )
+        self.assertFalse(
+            InventoryReservation.objects.filter(
+                sale=sale,
+            ).exists()
+        )
+
+    def test_untracked_order_is_not_expired(self):
+        from checkout_api.services import (
+            expire_pending_orders,
+        )
+        from inventory_api.models import (
+            InventoryMovement,
+        )
+        from sale_api.models import Sale, SaleStatus
+        InventoryMovement.objects.filter(
+            product_variant=self.variant,
+        ).delete()
+        sale = self._create_order(
+            idempotency_key='untracked-expiry'
+        )
+        cancelled, _released = expire_pending_orders()
+        self.assertEqual(cancelled, 0)
+        self.assertEqual(
+            Sale.objects.get(pk=sale.pk).status,
+            SaleStatus.PENDING,
+        )
 
     def test_insufficient_stock_raises(self):
         from django.core.exceptions import (
@@ -967,11 +1132,18 @@ class OrderCreationTest(OrderCreationTestBase):
         )
         from inventory_api.models import (
             InventoryMovement,
+            MovementType,
         )
-        # Remove all stock movements.
-        InventoryMovement.objects.filter(
+        # Keep the ledger (the variant stays
+        # tracked) but leave one unit for a cart
+        # of two.
+        InventoryMovement.objects.create(
             product_variant=self.variant,
-        ).delete()
+            quantity=-49,
+            movement_type=MovementType.ADJUSTMENT,
+            created_by=self.user,
+            updated_by=self.user,
+        )
         with self.assertRaises(
             (
                 DjangoValidationError,
@@ -1708,11 +1880,20 @@ class StorefrontOrderAPITest(OrderCreationTestBase):
         return response
 
     def test_confirm_out_of_stock_returns_400(self):
-        from inventory_api.models import InventoryMovement
+        from inventory_api.models import (
+            InventoryMovement,
+            MovementType,
+        )
 
-        InventoryMovement.objects.filter(
+        # Sell the stock down to zero; the ledger stays, so the
+        # variant is still tracked and must be refused.
+        InventoryMovement.objects.create(
             product_variant=self.variant,
-        ).delete()
+            quantity=-50,
+            movement_type=MovementType.ADJUSTMENT,
+            created_by=self.user,
+            updated_by=self.user,
+        )
         response = (
             self._assert_confirm_rejected_without_side_effects(
                 "api-out-of-stock-001"

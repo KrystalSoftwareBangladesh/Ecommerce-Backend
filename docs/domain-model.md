@@ -11,7 +11,7 @@ repository. Business rules that govern these entities are in
 | App | Responsibility | Models |
 |---|---|---|
 | `user_api` | Accounts, authentication, roles (Django `Group`s), permissions | `User` |
-| `customer_api` | Customer profile attached to a user account | `CustomerProfile` |
+| `customer_api` | Customer profile attached to a user account, saved billing/shipping addresses | `CustomerProfile`, `CustomerAddress` |
 | `category_api` | Hierarchical product categorisation, storefront menu, bulk import | `Category` |
 | `product_api` | Catalogue: products, variants, price history, brands, images | `Product`, `ProductVariant`, `ProductPriceHistory`, `Brand`, `ProductImage` |
 | `origin_api` | Hierarchical country/region of origin | `Origin` |
@@ -37,6 +37,9 @@ itself, and `meta_api` is a choice-lookup app, not SEO metadata.
 
 ```text
 User 1──1 CustomerProfile
+CustomerProfile 1──* CustomerAddress   (address_type BILLING/SHIPPING)
+CustomerAddress ──> ShippingZone       (shipping_zone, FK, nullable, SET_NULL —
+                                        delivery area chosen at checkout)
 User *──* Group (roles)          User created_by/updated_by ──> almost every model
 
 Category ──┐ self-FK parent (hierarchy, display_order, show_in_menu)
@@ -44,7 +47,7 @@ Origin   ──┘ self-FK parent
 
 Product *──* Category
 Product   ──> Origin            (FK, nullable)
-Product 1──* ProductVariant     (sku)
+Product 1──* ProductVariant     (sku; a product with none gets a default `P-<id>` variant at its first storefront sale)
 Product 1──* ProductImage
 Product 1──* ProductPriceHistory
 
@@ -77,6 +80,9 @@ Review   ──> Product   (unique per created_by + product, moderated)
 Wishlist ──> Product   (owner is created_by)
 Cart     ──> (owner is created_by, status ACTIVE/CHECKED_OUT/ABANDONED)
 Cart  1──* CartItem ──> Product
+
+ShippingZone 1──* ShippingZoneRule     (CITY / POSTCODE match)
+ShippingZone 1──* ShippingRate ──> ShippingMethod   (base_charge, free threshold)
 
 BlogPost  ──> User      (author, FK, nullable, SET_NULL)
 BlogPost *──* Category  (the shared category tree, reused)

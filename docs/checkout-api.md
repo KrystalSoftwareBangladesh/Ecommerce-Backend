@@ -28,6 +28,45 @@ Every error response uses the project envelope:
   `errors` is a list of strings and `message` is `"Validation failed."`.
   **Show `errors[0]` to the customer.**
 
+## 0. Delivery area and shipping address
+
+Before pricing, the storefront asks the customer where the order is going
+and which address to use. Two endpoints support that step:
+
+### `GET /shipping/zones/available/`
+
+Active shipping zones (delivery areas such as *Inside Dhaka* / *Outside
+Dhaka*), ordered by `display_order`. **Not paginated** — a plain array.
+
+```json
+[ { "id": 1, "name": "Inside Dhaka", "code": "inside-dhaka",
+    "description": "", "is_default": false, "display_order": 1 },
+  { "id": 2, "name": "Outside Dhaka", "code": "outside-dhaka",
+    "description": "", "is_default": true, "display_order": 2 } ]
+```
+
+### `POST` / `PATCH /customer-addresses/`
+
+A shipping address may carry the chosen zone in `shipping_zone` (zone id,
+nullable). Only active zones are accepted; an inactive or deleted zone id
+returns **400**. Reads return `shipping_zone`, `shipping_zone_name` and (on
+detail) `shipping_zone_code`, all `null` for addresses saved before this
+field existed.
+
+```json
+{ "address_type": "SHIPPING", "first_name": "Jane", "last_name": "Doe",
+  "address_1": "123 Test St", "city": "Dhaka", "postcode": "1205",
+  "country": "Bangladesh", "phone": "+8801700000000",
+  "shipping_zone": 1 }
+```
+
+**Zone resolution** for `/shipping/options/`, `/checkout/validate/` and
+`/checkout/confirm/` is, in order: the address's `shipping_zone` (if still
+active) → postcode rule → city rule → default zone. The storefront flow is
+therefore: pick a zone → create the address with that zone, or `PATCH` an
+untagged saved address with it → `GET /shipping/options/?address_id=` →
+validate → confirm.
+
 ## 1. Validate checkout — `POST /checkout/validate/`
 
 Prices the current cart for an address and shipping method. Creates
@@ -67,7 +106,10 @@ stock is reserved at confirmation.
 ## 2. Place the order — `POST /checkout/confirm/`
 
 Creates the order from the active cart, reserves stock and checks the cart
-out. The order starts as `PENDING` / `UNPAID`.
+out. The order starts as `PENDING` / `UNPAID`. A product that has no
+variant is sold through a default variant created on first sale (SKU
+`P-<product id>`); a product whose variant has no inventory ledger is sold
+**untracked** — see *Stock reservation and expiry* below.
 
 Request:
 
@@ -83,7 +125,7 @@ Responses:
 | Status | When |
 |---|---|
 | **201** | Order created, **or** an identical retry (same key, same inputs) — body is the order detail (section 4), same `id` as the first response. |
-| **400** | Field errors; no active cart (`"No active cart found."`); empty cart; inactive or unpriced product; product with no or several active variants; invalid address; no shipping zone or rate; **out of stock** (`"Insufficient stock for …"`); COD payment not configured. Nothing is created. |
+| **400** | Field errors; no active cart (`"No active cart found."`); empty cart; inactive or unpriced product; product with several active variants; invalid address; no shipping zone or rate; **out of stock** (`"Insufficient stock for …"`, stock-tracked products only); COD payment not configured. Nothing is created. |
 | **409** | The `idempotency_key` was already used with different inputs. Nothing is created. |
 | **401** | Not authenticated. |
 
@@ -111,6 +153,17 @@ Stock is held for 30 minutes (`CHECKOUT_RESERVATION_MINUTES`). If staff
 have not confirmed the order by then, it is **cancelled automatically**
 (status `CANCELLED`) and the customer gets an email asking them to place a
 new order. Cancellation happens within about 5 minutes of expiry.
+
+**Untracked products (approved 2026-10-25).** Stock is only reserved for a
+variant that has an inventory ledger (at least one active inventory
+movement). A variant with no ledger — every imported catalogue product
+until its opening stock is recorded — is sold *untracked*: no reservation
+is created, the order never expires, and staff confirmation records no
+stock movement. Once opening stock exists for the variant, new orders are
+reserved and deducted as usual; a pending untracked order confirmed after
+stock was recorded is stock-checked and deducted at confirmation. The
+frontend needs no change: `product_variant.sku` in the order detail is the
+default `P-<product id>` for such products.
 
 ## 3. Order list — `GET /orders/`
 

@@ -27,8 +27,12 @@ from inventory_api.models import (
 )
 from inventory_api.services.reservation import (
     expire_reservations,
+    is_stock_tracked,
     release_reservations,
     reserve_stock,
+)
+from product_api.services import (
+    get_or_create_default_variant,
 )
 from sale_api.models import (
     PaymentStatus,
@@ -164,7 +168,10 @@ def _validate_address(user, address_id):
     Returns the CustomerAddress or raises.
     """
     try:
-        address = CustomerAddress.objects.get(
+        address = CustomerAddress.objects.select_related(
+            "customer",
+            "shipping_zone",
+        ).get(
             id=address_id,
             address_type=(
                 CustomerAddress.AddressType.SHIPPING
@@ -194,6 +201,7 @@ def _resolve_shipping(address, method_id, subtotal):
     zone = match_zone(
         city=address.city,
         postcode=address.postcode,
+        zone=address.shipping_zone,
     )
     if zone is None:
         raise ValidationError(
@@ -436,8 +444,14 @@ def _resolve_variant(product):
     Resolve a product to exactly one eligible
     active variant.
 
+    A product with no active variant gets a
+    default one created (``P-<product id>``) so
+    it can be sold; see
+    ``product_api.services.get_or_create_default_variant``.
+
     Returns the ProductVariant or raises
-    ValidationError.
+    ValidationError when the product has several
+    active variants and the customer must pick one.
     """
     active_variants = (
         product.variants.filter(
@@ -447,9 +461,8 @@ def _resolve_variant(product):
     )
     count = active_variants.count()
     if count == 0:
-        raise ValidationError(
-            f"Product '{product.name}' has no "
-            "available variants."
+        return get_or_create_default_variant(
+            product=product
         )
     if count == 1:
         return active_variants.first()
@@ -706,6 +719,11 @@ def create_order(
         )
 
     # --- Step 9: Reserve inventory ---
+    # Only variants with an inventory ledger are
+    # reserved. A variant without one (imported
+    # catalogue product, no opening stock yet) is
+    # sold untracked: no reservation, no expiry,
+    # no deduction at confirmation.
     reserve_items = [
         {
             'product_variant': (
@@ -714,13 +732,17 @@ def create_order(
             'quantity': item['quantity'],
         }
         for item in resolved_items
+        if is_stock_tracked(item['product_variant'])
     ]
-    try:
-        reserve_stock(
-            sale, reserve_items, user=user
-        )
-    except DjangoValidationError as exc:
-        raise ValidationError(exc.messages) from exc
+    if reserve_items:
+        try:
+            reserve_stock(
+                sale, reserve_items, user=user
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError(
+                exc.messages
+            ) from exc
 
     # --- Step 10: Mark cart CHECKED_OUT ---
     cart.status = CartStatus.CHECKED_OUT

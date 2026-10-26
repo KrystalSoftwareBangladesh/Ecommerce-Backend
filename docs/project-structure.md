@@ -92,6 +92,15 @@ Ecommerce-Backend/
 │   ├── admin.py
 │   └── tests.py
 │
+├── shipping_api/                      # zones, zone rules, methods, rates
+│   ├── models/{shipping_zone.py,shipping_method.py,shipping_rate.py}
+│   ├── serializers/{shipping_zone.py,shipping_method.py,shipping_rate.py,shipping_option.py}
+│   ├── services/shipping.py           # match_zone, get_shipping_options
+│   ├── views/v1/{shipping_zone.py,shipping_method.py,shipping_rate.py,shipping_option.py}
+│   ├── urls/{__init__.py,v1.py}
+│   ├── admin.py
+│   └── tests.py
+│
 ├── checkout_api/                      # no models — storefront checkout/orders
 │   ├── services.py                    # validate, create, cancel, expire orders
 │   ├── exceptions.py                  # IdempotencyConflict (409)
@@ -135,9 +144,11 @@ Ecommerce-Backend/
 │       └── {test_scanner.py,test_api.py}
 │
 ├── customer_api/
-│   ├── models.py                    # flat module, not a package
-│   ├── serializers/customer_profile.py
-│   ├── views/v1/customer_profile.py
+│   ├── models/{customer.py,customer_address.py}
+│   ├── serializers/{customer_profile.py,customer_address.py}
+│   ├── services/customer_address.py
+│   ├── views/v1/{customer_profile.py,customer_address.py}
+│   ├── management/commands/import_customer_addresses.py
 │   ├── urls/{__init__.py,v1.py}
 │   ├── admin.py
 │   └── tests.py

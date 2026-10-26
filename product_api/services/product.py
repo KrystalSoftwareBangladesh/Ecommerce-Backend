@@ -4,7 +4,10 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
-from product_api.models import ProductImage, Product
+from product_api.models import ProductImage, Product, ProductVariant
+
+
+DEFAULT_VARIANT_SKU_PREFIX = 'P-'
 
 
 def _get_active_images(product):
@@ -345,3 +348,59 @@ def increment_product_view_count(*, product: Product) -> None:
     ).update(
         view_count=F("view_count") + 1,
     )
+
+
+def _default_variant_sku(product):
+    """
+    Return an unused SKU for the product's default variant.
+
+    The base form is ``P-<product id>``. Should a staff-entered variant
+    already use that SKU (compared case-insensitively, as the product
+    serializer does), a numeric suffix is appended.
+    """
+    base = f"{DEFAULT_VARIANT_SKU_PREFIX}{product.pk}"
+    sku = base
+    suffix = 2
+    while ProductVariant.objects.filter(
+        sku__iexact=sku, is_active=True,
+    ).exists():
+        sku = f"{base}-{suffix}"
+        suffix += 1
+    return sku
+
+
+def get_or_create_default_variant(*, product):
+    """
+    Return the product's active variant, creating a default one when
+    the product has none.
+
+    Sales, reservations and the inventory ledger are keyed by
+    ``ProductVariant``, but imported catalogue products carry no
+    variants. The default variant (SKU ``P-<product id>``, no colour or
+    size) lets such a product be sold without changing those ledgers.
+
+    The product row is locked so two concurrent checkouts cannot create
+    two default variants; callers must run inside a transaction. If an
+    active variant appears while waiting for the lock, that variant is
+    returned instead.
+    """
+    if product is None:
+        raise ValidationError('A product is required.')
+
+    with transaction.atomic():
+        locked_product = (
+            Product.objects.select_for_update().get(pk=product.pk)
+        )
+        existing = (
+            locked_product.variants.filter(
+                is_active=True, deleted_at__isnull=True,
+            )
+            .order_by('sku', 'pk')
+            .first()
+        )
+        if existing is not None:
+            return existing
+        return ProductVariant.objects.create(
+            product=locked_product,
+            sku=_default_variant_sku(locked_product),
+        )

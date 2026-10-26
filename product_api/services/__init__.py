@@ -8,6 +8,7 @@ from .product import (
     soft_delete_product_image,
     bulk_upload_product_images,
     increment_product_view_count,
+    get_or_create_default_variant,
 )
 from .product_image import (
     get_product_image_summary,
@@ -26,6 +27,7 @@ __all__ = [
     'soft_delete_product_image',
     'bulk_upload_product_images',
     'increment_product_view_count',
+    'get_or_create_default_variant',
     "get_product_image_summary",
     'get_product_image_dimensions',
     'is_product_image_high_resolution',

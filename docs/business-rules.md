@@ -89,8 +89,21 @@ sales cannot oversell.
 
 API contract: [checkout-api.md](checkout-api.md).
 
+- A product with no active variant is sold through a **default variant**
+  created at its first storefront sale (SKU `P-<product id>`, no colour or
+  size; `product_api.services.get_or_create_default_variant`). A product
+  with several active variants cannot be ordered from the cart (approved
+  2026-10-25).
+- A variant is **stock-tracked** once it has an active inventory movement
+  (`inventory_api.services.is_stock_tracked`). Untracked variants are sold
+  without a reservation, never expire and record no movement when
+  confirmed; recording opening stock switches the product to the normal
+  rules below (approved 2026-10-25).
 - Placing an order reserves stock for `CHECKOUT_RESERVATION_MINUTES`
-  (30). Staff confirmation consumes the reservation and deducts stock.
+  (30) for every stock-tracked variant. Staff confirmation consumes the
+  reservation and deducts stock; an unreserved item whose variant became
+  tracked after the order was placed is stock-checked and deducted at
+  confirmation.
 - An order whose reservation expires while it is still PENDING is
   **cancelled automatically** by the `expire-pending-orders` Celery Beat
   task (approved 2026-10-13): stock is released, status becomes
@@ -100,6 +113,12 @@ API contract: [checkout-api.md](checkout-api.md).
   the Sale row, so a cancellation cannot overwrite a confirmation.
 - Discounts and taxes are not supported on storefront orders: confirmation
   is refused unless total = subtotal + shipping.
+- The shipping zone of an order is resolved from the delivery address in
+  this order of precedence (approved 2026-10-25): the zone the customer
+  chose for the address (`CustomerAddress.shipping_zone`, when still
+  active) → postcode rule → city rule → the default zone. Shipping charges
+  are always the zone's `ShippingRate` for the chosen method, computed on
+  the backend; the storefront never sends a charge.
 - Confirmation debits Accounts Receivable and credits product and shipping
   revenue. COD collection (`collect_sale_payment` permission, DELIVERED
   orders only, once) debits the COD payment method's asset account and

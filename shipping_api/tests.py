@@ -193,6 +193,34 @@ class ZoneMatchingTest(TestCase):
         )
         self.assertEqual(zone, zone_sylhet)
 
+    def test_explicit_zone_priority_over_rules(self):
+        """The zone chosen on the address wins over rules."""
+        zone = match_zone(
+            city="Dhaka",
+            postcode="1205",
+            zone=self.zone_chittagong,
+        )
+        self.assertEqual(zone, self.zone_chittagong)
+
+    def test_inactive_explicit_zone_falls_back(self):
+        self.zone_chittagong.is_active = False
+        self.zone_chittagong.save()
+        zone = match_zone(
+            city="Dhaka",
+            postcode="",
+            zone=self.zone_chittagong,
+        )
+        self.assertEqual(zone, self.zone_dhaka)
+
+    def test_deleted_explicit_zone_falls_back(self):
+        self.zone_chittagong.soft_delete()
+        zone = match_zone(
+            city="Sylhet",
+            postcode="",
+            zone=self.zone_chittagong,
+        )
+        self.assertEqual(zone, self.zone_default)
+
 
 class ShippingChargeTest(TestCase):
     """Tests for shipping charge calculation."""
@@ -411,6 +439,39 @@ class ShippingOptionsAPITest(TestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
+    def test_address_zone_overrides_city_rule(self):
+        """Options come from the address's own zone."""
+        outside = ShippingZone.objects.create(
+            name="Outside Dhaka", code="outside-dhaka"
+        )
+        ShippingRate.objects.create(
+            zone=outside,
+            method=self.method,
+            base_charge=decimal.Decimal("120.00"),
+        )
+        self.address.shipping_zone = outside
+        self.address.save()
+        self.client.force_authenticate(
+            user=self.user
+        )
+        resp = self.client.get(
+            self.url,
+            {"address_id": self.address.id},
+        )
+        self.assertEqual(
+            resp.status_code, status.HTTP_200_OK
+        )
+        data = resp.json()
+        self.assertEqual(
+            data["zone"]["code"], "outside-dhaka"
+        )
+        self.assertEqual(
+            decimal.Decimal(
+                str(data["options"][0]["shipping_charge"])
+            ),
+            decimal.Decimal("120.00"),
+        )
+
     def test_other_user_address_rejected(self):
         other = User.objects.create_user(
             username="other@example.com",
@@ -580,3 +641,68 @@ class ShippingOptionsAPITest(TestCase):
             ),
             decimal.Decimal("500.00"),
         )
+
+
+class ShippingZoneAvailableAPITest(TestCase):
+    """Tests for GET /api/v1/shipping/zones/available/."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="zones@example.com",
+            email="zones@example.com",
+            password="TestPass123!",
+        )
+        self.inside = ShippingZone.objects.create(
+            name="Inside Dhaka",
+            code="inside-dhaka",
+            display_order=1,
+        )
+        self.outside = ShippingZone.objects.create(
+            name="Outside Dhaka",
+            code="outside-dhaka",
+            display_order=2,
+            is_default=True,
+        )
+        self.inactive = ShippingZone.objects.create(
+            name="Old Zone",
+            code="old-zone",
+            is_active=False,
+        )
+        self.deleted = ShippingZone.objects.create(
+            name="Gone Zone", code="gone-zone"
+        )
+        self.deleted.soft_delete()
+        self.url = "/api/v1/shipping/zones/available/"
+
+    def test_requires_authentication(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(
+            resp.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_lists_only_active_zones_in_order(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(self.url)
+        self.assertEqual(
+            resp.status_code, status.HTTP_200_OK
+        )
+        data = resp.json()
+        self.assertIsInstance(data, list)
+        self.assertEqual(
+            [z["code"] for z in data],
+            ["inside-dhaka", "outside-dhaka"],
+        )
+        self.assertEqual(
+            set(data[0].keys()),
+            {
+                "id",
+                "name",
+                "code",
+                "description",
+                "is_default",
+                "display_order",
+            },
+        )
+        self.assertTrue(data[1]["is_default"])
