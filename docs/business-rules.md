@@ -410,6 +410,23 @@ the published set and can never surface a draft or a soft-deleted post.
   afterwards; renaming a tag does not move its slug.
 - `legacy_id` is migration-owned and is not accepted by the API.
 
+## Sitemap
+
+`GET /api/v1/seo/sitemap-urls/` (`meta_api`) is public, read-only and
+unpaginated. It returns `products`, `categories`, `brands` and `blogs`,
+each always present as a list of `{slug, lastmod}`:
+
+- **Products** — active and not soft-deleted; `lastmod` is `updated_at`.
+- **Categories** — active, not soft-deleted, non-empty slug; `lastmod` is
+  `updated_at`.
+- **Brands** — active, not soft-deleted, non-empty slug; `lastmod` is
+  `updated_at`.
+- **Blog posts** — active, published, not soft-deleted, `seo_noindex`
+  false, non-empty slug; `lastmod` is `published_at`.
+
+"Not soft-deleted" means `deleted_at` is null. Timestamps are ISO 8601 in
+UTC. The storefront builds the URLs from the slugs.
+
 ## Permissions
 
 Protected endpoints require authentication.

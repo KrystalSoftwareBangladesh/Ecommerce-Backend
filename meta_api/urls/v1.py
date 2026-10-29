@@ -5,5 +5,6 @@ from meta_api.views import v1
 
 
 urlpatterns = [
-    path('moderation-statuses/', v1.ModerationStatusListAPIView.as_view())
+    path('moderation-statuses/', v1.ModerationStatusListAPIView.as_view()),
+    path('seo/sitemap-urls/', v1.SitemapUrlsAPIView.as_view()),
 ]
