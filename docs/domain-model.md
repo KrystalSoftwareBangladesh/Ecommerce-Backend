@@ -24,14 +24,15 @@ repository. Business rules that govern these entities are in
 | `review_api` | Product reviews with moderation | `Review` |
 | `wishlist_api` | Per-user product wishlist | `Wishlist` |
 | `cart_api` | Shopping cart and cart lines | `Cart`, `CartItem` |
-| `meta_api` | Choice/enum lookups for clients (currently moderation statuses) | *(none)* |
+| `meta_api` | Choice/enum lookups for clients (currently moderation statuses) and the read-only sitemap URL feed | *(none)* |
 | `content_security_api` | Content Security Scanner: configurable detection rules, scan results and findings for migrated content | `KeywordRule`, `DomainRule`, `HtmlTagRule`, `HtmlAttributeRule`, `RedirectRule`, `HiddenContentRule`, `ObfuscationRule`, `ContentScan`, `ContentScanFinding` |
 | `request_log_api` | API request logging and observability: one immutable record per HTTP request | `RequestLog` |
 | `blog_api` | Editorial content: posts with their publication lifecycle, blog tags, SEO metadata | `BlogPost`, `BlogTag` |
 
 There is **no `Order` model** — a completed customer purchase is a `Sale`.
 There is **no standalone SEO model**: blog SEO fields live on `BlogPost`
-itself, and `meta_api` is a choice-lookup app, not SEO metadata.
+itself, and `meta_api` only reads slugs for the sitemap; it stores no SEO
+metadata.
 
 ## Relationships
 

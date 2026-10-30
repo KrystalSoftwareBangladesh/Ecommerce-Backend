@@ -163,12 +163,12 @@ Ecommerce-Backend/
 │
 ├── meta_api/
 │   ├── models.py                    # no models defined
-│   ├── serializers/moderation_status.py
-│   ├── services/moderation_status.py
-│   ├── views/v1/moderation_status.py
+│   ├── serializers/{moderation_status.py,sitemap.py}
+│   ├── services/{moderation_status.py,sitemap.py}
+│   ├── views/v1/{moderation_status.py,sitemap.py}
 │   ├── urls/{__init__.py,v1.py}
 │   ├── admin.py
-│   └── tests.py
+│   └── tests.py                     # sitemap endpoint tests
 │
 ├── origin_api/
 │   ├── models/origin.py

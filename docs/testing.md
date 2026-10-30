@@ -45,7 +45,8 @@ and `blog_api` are the two apps with a `factories.py`.
 | `purchase_api` | 284 |
 | `category_api` | 243 |
 | `user_api` | 234 |
-| `cart_api`, `customer_api`, `inventory_api`, `meta_api`, `review_api`, `supplier_api`, `wishlist_api` | 3-line placeholder |
+| `meta_api` | sitemap endpoint tests |
+| `cart_api`, `customer_api`, `inventory_api`, `review_api`, `supplier_api`, `wishlist_api` | 3-line placeholder |
 | `origin_api` | no `tests.py` at all |
 | `blog_api`, `content_security_api`, `request_log_api` | `tests/` package — **linted**, since `.flake8` excludes `tests.py` by name only |
 

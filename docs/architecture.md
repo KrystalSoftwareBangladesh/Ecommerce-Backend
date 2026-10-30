@@ -40,7 +40,10 @@ apps registered in `LOCAL_APPS` are:
 Responsibilities are listed in [domain-model.md](domain-model.md).
 
 `meta_api` is the only app with no models — it exposes choice/enum lookups
-(currently moderation statuses) to clients.
+(currently moderation statuses) and the public, read-only sitemap feed
+`GET /api/v1/seo/sitemap-urls/` (slug + lastmod of indexable products,
+categories, brands and blog posts) to clients. It only reads other apps'
+models.
 
 `content_security_api` and `request_log_api` are the two cross-cutting
 apps. `content_security_api` owns no business domain of its own and instead
