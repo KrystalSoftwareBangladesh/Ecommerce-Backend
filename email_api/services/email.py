@@ -42,6 +42,7 @@ class EmailService:
         related_user=None,
         metadata=None,
         idempotency_key=None,
+        subject=None,
     ):
         if not recipient:
             raise ValidationError("Email recipient is required.")
@@ -61,7 +62,7 @@ class EmailService:
             status=EmailStatus.PENDING,
             recipient=recipient,
             sender=settings.DEFAULT_FROM_EMAIL,
-            subject=template_config["subject"],
+            subject=subject or template_config["subject"],
             provider="smtp",
             related_user=related_user,
             metadata=metadata or {},
@@ -167,6 +168,7 @@ class EmailService:
         metadata=None,
         idempotency_key=None,
         persist_context=False,
+        subject=None,
     ):
         """
         Create an EmailLog and send it through Celery after commit.
@@ -174,6 +176,8 @@ class EmailService:
         ``persist_context`` stores the template context on the log
         so the email can be resent if dispatch is lost. Leave it
         off for emails whose context holds secrets (tokens, links).
+
+        ``subject`` overrides the registry subject for this email.
         """
         if persist_context:
             context = json.loads(
@@ -197,6 +201,7 @@ class EmailService:
                     related_user=related_user,
                     metadata=metadata,
                     idempotency_key=idempotency_key,
+                    subject=subject,
                 )
         except IntegrityError:
             if not idempotency_key:

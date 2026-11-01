@@ -6,6 +6,12 @@ from django.db import transaction
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
+from email_api.constants import EmailType
+from email_api.services.order_notification import (
+    describe_staff_actor,
+    schedule_order_notifications,
+)
+
 from .models import (
     Sale,
     SaleItem,
@@ -482,6 +488,9 @@ def create_sale(user, data):
         sale.subtotal_amount = subtotal
         sale.total_amount = subtotal - sale.discount_amount + sale.tax_amount
         sale.save()
+        schedule_order_notifications(
+            sale.id, EmailType.ORDER_PLACED_NOTIFICATION
+        )
         return sale
 
 
@@ -766,6 +775,12 @@ def update_sale_status(
                 'return_transaction'
             )
         sale.save(update_fields=update_fields)
+        if next_status == SaleStatus.CANCELLED:
+            schedule_order_notifications(
+                sale.id,
+                EmailType.ORDER_CANCELLED_NOTIFICATION,
+                cancelled_by=describe_staff_actor(user),
+            )
         return sale
 
 

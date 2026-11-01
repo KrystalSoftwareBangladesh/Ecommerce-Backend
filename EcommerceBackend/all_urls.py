@@ -20,6 +20,7 @@ from blog_api import urls as blog_urls
 from banner_api import urls as banner_ulrs
 from shipping_api import urls as shipping_urls
 from checkout_api import urls as checkout_urls
+from email_api import urls as email_urls
 
 
 urlpatterns = []
@@ -45,3 +46,4 @@ urlpatterns += blog_urls.urlpatterns
 urlpatterns += banner_ulrs.urlpatterns
 urlpatterns += shipping_urls.urlpatterns
 urlpatterns += checkout_urls.urlpatterns
+urlpatterns += email_urls.urlpatterns

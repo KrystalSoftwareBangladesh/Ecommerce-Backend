@@ -17,6 +17,12 @@ class EmailType(models.TextChoices):
     ORDER_CONFIRMATION = 'ORDER_CONFIRMATION', 'Order Confirmation'
     ORDER_CANCELLED = 'ORDER_CANCELLED', 'Order Cancelled'
     ORDER_SHIPPED = 'ORDER_SHIPPED', 'Order Shipped'
+    ORDER_PLACED_NOTIFICATION = (
+        'ORDER_PLACED_NOTIFICATION', 'Order Placed Notification'
+    )
+    ORDER_CANCELLED_NOTIFICATION = (
+        'ORDER_CANCELLED_NOTIFICATION', 'Order Cancelled Notification'
+    )
     CAMPAIGN = 'CAMPAIGN', 'Campaign'
 
 
@@ -50,5 +56,15 @@ EMAIL_TEMPLATE_REGISTRY = {
         "subject": "Your Best Computer Hub order was cancelled",
         "text": "emails/order_cancelled.txt",
         "html": "emails/order_cancelled.html",
+    },
+    EmailType.ORDER_PLACED_NOTIFICATION: {
+        "subject": "New order to process",
+        "text": "emails/order_placed_notification.txt",
+        "html": "emails/order_placed_notification.html",
+    },
+    EmailType.ORDER_CANCELLED_NOTIFICATION: {
+        "subject": "An order was cancelled",
+        "text": "emails/order_cancelled_notification.txt",
+        "html": "emails/order_cancelled_notification.html",
     },
 }

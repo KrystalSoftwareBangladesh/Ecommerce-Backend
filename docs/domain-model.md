@@ -28,6 +28,7 @@ repository. Business rules that govern these entities are in
 | `content_security_api` | Content Security Scanner: configurable detection rules, scan results and findings for migrated content | `KeywordRule`, `DomainRule`, `HtmlTagRule`, `HtmlAttributeRule`, `RedirectRule`, `HiddenContentRule`, `ObfuscationRule`, `ContentScan`, `ContentScanFinding` |
 | `request_log_api` | API request logging and observability: one immutable record per HTTP request | `RequestLog` |
 | `blog_api` | Editorial content: posts with their publication lifecycle, blog tags, SEO metadata | `BlogPost`, `BlogTag` |
+| `email_api` | Transactional email delivery and its log, email verification, internal order notification recipients | `EmailLog`, `EmailVerification`, `OrderNotificationRecipient` |
 
 There is **no `Order` model** — a completed customer purchase is a `Sale`.
 There is **no standalone SEO model**: blog SEO fields live on `BlogPost`
