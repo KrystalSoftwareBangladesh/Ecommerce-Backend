@@ -1,0 +1,9 @@
+A new order needs processing.
+
+Order {{ invoice_number }} was placed{% if channel %} through {{ channel }}{% endif %}.
+Customer: {{ customer_name }}
+Items: {{ item_count }}
+Total: {{ currency }} {{ total_amount }}
+{% if order_admin_url %}
+Open order in admin: {{ order_admin_url }}
+{% endif %}

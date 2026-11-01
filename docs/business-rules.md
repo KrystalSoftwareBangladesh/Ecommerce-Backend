@@ -135,6 +135,24 @@ which is done for order emails but not for emails carrying tokens. An email
 stuck in PROCESSING is marked FAILED and never resent automatically, since
 it may already have been delivered.
 
+### Order notifications
+
+Internal recipients (`OrderNotificationRecipient`, managed at
+`/api/v1/email/order-notification-recipients/` behind the model's
+view/add/change/delete permissions) are alerted when:
+
+- any sale is created — POS (`create_sale`) or storefront checkout
+  (`create_order`), every channel;
+- an order is cancelled by the customer (`cancel_order`) or by staff
+  (`update_sale_status` to `CANCELLED`).
+
+Automatic cancellation of an expired reservation does **not** notify.
+The alert is a short notice (invoice, channel, customer name, item count,
+total, admin link) — not a copy of the order; it carries no line items,
+address or phone. Each active, non-deleted recipient gets its own email,
+idempotent per sale, event and recipient. Like customer order emails it is
+queued after commit and never affects the order.
+
 ---
 
 ## Accounting

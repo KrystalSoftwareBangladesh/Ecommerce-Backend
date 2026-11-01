@@ -1,7 +1,11 @@
 # email_api/admin.py
 from django.contrib import admin
 
-from email_api.models import EmailLog, EmailVerification
+from email_api.models import (
+    EmailLog,
+    EmailVerification,
+    OrderNotificationRecipient,
+)
 
 
 @admin.register(EmailLog)
@@ -70,3 +74,31 @@ class EmailVerificationAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     date_hierarchy = "created_at"
     list_per_page = 50
+
+
+@admin.register(OrderNotificationRecipient)
+class OrderNotificationRecipientAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "email",
+        "name",
+        "is_active",
+        "deleted_at",
+        "created_at",
+    )
+    list_filter = (
+        "is_active",
+        "created_at",
+    )
+    search_fields = (
+        "email",
+        "name",
+    )
+    readonly_fields = (
+        "created_by",
+        "updated_by",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+    )
+    ordering = ("email",)

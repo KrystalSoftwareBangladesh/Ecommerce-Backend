@@ -18,6 +18,9 @@ from checkout_api.exceptions import IdempotencyConflict
 from EcommerceBackend.core.choices import CartStatus
 from email_api.constants import EmailType
 from email_api.services.email import EmailService
+from email_api.services.order_notification import (
+    schedule_order_notifications,
+)
 from cart_api.models import Cart
 from cart_api.services.cart import get_active_cart
 from customer_api.models import CustomerAddress
@@ -760,6 +763,9 @@ def create_order(
             sale_id, EmailType.ORDER_CONFIRMATION
         )
     )
+    schedule_order_notifications(
+        sale.id, EmailType.ORDER_PLACED_NOTIFICATION
+    )
     return sale
 
 
@@ -812,6 +818,11 @@ def cancel_order(*, user, sale):
         lambda sale_id=sale.id: _queue_order_email_after_commit(
             sale_id, EmailType.ORDER_CANCELLED
         )
+    )
+    schedule_order_notifications(
+        sale.id,
+        EmailType.ORDER_CANCELLED_NOTIFICATION,
+        cancelled_by="the customer",
     )
     return sale
 

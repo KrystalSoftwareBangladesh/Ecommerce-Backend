@@ -1,0 +1,8 @@
+An order was cancelled.
+
+Order {{ invoice_number }} was cancelled by {{ cancelled_by }}. It no longer needs processing.
+Customer: {{ customer_name }}
+Total: {{ currency }} {{ total_amount }}
+{% if order_admin_url %}
+Open order in admin: {{ order_admin_url }}
+{% endif %}

@@ -73,6 +73,18 @@ Ecommerce-Backend/
 │       ├── {test_models.py,test_services.py}
 │       └── {test_api_blog_post.py,test_api_blog_tag.py}
 │
+├── email_api/                        # email log, verification, order notifications
+│   ├── models/{email_log.py,email_verification.py,order_notification_recipient.py}
+│   ├── serializers/{email_verification.py,order_notification_recipient.py}
+│   ├── services/{email.py,email_verification.py,order_notification.py}
+│   ├── views/v1/order_notification_recipient.py
+│   ├── urls/{__init__.py,v1.py}
+│   ├── templates/emails/            # one .txt + .html pair per EmailType
+│   ├── constants.py                 # EmailType, EmailStatus, template registry
+│   ├── tasks.py                     # Celery send + stale-log recovery
+│   ├── admin.py
+│   └── tests.py
+│
 ├── account_api/
 │   ├── models/chart_of_account.py
 │   ├── serializers/chart_of_account.py

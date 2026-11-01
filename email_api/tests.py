@@ -193,3 +193,270 @@ class BeatScheduleTest(TestCase):
         for name, entry in settings.CELERY_BEAT_SCHEDULE.items():
             with self.subTest(entry=name):
                 self.assertIn(entry["task"], app.tasks)
+
+
+# ── Order notifications ──────────────────────
+
+
+class OrderNotificationTestBase(TestCase):
+    def setUp(self):
+        from account_api.models import AccountType, ChartOfAccount
+        from customer_api.models import CustomerProfile
+        from product_api.models import Product, ProductVariant
+        from user_api.models import User
+
+        self.staff_user = User.objects.create_user(
+            username="notify-staff",
+            email="notify-staff@example.com",
+            password="test-pass-123",
+            role="STAFF",
+            first_name="Rina",
+        )
+        self.customer_user = User.objects.create_user(
+            username="notify-customer",
+            email="notify-customer@example.com",
+            password="test-pass-123",
+            role="CUSTOMER",
+            first_name="Karim",
+        )
+        self.customer = CustomerProfile.objects.create(
+            user=self.customer_user,
+        )
+        product = Product.objects.create(
+            name="Notify Product",
+            current_selling_price=Decimal("100.00"),
+        )
+        self.variant = ProductVariant.objects.create(
+            product=product,
+            sku="NOTIFY-001",
+        )
+        self.cash_account = ChartOfAccount.objects.create(
+            name="Cash",
+            account_type=AccountType.ASSET,
+        )
+
+    def _recipient(self, email, **kwargs):
+        from email_api.models import OrderNotificationRecipient
+
+        return OrderNotificationRecipient.objects.create(
+            email=email, **kwargs
+        )
+
+    def _create_sale(self, channel=None):
+        from datetime import date
+
+        from sale_api.services import create_sale
+
+        payload = {
+            "customer": self.customer,
+            "account": self.cash_account,
+            "sale_date": date(2026, 11, 1),
+            "discount_amount": Decimal("0.00"),
+            "tax_amount": Decimal("0.00"),
+            "items": [{
+                "product_variant": self.variant,
+                "quantity": 3,
+                "unit_price": Decimal("100.00"),
+                "line_total": Decimal("300.00"),
+            }],
+        }
+        if channel:
+            payload["channel"] = channel
+        with mock.patch(DELAY), \
+                self.captureOnCommitCallbacks(execute=True):
+            return create_sale(self.staff_user, payload)
+
+    def _notification_logs(self, email_type):
+        return EmailLog.objects.filter(email_type=email_type)
+
+
+class OrderPlacedNotificationTest(OrderNotificationTestBase):
+    def test_new_sale_notifies_each_active_recipient(self):
+        from django.utils import timezone as tz
+
+        self._recipient("ops@example.com")
+        self._recipient("warehouse@example.com")
+        self._recipient("paused@example.com", is_active=False)
+        self._recipient("gone@example.com", deleted_at=tz.now())
+
+        with self.settings(FRONTEND_BASE_URL="https://shop.example/"):
+            sale = self._create_sale()
+
+        logs = self._notification_logs(
+            EmailType.ORDER_PLACED_NOTIFICATION
+        )
+        self.assertEqual(
+            sorted(logs.values_list("recipient", flat=True)),
+            ["ops@example.com", "warehouse@example.com"],
+        )
+        log = logs.first()
+        self.assertIsNone(log.related_user)
+        self.assertEqual(log.metadata["sale_id"], sale.id)
+        self.assertIn(sale.invoice_number, log.subject)
+        context = log.metadata["context"]
+        self.assertEqual(context["item_count"], 3)
+        self.assertEqual(context["customer_name"], "Karim")
+        self.assertEqual(
+            context["order_admin_url"],
+            f"https://shop.example/admin/orders/{sale.id}/",
+        )
+
+    def test_no_recipients_queues_nothing(self):
+        self._create_sale()
+
+        self.assertFalse(
+            self._notification_logs(
+                EmailType.ORDER_PLACED_NOTIFICATION
+            ).exists()
+        )
+
+    def test_requeue_does_not_duplicate(self):
+        from email_api.services import queue_order_notifications
+
+        self._recipient("ops@example.com")
+        sale = self._create_sale()
+
+        with mock.patch(DELAY), \
+                self.captureOnCommitCallbacks(execute=True):
+            queue_order_notifications(
+                sale.id, EmailType.ORDER_PLACED_NOTIFICATION
+            )
+
+        self.assertEqual(
+            self._notification_logs(
+                EmailType.ORDER_PLACED_NOTIFICATION
+            ).count(),
+            1,
+        )
+
+    def test_queue_failure_does_not_break_the_sale(self):
+        from sale_api.models import Sale
+
+        self._recipient("ops@example.com")
+        with mock.patch(
+            "email_api.services.order_notification.EmailService.queue",
+            side_effect=RuntimeError("boom"),
+        ):
+            sale = self._create_sale()
+
+        self.assertTrue(Sale.objects.filter(pk=sale.pk).exists())
+
+
+class OrderCancelledNotificationTest(OrderNotificationTestBase):
+    def test_staff_cancellation_notifies_recipients(self):
+        from sale_api.models import SaleStatus
+        from sale_api.services import update_sale_status
+
+        self._recipient("ops@example.com")
+        sale = self._create_sale()
+
+        with mock.patch(DELAY), \
+                self.captureOnCommitCallbacks(execute=True):
+            update_sale_status(
+                self.staff_user, sale, SaleStatus.CANCELLED
+            )
+
+        log = self._notification_logs(
+            EmailType.ORDER_CANCELLED_NOTIFICATION
+        ).get()
+        self.assertEqual(log.recipient, "ops@example.com")
+        self.assertEqual(
+            log.metadata["context"]["cancelled_by"], "staff (Rina)"
+        )
+
+    def test_customer_cancellation_notifies_recipients(self):
+        from checkout_api.services import cancel_order
+        from sale_api.models import Sale
+
+        self._recipient("ops@example.com")
+        sale = self._create_sale(channel=Sale.SaleChannel.WEBSITE)
+
+        with mock.patch(DELAY), \
+                self.captureOnCommitCallbacks(execute=True):
+            cancel_order(user=self.customer_user, sale=sale)
+
+        log = self._notification_logs(
+            EmailType.ORDER_CANCELLED_NOTIFICATION
+        ).get()
+        self.assertEqual(
+            log.metadata["context"]["cancelled_by"], "the customer"
+        )
+
+
+class OrderNotificationRecipientApiTest(TestCase):
+    URL = "/api/v1/email/order-notification-recipients/"
+
+    def setUp(self):
+        from django.contrib.auth.models import Permission
+        from rest_framework.test import APIClient
+
+        from user_api.models import User
+
+        self.client = APIClient()
+        self.manager = User.objects.create_user(
+            username="notify-manager",
+            email="manager@example.com",
+            password="test-pass-123",
+            role="STAFF",
+        )
+        self.manager.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label="email_api",
+            codename__endswith="ordernotificationrecipient",
+        ))
+        self.outsider = User.objects.create_user(
+            username="notify-outsider",
+            email="outsider@example.com",
+            password="test-pass-123",
+            role="STAFF",
+        )
+
+    def test_user_without_permission_is_forbidden(self):
+        self.client.force_authenticate(self.outsider)
+
+        self.assertEqual(self.client.get(self.URL).status_code, 403)
+        self.assertEqual(
+            self.client.post(
+                self.URL, {"email": "a@example.com"}
+            ).status_code,
+            403,
+        )
+
+    def test_create_normalizes_and_rejects_duplicates(self):
+        self.client.force_authenticate(self.manager)
+
+        response = self.client.post(
+            self.URL, {"email": " Ops@Example.com ", "name": "Ops"}
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["email"], "ops@example.com")
+
+        duplicate = self.client.post(self.URL, {"email": "OPS@example.com"})
+        self.assertEqual(duplicate.status_code, 400)
+
+    def test_delete_is_soft_and_email_can_be_added_again(self):
+        from email_api.models import OrderNotificationRecipient
+
+        self.client.force_authenticate(self.manager)
+        created = self.client.post(self.URL, {"email": "ops@example.com"})
+
+        deleted = self.client.delete(f"{self.URL}{created.data['id']}/")
+        self.assertEqual(deleted.status_code, 204)
+        self.assertEqual(self.client.get(self.URL).data["count"], 0)
+        self.assertIsNotNone(
+            OrderNotificationRecipient.objects.get(
+                pk=created.data["id"]
+            ).deleted_at
+        )
+
+        again = self.client.post(self.URL, {"email": "ops@example.com"})
+        self.assertEqual(again.status_code, 201)
+
+    def test_toggle_active(self):
+        self.client.force_authenticate(self.manager)
+        created = self.client.post(self.URL, {"email": "ops@example.com"})
+
+        response = self.client.patch(
+            f"{self.URL}{created.data['id']}/", {"is_active": False}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["is_active"])
