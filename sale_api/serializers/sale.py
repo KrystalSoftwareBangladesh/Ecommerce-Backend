@@ -254,3 +254,15 @@ class SaleStatusUpdateSerializer(serializers.Serializer):
                 'Sale account must be an asset account.'
             )
         return value
+
+
+class SaleCountSummarySerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = serializers.DictField(child=serializers.IntegerField())
+
+
+class SaleAmountSummarySerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = serializers.DictField(
+        child=serializers.DecimalField(max_digits=20, decimal_places=2)
+    )

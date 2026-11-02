@@ -1,5 +1,7 @@
 # sale_api/views/v1/sale.py
 from django.core.exceptions import ValidationError as DjangoValidationError
+from decimal import Decimal
+from django.db.models import Count, Sum
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
@@ -12,7 +14,8 @@ from sale_api.models import Sale, SaleStatus, get_next_sale_statuses
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
     SaleDetailSerializer, SaleChannelListSerializer, SaleStatusListSerializer,
-    SaleStatusUpdateSerializer
+    SaleStatusUpdateSerializer, SaleCountSummarySerializer,
+    SaleAmountSummarySerializer
 )
 from sale_api.services import (
     create_sale, update_sale, update_sale_status,
@@ -207,3 +210,60 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
             'statuses': statuses,
             'transitions': transitions,
         })
+
+    @extend_schema(
+        tags=["Sales"],
+        summary="Sale count summary",
+        description="Number of sales grouped by status.",
+        request=None,
+        responses={200: SaleCountSummarySerializer},
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='summary',
+        pagination_class=None,
+    )
+    def summary(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        rows = queryset.order_by().values('status').annotate(
+            count=Count('id')
+        )
+        counts = {value: 0 for value, _ in SaleStatus.choices}
+        counts.update({row['status']: row['count'] for row in rows})
+        serializer = SaleCountSummarySerializer({
+            'success': True,
+            'data': counts,
+        })
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Sales"],
+        summary="Sale amount summary",
+        description="Sum of total_amount grouped by status.",
+        request=None,
+        responses={200: SaleAmountSummarySerializer},
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='amount-summary',
+        pagination_class=None,
+    )
+    def amount_summary(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        rows = queryset.order_by().values('status').annotate(
+            total=Sum('total_amount')
+        )
+        amounts = {
+            value: Decimal('0.00') for value, _ in SaleStatus.choices
+        }
+        amounts.update({
+            row['status']: row['total'] for row in rows
+            if row['total'] is not None
+        })
+        serializer = SaleAmountSummarySerializer({
+            'success': True,
+            'data': amounts,
+        })
+        return Response(serializer.data)
