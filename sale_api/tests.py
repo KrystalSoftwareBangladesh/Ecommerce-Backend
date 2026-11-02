@@ -1476,3 +1476,35 @@ class SaleSummaryApiTests(APITestCase):
         self.assertEqual(
             response.data['data'][SaleStatus.PENDING], 2
         )
+
+    def test_summary_respects_list_filters(self):
+        response = self.client.get(
+            '/api/v1/sales/summary/?status=' + SaleStatus.PENDING
+        )
+
+        self.assertEqual(response.status_code, 200)
+        expected = {value: 0 for value, _ in SaleStatus.choices}
+        expected[SaleStatus.PENDING] = 2
+        self.assertEqual(response.data['data'], expected)
+
+    def test_summary_zero_defaults_when_no_sales_match(self):
+        expected_counts = {
+            value: 0 for value, _ in SaleStatus.choices
+        }
+        expected_amounts = {
+            value: '0.00' for value, _ in SaleStatus.choices
+        }
+
+        summary = self.client.get(
+            '/api/v1/sales/summary/?channel=Instagram'
+        )
+        amount_summary = self.client.get(
+            '/api/v1/sales/amount-summary/?channel=Instagram'
+        )
+
+        self.assertEqual(summary.status_code, 200)
+        self.assertEqual(summary.data['data'], expected_counts)
+        self.assertEqual(amount_summary.status_code, 200)
+        self.assertEqual(
+            amount_summary.data['data'], expected_amounts
+        )
