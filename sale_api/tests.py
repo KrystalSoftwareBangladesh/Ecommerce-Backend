@@ -1400,3 +1400,111 @@ class POSRegressionTest(TestCase):
         self.assertIsNotNone(
             self.sale.return_transaction
         )
+
+
+class SaleSummaryApiTests(APITestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username='staff-summary',
+            email='staff-summary@example.com',
+            password='test-pass-123',
+            role='STAFF'
+        )
+        self.customer_user = User.objects.create_user(
+            username='customer-summary',
+            email='customer-summary@example.com',
+            password='test-pass-123',
+            role='CUSTOMER'
+        )
+        self.customer = CustomerProfile.objects.create(
+            user=self.customer_user
+        )
+        self._create_sale(
+            SaleStatus.PENDING, Decimal('45000.00'))
+        self._create_sale(
+            SaleStatus.PENDING, Decimal('1000.00'))
+        self._create_sale(
+            SaleStatus.DELIVERED, Decimal('2500.50'))
+        self.client.force_authenticate(user=self.staff_user)
+
+    def _create_sale(self, sale_status, total_amount):
+        sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=date(2026, 11, 1),
+            status=sale_status,
+            subtotal_amount=total_amount,
+            total_amount=total_amount,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
+        return sale
+
+    def test_summary_returns_counts_by_status(self):
+        response = self.client.get('/api/v1/sales/summary/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['success'])
+        expected = {value: 0 for value, _ in SaleStatus.choices}
+        expected.update({
+            SaleStatus.PENDING: 2,
+            SaleStatus.DELIVERED: 1,
+        })
+        self.assertEqual(response.data['data'], expected)
+
+    def test_amount_summary_returns_decimal_strings(self):
+        response = self.client.get(
+            '/api/v1/sales/amount-summary/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['success'])
+        expected = {
+            value: '0.00' for value, _ in SaleStatus.choices
+        }
+        expected.update({
+            SaleStatus.PENDING: '46000.00',
+            SaleStatus.DELIVERED: '2500.50',
+        })
+        self.assertEqual(response.data['data'], expected)
+
+    def test_summary_ignores_ordering_param(self):
+        response = self.client.get(
+            '/api/v1/sales/summary/?ordering=total_amount'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['data'][SaleStatus.PENDING], 2
+        )
+
+    def test_summary_respects_list_filters(self):
+        response = self.client.get(
+            '/api/v1/sales/summary/?status=' + SaleStatus.PENDING
+        )
+
+        self.assertEqual(response.status_code, 200)
+        expected = {value: 0 for value, _ in SaleStatus.choices}
+        expected[SaleStatus.PENDING] = 2
+        self.assertEqual(response.data['data'], expected)
+
+    def test_summary_zero_defaults_when_no_sales_match(self):
+        expected_counts = {
+            value: 0 for value, _ in SaleStatus.choices
+        }
+        expected_amounts = {
+            value: '0.00' for value, _ in SaleStatus.choices
+        }
+
+        summary = self.client.get(
+            '/api/v1/sales/summary/?channel=Instagram'
+        )
+        amount_summary = self.client.get(
+            '/api/v1/sales/amount-summary/?channel=Instagram'
+        )
+
+        self.assertEqual(summary.status_code, 200)
+        self.assertEqual(summary.data['data'], expected_counts)
+        self.assertEqual(amount_summary.status_code, 200)
+        self.assertEqual(
+            amount_summary.data['data'], expected_amounts
+        )
