@@ -79,6 +79,11 @@ Sales may:
 
 Stock must be validated before sale completion.
 
+`GET /api/v1/sales/summary/` and `GET /api/v1/sales/amount-summary/`
+return read-only sales counts and `total_amount` sums grouped by status
+for every status (absent statuses report `0` / `0.00`). Both honour the
+list endpoint's filters; they are not paginated.
+
 Available stock is active inventory movements minus active, unexpired
 storefront reservations. POS confirmation and storefront reservation both
 lock the product variant rows (in primary-key order) before checking it, so
