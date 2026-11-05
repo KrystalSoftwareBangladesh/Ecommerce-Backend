@@ -19,7 +19,8 @@ from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
     SaleDetailSerializer, SaleChannelListSerializer, SaleStatusListSerializer,
     SaleStatusUpdateSerializer, SaleCountSummarySerializer,
-    SaleAmountSummarySerializer, SalePerformanceReportQuerySerializer,
+    SaleAmountSummarySerializer, SalePendingCountSerializer,
+    SalePerformanceReportQuerySerializer,
     SalePerformanceReportSerializer,
 )
 from sale_api.services import (
@@ -280,6 +281,32 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
         serializer = SaleAmountSummarySerializer({
             'success': True,
             'data': amounts,
+        })
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Sales"],
+        summary="Sale pending count",
+        description=(
+            "Count of active sales currently in PENDING status."
+        ),
+        request=None,
+        responses={200: SalePendingCountSerializer},
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='pending-count',
+        pagination_class=None,
+    )
+    def pending_count(self, request):
+        count = Sale.objects.filter(
+            is_active=True,
+            status=SaleStatus.PENDING,
+        ).aggregate(pending_orders=Count('id'))['pending_orders']
+        serializer = SalePendingCountSerializer({
+            'success': True,
+            'data': {'pending_orders': count},
         })
         return Response(serializer.data)
 
