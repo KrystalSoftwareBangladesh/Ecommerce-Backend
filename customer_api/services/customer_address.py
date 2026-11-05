@@ -1,18 +1,34 @@
 # customer_api/services/customer_address.py
-from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from customer_api.models import CustomerAddress
+from rest_framework.exceptions import ValidationError
+
+from customer_api.models import CustomerProfile, CustomerAddress
 
 
 def get_customer_profile(user):
-    """Return the CustomerProfile for the given user or raise."""
+    """Return the CustomerProfile for the given user or None."""
     try:
         return user.customer_profile
-    except Exception:
+    except CustomerProfile.DoesNotExist:
+        return None
+
+
+def get_or_create_customer_profile(user):
+    """Return the user's profile, provisioning one if absent.
+
+    An inactive profile raises instead of being reactivated or
+    replaced.
+    """
+    profile, _ = CustomerProfile.objects.get_or_create(
+        user=user,
+        defaults={"customer_type": "WEBSITE"},
+    )
+    if not profile.is_active:
         raise ValidationError(
-            "No customer profile found for this user."
+            "Customer profile is inactive for this user."
         )
+    return profile
 
 
 def list_addresses(*, customer_profile):
@@ -24,9 +40,10 @@ def list_addresses(*, customer_profile):
     ).select_related("shipping_zone")
 
 
-def create_address(*, customer_profile, user, validated_data):
-    """Create a new address for the given customer profile."""
+def create_address(*, user, validated_data):
+    """Create an address, provisioning the profile if needed."""
     with transaction.atomic():
+        customer_profile = get_or_create_customer_profile(user)
         address = CustomerAddress.objects.create(
             customer=customer_profile,
             created_by=user,

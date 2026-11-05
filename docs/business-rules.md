@@ -195,6 +195,17 @@ Customer balances must reflect:
 - Payments
 - Adjustments
 
+### Customer address creation
+
+Creating an address (`POST /api/v1/customer-addresses/`) provisions a
+`CustomerProfile` for the requesting user if none exists
+(`customer_type="WEBSITE"`), inside the same transaction as the address.
+Any authenticated user is eligible; role is not checked.
+
+An existing inactive profile is never reactivated or replaced: creation
+fails with `400`. Listing addresses (`GET /api/v1/customer-addresses/`)
+never provisions a profile — a user without one gets an empty list.
+
 ---
 
 ## Content Security

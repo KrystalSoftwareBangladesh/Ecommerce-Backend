@@ -25,6 +25,8 @@ class CustomerAddressViewSet(viewsets.ModelViewSet):
         customer_profile = services.get_customer_profile(
             self.request.user
         )
+        if customer_profile is None:
+            return CustomerAddress.objects.none()
         return services.list_addresses(
             customer_profile=customer_profile
         )
@@ -37,11 +39,7 @@ class CustomerAddressViewSet(viewsets.ModelViewSet):
         return CustomerAddressDetailSerializer
 
     def perform_create(self, serializer):
-        customer_profile = services.get_customer_profile(
-            self.request.user
-        )
         address = services.create_address(
-            customer_profile=customer_profile,
             user=self.request.user,
             validated_data=serializer.validated_data,
         )
