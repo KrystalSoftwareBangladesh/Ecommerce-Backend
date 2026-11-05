@@ -84,6 +84,11 @@ return read-only sales counts and `total_amount` sums grouped by status
 for every status (absent statuses report `0` / `0.00`). Both honour the
 list endpoint's filters; they are not paginated.
 
+`GET /api/v1/sales/pending-count/` returns the count of active sales in
+`PENDING` status as `data.pending_orders`. It is not paginated and does
+not honour list filters; soft-deleted (`is_active=False`) sales are
+excluded.
+
 `GET /api/v1/sales/reports/performance/` returns order and revenue
 totals for a reporting period ending today (`days`, default `90`, max
 `365`), compared against the immediately preceding period of equal

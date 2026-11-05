@@ -268,6 +268,15 @@ class SaleAmountSummarySerializer(serializers.Serializer):
     )
 
 
+class SalePendingCountDataSerializer(serializers.Serializer):
+    pending_orders = serializers.IntegerField()
+
+
+class SalePendingCountSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = SalePendingCountDataSerializer()
+
+
 class SalePerformanceReportQuerySerializer(serializers.Serializer):
     days = serializers.IntegerField(
         required=False, default=90, min_value=1, max_value=365

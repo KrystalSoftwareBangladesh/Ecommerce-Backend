@@ -1468,6 +1468,34 @@ class SaleSummaryApiTests(APITestCase):
         })
         self.assertEqual(response.data['data'], expected)
 
+    def test_pending_count_counts_active_pending_sales(self):
+        response = self.client.get(
+            '/api/v1/sales/pending-count/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['success'])
+        self.assertEqual(
+            response.data['data'],
+            {'pending_orders': 2},
+        )
+
+    def test_pending_count_excludes_inactive_sales(self):
+        sale = self._create_sale(
+            SaleStatus.PENDING, Decimal('500.00'))
+        sale.is_active = False
+        sale.save(update_fields=['is_active'])
+
+        response = self.client.get(
+            '/api/v1/sales/pending-count/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['data'],
+            {'pending_orders': 2},
+        )
+
     def test_summary_ignores_ordering_param(self):
         response = self.client.get(
             '/api/v1/sales/summary/?ordering=total_amount'
