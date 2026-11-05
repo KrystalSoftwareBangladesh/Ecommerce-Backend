@@ -1,9 +1,9 @@
-Django==5.2.5
+Django==5.2.17
 celery
 redis
 psycopg2-binary
 flake8
-djangorestframework==3.16.1
+djangorestframework==3.18.2
 djangorestframework-simplejwt
 django-cors-headers
 drf-spectacular
