@@ -84,6 +84,18 @@ return read-only sales counts and `total_amount` sums grouped by status
 for every status (absent statuses report `0` / `0.00`). Both honour the
 list endpoint's filters; they are not paginated.
 
+`GET /api/v1/sales/reports/performance/` returns order and revenue
+totals for a reporting period ending today (`days`, default `90`, max
+`365`), compared against the immediately preceding period of equal
+duration, plus a day-by-day trend that is zero-filled for dates with no
+orders. It honours the `channel`, `customer` and `status` sale filters
+(applied identically to both periods) but not `start_date`/`end_date`,
+`search` or `ordering`, since `days` already defines the window. A growth
+percentage is `null` when the corresponding previous-period value is
+zero. Like `amount-summary`, revenue totals every matched status
+(including `CANCELLED` and `RETURNED`) unless `status` narrows it; it is
+not paginated.
+
 Available stock is active inventory movements minus active, unexpired
 storefront reservations. POS confirmation and storefront reservation both
 lock the product variant rows (in primary-key order) before checking it, so

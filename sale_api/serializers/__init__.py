@@ -17,6 +17,8 @@ from .sale import (
     SaleStatusUpdateSerializer,
     SaleCountSummarySerializer,
     SaleAmountSummarySerializer,
+    SalePerformanceReportQuerySerializer,
+    SalePerformanceReportSerializer,
 )
 
 
@@ -36,4 +38,6 @@ __all__ = [
     SaleStatusUpdateSerializer,
     SaleCountSummarySerializer,
     SaleAmountSummarySerializer,
+    SalePerformanceReportQuerySerializer,
+    SalePerformanceReportSerializer,
 ]
