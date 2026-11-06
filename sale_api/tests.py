@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from account_api.models import AccountType, ChartOfAccount
@@ -1467,6 +1468,34 @@ class SaleSummaryApiTests(APITestCase):
         })
         self.assertEqual(response.data['data'], expected)
 
+    def test_pending_count_counts_active_pending_sales(self):
+        response = self.client.get(
+            '/api/v1/sales/pending-count/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['success'])
+        self.assertEqual(
+            response.data['data'],
+            {'pending_orders': 2},
+        )
+
+    def test_pending_count_excludes_inactive_sales(self):
+        sale = self._create_sale(
+            SaleStatus.PENDING, Decimal('500.00'))
+        sale.is_active = False
+        sale.save(update_fields=['is_active'])
+
+        response = self.client.get(
+            '/api/v1/sales/pending-count/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['data'],
+            {'pending_orders': 2},
+        )
+
     def test_summary_ignores_ordering_param(self):
         response = self.client.get(
             '/api/v1/sales/summary/?ordering=total_amount'
@@ -1508,3 +1537,190 @@ class SaleSummaryApiTests(APITestCase):
         self.assertEqual(
             amount_summary.data['data'], expected_amounts
         )
+
+
+class SalePerformanceReportApiTests(APITestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username='staff-perf',
+            email='staff-perf@example.com',
+            password='test-pass-123',
+            role='STAFF'
+        )
+        self.customer_user = User.objects.create_user(
+            username='customer-perf',
+            email='customer-perf@example.com',
+            password='test-pass-123',
+            role='CUSTOMER'
+        )
+        self.customer = CustomerProfile.objects.create(
+            user=self.customer_user
+        )
+        self.today = timezone.now().date()
+        self.client.force_authenticate(user=self.staff_user)
+
+    def _create_sale(
+        self, sale_date, total_amount=Decimal('100.00'),
+        channel=Sale.SaleChannel.WALK_IN, sale_status=SaleStatus.PENDING,
+        is_active=True,
+    ):
+        sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=sale_date,
+            status=sale_status,
+            channel=channel,
+            subtotal_amount=total_amount,
+            total_amount=total_amount,
+            is_active=is_active,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
+        return sale
+
+    def test_default_days_returns_90_day_window_with_zero_fill(self):
+        self._create_sale(self.today, Decimal('100.00'))
+        start_date = self.today - timedelta(days=89)
+        self._create_sale(start_date, Decimal('50.00'))
+
+        response = self.client.get('/api/v1/sales/reports/performance/')
+
+        self.assertEqual(response.status_code, 200)
+        data = response.data['data']
+        self.assertEqual(data['period']['days'], 90)
+        self.assertEqual(str(data['period']['start_date']), str(start_date))
+        self.assertEqual(str(data['period']['end_date']), str(self.today))
+        self.assertEqual(len(data['daily_trend']), 90)
+        self.assertEqual(data['overview']['total_orders'], 2)
+        self.assertEqual(data['overview']['total_revenue'], '150.00')
+        self.assertEqual(
+            data['overview']['average_order_value'], '75.00'
+        )
+        zero_days = [
+            row for row in data['daily_trend']
+            if row['order_count'] == 0
+        ]
+        self.assertEqual(len(zero_days), 88)
+        for row in zero_days:
+            self.assertEqual(row['revenue'], '0.00')
+
+    def test_sale_just_outside_window_lands_in_previous_period(self):
+        start_date = self.today - timedelta(days=9)
+        previous_sale_date = start_date - timedelta(days=1)
+        self._create_sale(previous_sale_date, Decimal('200.00'))
+        self._create_sale(start_date, Decimal('100.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=10'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.data['data']
+        self.assertEqual(data['overview']['total_orders'], 1)
+        self.assertEqual(data['overview']['total_revenue'], '100.00')
+        self.assertEqual(data['comparison']['previous_period_orders'], 1)
+        self.assertEqual(
+            data['comparison']['previous_period_revenue'], '200.00'
+        )
+        self.assertEqual(
+            data['comparison']['order_growth_percentage'], 0.0
+        )
+        self.assertEqual(
+            data['comparison']['revenue_growth_percentage'], -50.0
+        )
+
+    def test_sale_before_previous_window_is_excluded(self):
+        start_date = self.today - timedelta(days=9)
+        previous_start_date = start_date - timedelta(days=10)
+        too_old = previous_start_date - timedelta(days=1)
+        self._create_sale(too_old, Decimal('999.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=10'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['comparison']['previous_period_orders'], 0)
+        self.assertEqual(
+            data['comparison']['previous_period_revenue'], '0.00'
+        )
+        self.assertIsNone(
+            data['comparison']['order_growth_percentage']
+        )
+        self.assertIsNone(
+            data['comparison']['revenue_growth_percentage']
+        )
+
+    def test_growth_percentage_null_when_previous_period_empty(self):
+        self._create_sale(self.today, Decimal('100.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=10'
+        )
+
+        data = response.data['data']
+        self.assertIsNone(
+            data['comparison']['order_growth_percentage']
+        )
+        self.assertIsNone(
+            data['comparison']['revenue_growth_percentage']
+        )
+
+    def test_soft_deleted_sales_are_excluded(self):
+        self._create_sale(self.today, Decimal('500.00'), is_active=False)
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=10'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['overview']['total_orders'], 0)
+        self.assertEqual(data['overview']['total_revenue'], '0.00')
+        self.assertEqual(data['overview']['average_order_value'], '0.00')
+
+    def test_channel_filter_applies_to_both_periods(self):
+        start_date = self.today - timedelta(days=9)
+        previous_sale_date = start_date - timedelta(days=1)
+        self._create_sale(
+            self.today, Decimal('100.00'), channel=Sale.SaleChannel.WEBSITE
+        )
+        self._create_sale(
+            previous_sale_date, Decimal('200.00'),
+            channel=Sale.SaleChannel.WEBSITE,
+        )
+        self._create_sale(
+            self.today, Decimal('300.00'), channel=Sale.SaleChannel.PHONE
+        )
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/'
+            '?days=10&channel=Website'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['overview']['total_orders'], 1)
+        self.assertEqual(data['overview']['total_revenue'], '100.00')
+        self.assertEqual(data['comparison']['previous_period_orders'], 1)
+        self.assertEqual(
+            data['comparison']['previous_period_revenue'], '200.00'
+        )
+
+    def test_days_rejects_zero(self):
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=0'
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_days_rejects_over_365(self):
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=366'
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_days_rejects_non_integer(self):
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=abc'
+        )
+
+        self.assertEqual(response.status_code, 400)

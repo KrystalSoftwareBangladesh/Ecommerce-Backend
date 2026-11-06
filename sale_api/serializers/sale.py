@@ -266,3 +266,59 @@ class SaleAmountSummarySerializer(serializers.Serializer):
     data = serializers.DictField(
         child=serializers.DecimalField(max_digits=20, decimal_places=2)
     )
+
+
+class SalePendingCountDataSerializer(serializers.Serializer):
+    pending_orders = serializers.IntegerField()
+
+
+class SalePendingCountSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = SalePendingCountDataSerializer()
+
+
+class SalePerformanceReportQuerySerializer(serializers.Serializer):
+    days = serializers.IntegerField(
+        required=False, default=90, min_value=1, max_value=365
+    )
+
+
+class SalePerformancePeriodSerializer(serializers.Serializer):
+    days = serializers.IntegerField()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+
+
+class SalePerformanceOverviewSerializer(serializers.Serializer):
+    total_orders = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=20, decimal_places=2)
+    average_order_value = serializers.DecimalField(
+        max_digits=20, decimal_places=2
+    )
+
+
+class SalePerformanceComparisonSerializer(serializers.Serializer):
+    previous_period_orders = serializers.IntegerField()
+    order_growth_percentage = serializers.FloatField(allow_null=True)
+    previous_period_revenue = serializers.DecimalField(
+        max_digits=20, decimal_places=2
+    )
+    revenue_growth_percentage = serializers.FloatField(allow_null=True)
+
+
+class SalePerformanceDailyTrendSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    order_count = serializers.IntegerField()
+    revenue = serializers.DecimalField(max_digits=20, decimal_places=2)
+
+
+class SalePerformanceReportDataSerializer(serializers.Serializer):
+    period = SalePerformancePeriodSerializer()
+    overview = SalePerformanceOverviewSerializer()
+    comparison = SalePerformanceComparisonSerializer()
+    daily_trend = SalePerformanceDailyTrendSerializer(many=True)
+
+
+class SalePerformanceReportSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = SalePerformanceReportDataSerializer()

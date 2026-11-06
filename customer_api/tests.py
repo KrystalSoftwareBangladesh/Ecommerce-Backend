@@ -246,3 +246,78 @@ class CustomerAddressAPITestCase(TestCase):
         self.client.delete(f"{self.list_url}{addr_id}/")
         resp = self.client.get(self.list_url)
         self.assertEqual(len(resp.data["results"]), 0)
+
+
+class CustomerAddressAutoProvisionTestCase(TestCase):
+    """Address creation provisions the customer profile."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="nopfile@example.com",
+            email="nopfile@example.com",
+            first_name="No",
+            last_name="Profile",
+            password="TestPass123!",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.list_url = "/api/v1/customer-addresses/"
+
+    def _address_payload(self):
+        return {
+            "address_type": "BILLING",
+            "first_name": "John",
+            "last_name": "Doe",
+            "address_1": "123 Main St",
+            "city": "Dhaka",
+            "state": "Dhaka",
+            "postcode": "1205",
+            "country": "BD",
+            "phone": "+8801700000000",
+        }
+
+    def test_create_address_provisions_customer_profile(self):
+        """POST by a non-customer creates the profile too."""
+        resp = self.client.post(
+            self.list_url, self._address_payload(), format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        profile = CustomerProfile.objects.get(user=self.user)
+        self.assertEqual(profile.customer_type, "WEBSITE")
+        self.assertTrue(profile.is_active)
+        address = CustomerAddress.objects.get(
+            customer=profile
+        )
+        self.assertEqual(address.address_type, "BILLING")
+
+    def test_create_address_rejects_inactive_profile(self):
+        """Inactive profile: 400, no new profile, no address."""
+        CustomerProfile.objects.create(
+            user=self.user,
+            customer_type="WEBSITE",
+            is_active=False,
+        )
+        resp = self.client.post(
+            self.list_url, self._address_payload(), format="json"
+        )
+        self.assertEqual(
+            resp.status_code, status.HTTP_400_BAD_REQUEST
+        )
+        self.assertEqual(
+            CustomerProfile.objects.filter(
+                user=self.user
+            ).count(),
+            1,
+        )
+        self.assertEqual(CustomerAddress.objects.count(), 0)
+
+    def test_list_without_profile_returns_empty(self):
+        """GET list by a non-customer: empty, no provisioning."""
+        resp = self.client.get(self.list_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["results"]), 0)
+        self.assertFalse(
+            CustomerProfile.objects.filter(
+                user=self.user
+            ).exists()
+        )
