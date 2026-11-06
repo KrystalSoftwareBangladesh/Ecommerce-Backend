@@ -33,6 +33,7 @@ Ecommerce-Backend/
 │   ├── business-rules.md
 │   ├── category-import-api.md
 │   ├── checkout-api.md                # storefront checkout/order API contract
+│   ├── cms-architecture.md            # CMS technical architecture & data model
 │   ├── content-security-scanner-plan.md
 │   ├── conventions.md
 │   ├── deployment.md                  # Celery worker + Beat requirements
