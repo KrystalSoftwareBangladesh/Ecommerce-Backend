@@ -478,6 +478,38 @@ each always present as a list of `{slug, lastmod}`:
 "Not soft-deleted" means `deleted_at` is null. Timestamps are ISO 8601 in
 UTC. The storefront builds the URLs from the slugs.
 
+## CMS (Phase 1 — global sections)
+
+`cms_api.CmsSection` is a Wagtail snippet holding one content block whose
+type matches its immutable `section_type`. Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **Create never implies publish.** A new section is a draft
+  (`live=False`); `status` is not writable through CRUD. Publishing is
+  `POST /api/v1/cms/sections/{id}/publish/` behind
+  `publish_cms_section`.
+- **`section_type` is immutable** after creation. `content` must hold
+  exactly one block of that type; unknown types and multi-block content
+  are rejected with 400.
+- **Optimistic locking.** A write carrying `base_revision_id` that is not
+  the section's latest revision is rejected with 409
+  (`revision_conflict`).
+- **Unpublish** (`unpublish_cms_section`) hides the section without
+  deleting it; unpublishing a draft is a 400.
+- **Archive** (`archive_cms_section`) sets `archived_at` and excludes the
+  section from the default listing (`?archived=true` lists archived
+  ones). There is no unarchive in Phase 1. Archiving twice is a 400.
+- **Delete is soft** (`delete_cmssection`) and dependency-guarded: while
+  any other object references the section (Wagtail `ReferenceIndex`),
+  deletion is refused with 400. The references are listed at
+  `.../{id}/references/`.
+- **Rollback** restores an older revision's content as a *new* revision
+  and publishes it (audit trail stays intact). It is gated by
+  `publish_cms_section`, matching its publish effect.
+- **Section-type schemas** are read from
+  `GET /api/v1/cms/section-types/` (authenticated, no model permission);
+  the type registry is code-owned, not admin-defined.
+
 ## Permissions
 
 Protected endpoints require authentication.

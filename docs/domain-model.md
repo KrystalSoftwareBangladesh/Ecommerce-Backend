@@ -29,6 +29,7 @@ repository. Business rules that govern these entities are in
 | `request_log_api` | API request logging and observability: one immutable record per HTTP request | `RequestLog` |
 | `blog_api` | Editorial content: posts with their publication lifecycle, blog tags, SEO metadata | `BlogPost`, `BlogTag` |
 | `email_api` | Transactional email delivery and its log, email verification, internal order notification recipients | `EmailLog`, `EmailVerification`, `OrderNotificationRecipient` |
+| `cms_api` | Wagtail CMS: global sections with draft/publish lifecycle, revisions and rollback (issue #463) | `CmsSection` |
 
 There is **no `Order` model** — a completed customer purchase is a `Sale`.
 There is **no standalone SEO model**: blog SEO fields live on `BlogPost`
@@ -163,6 +164,8 @@ Declared in `Meta.permissions` and shipped with a migration:
   `view_request_log_response_payload`, `view_request_log_error_details`,
   `view_request_log_traceback`
 - `blog_api.BlogPost` — `publish_blog_post`, `unpublish_blog_post`
+- `cms_api.CmsSection` — `publish_cms_section`,
+  `unpublish_cms_section`, `archive_cms_section`
 
 See [business-rules.md](business-rules.md#custom-model-permissions) for how
 they are applied.

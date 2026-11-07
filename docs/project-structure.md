@@ -125,12 +125,20 @@ Ecommerce-Backend/
 │   └── tests.py
 │
 ├── cms_api/                           # Wagtail CMS (issue#463)
-│   ├── models/__init__.py             # no models yet (Phase 1+)
-│   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/ (empty in Phase 0)
+│   ├── models/{__init__.py,cms_section.py}      # CmsSection snippet
+│   ├── sections/{__init__.py,blocks.py,registry.py}  # type registry
+│   ├── serializers/{__init__.py,cms_section.py}
+│   ├── services/{__init__.py,cms_section.py}
+│   ├── views/{__init__.py,v1/{__init__.py,cms_section.py}}
+│   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types
+│   ├── tests/{__init__.py,factories.py,test_api_cms_section.py,
+│   │        test_api_cms_section_lifecycle.py,test_api_section_types.py}
+│   ├── migrations/0001_initial.py
+│   ├── templates/cms_api/cms_section_preview.html
 │   ├── management/commands/setup_cms_site.py
+│   ├── wagtail_hooks.py               # snippet + log-action registration
 │   ├── apps.py
-│   ├── admin.py
-│   └── tests.py
+│   └── admin.py
 │
 ├── category_api/
 │   ├── models/category.py

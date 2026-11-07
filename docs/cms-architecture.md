@@ -512,6 +512,42 @@ permission system for CMS content.
    5 errors + 8 skipped, identical to the clean-HEAD baseline (all
    pre-existing; no regression from the Wagtail install).
 
+## Phase 1 verification results (2026-11-07)
+
+Scope delivered: §14 row 1 — section-type registry, `CmsSection`
+snippet with CRUD, publish/unpublish, revisions/rollback, archive,
+delete reference guard, and the section-type schema API.
+
+1. **Wagtail snippet + `ReferenceIndex`** — `CmsSection` is a
+   `DraftStateMixin`/`RevisionMixin` snippet; the delete guard uses
+   `ReferenceIndex.get_grouped_references_to()`. Verified against
+   Wagtail 7.4.4 in the venv.
+2. **One-block content rule** — enforced in `SectionContentField`
+   (`to_python` → `stream_block.clean`) and cross-checked against
+   `section_type` in the write serializers; the model `clean()` is the
+   second line of defence.
+3. **Publish/unpublish/rollback** — Wagtail's internal permission checks
+   target the auto-generated `publish_cmssection` codenames, not the
+   spec permissions, so services call the Wagtail actions with
+   `skip_permission_checks=True`; enforcement is DRF-side
+   (`ModelPermissionAccess` + custom permissions). Rollback = restore +
+   publish as a new revision (interpretation R1).
+4. **Archive** — archive-only per spec; no unarchive in Phase 1. The
+   log action `cms_api.archive` is registered via
+   `register_log_actions` (Wagtail core has no archive action).
+5. **Schema API** — `GET /api/v1/cms/section-types/` is authenticated
+   (`IsAuthenticated`) and derived from the code-owned registry
+   (per-type-name schemas, approved in review).
+6. **Tests + regression** — 35 new API tests (CRUD/validation,
+   lifecycle, section types) all pass; the full suite runs 834 tests
+   with 30 failures + 5 errors + 8 skipped, identical counts to the
+   Phase 0 baseline — no regressions.
+
+**Spec gaps inherited from Phase 1 scope:** no unarchive, `sort_order`
+exists on the model but is not exposed by the API, no public storefront
+endpoints (Phase 3), and the featured-flag gap on product collections
+(open since Phase 0, §13.5 item 5).
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs
