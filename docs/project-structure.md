@@ -124,6 +124,14 @@ Ecommerce-Backend/
 │   ├── urls/{__init__.py,v1.py}
 │   └── tests.py
 │
+├── cms_api/                           # Wagtail CMS (issue#463)
+│   ├── models/__init__.py             # no models yet (Phase 1+)
+│   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/ (empty in Phase 0)
+│   ├── management/commands/setup_cms_site.py
+│   ├── apps.py
+│   ├── admin.py
+│   └── tests.py
+│
 ├── category_api/
 │   ├── models/category.py
 │   ├── serializers/{category.py,category_import.py,import.py}

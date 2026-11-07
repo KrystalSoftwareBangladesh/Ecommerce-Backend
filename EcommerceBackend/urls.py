@@ -25,6 +25,9 @@ from drf_spectacular.views import (
 urlpatterns = [
     # admin
     path('admin/', admin.site.urls),
+    # wagtail admin (issue#463) — wagtail.urls is intentionally not
+    # mounted: CMS pages are headless, read through the CMS API only
+    path('cms-admin/', include('wagtail.admin.urls')),
     # documentation
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

@@ -63,6 +63,19 @@ THIRD_PARTY_APPS = [
     'django_filters',
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    # Wagtail CMS (issue#463)
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail',
+    'modelcluster',
+    'taggit',
 ]
 LOCAL_APPS = [
     'user_api',
@@ -87,6 +100,7 @@ LOCAL_APPS = [
     'email_api',
     'shipping_api',
     'checkout_api',
+    'cms_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -215,6 +229,110 @@ USE_TZ = True
 
 # Frontend
 FRONTEND_BASE_URL = FRONTEND_BASE_URL_SETTINGS
+
+# Wagtail CMS (issue#463). Pages are headless — read through the CMS
+# API only, never rendered by Django.
+WAGTAIL_SITE_NAME = PROJECT_NAME
+WAGTAILADMIN_BASE_URL = FRONTEND_BASE_URL_SETTINGS
+WAGTAILIMAGES_SERVE_METHOD = "direct"
+
+# CMS cache. CMS_CACHE_URL_SETTINGS (env.py) is a Redis URL; falls
+# back to a local memory cache when absent.
+CMS_CACHE_URL_SETTINGS = getattr(env, "CMS_CACHE_URL_SETTINGS", "")
+if CMS_CACHE_URL_SETTINGS.startswith("redis"):
+    CACHES = {
+        "default": {
+            "BACKEND": (
+                "django.core.cache.backends.redis.RedisCache"
+            ),
+            "LOCATION": CMS_CACHE_URL_SETTINGS,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": (
+                "django.core.cache.backends.locmem.LocMemCache"
+            ),
+        }
+    }
+
+# Wagtail background tasks (django-tasks) run inline so reference
+# tracking behind dependency-guarded deletes stays consistent
+# without a separate task worker.
+TASKS = {
+    "default": {
+        "BACKEND": (
+            "django_tasks.backends.immediate.ImmediateBackend"
+        ),
+    }
+}
+
+# Path prefixes no CmsPage slug path may ever use (docs/cms-
+# architecture.md section 9).
+CMS_RESERVED_PATHS = [
+    # API, Django and Wagtail mounts
+    '/api/',
+    '/admin/',
+    '/cms-admin/',
+    '/docs/',
+    '/redoc/',
+    '/schema/',
+    '/media/',
+    '/static/',
+    '/accounts/',
+    # Storefront routes (bikkhato, BestComputerHub, ZayrahLife
+    # frontends; audited 2026-11-06)
+    '/about/',
+    '/about-us/',
+    '/blog/',
+    '/brand/',
+    '/careers/',
+    '/cart/',
+    '/categories/',
+    '/category/',
+    '/checkout/',
+    '/contact/',
+    '/corporate-gifts/',
+    '/delivery-policy/',
+    '/digital-commerce-guidelines/',
+    '/disclaimer/',
+    '/districts/',
+    '/emi-information/',
+    '/fair-price/',
+    '/faq/',
+    '/forgot-password/',
+    '/invoice/',
+    '/legal/',
+    '/login/',
+    '/my-account/',
+    '/new-arrivals/',
+    '/not-found/',
+    '/offers/',
+    '/order-track/',
+    '/orders/',
+    '/privacy/',
+    '/privacy-policy/',
+    '/product/',
+    '/product-category/',
+    '/products/',
+    '/profile/',
+    '/refund/',
+    '/register/',
+    '/reset-password/',
+    '/return-refund-after-sales-policy/',
+    '/seller-dashboard/',
+    '/seller-register/',
+    '/shop/',
+    '/shop-now/',
+    '/signup/',
+    '/stories/',
+    '/support/',
+    '/sustainability/',
+    '/terms/',
+    '/verify-email/',
+    '/warranty-policy/',
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

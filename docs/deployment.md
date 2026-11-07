@@ -98,3 +98,22 @@ WantedBy=multi-user.target
 - Adding `sudo systemctl restart <worker> <beat>` to the workflows is a
   deliberate follow-up once the unit names exist on every server: the
   workflow scripts run with `set -e`, so a missing unit fails the deploy.
+
+## Wagtail CMS site setup (issue #463)
+
+`python manage.py migrate` installs the Wagtail CMS apps and creates a
+default `wagtail.sites.Site` pointing at `localhost`. After the first
+migrate that includes the CMS, run once per deployment:
+
+```bash
+python manage.py setup_cms_site
+```
+
+It points the default site at the hostname in `FRONTEND_BASE_URL_SETTINGS`
+(override with `--hostname`). The command is idempotent and does not touch
+pages. CMS pages themselves are headless: the API serves them and the
+Wagtail admin lives at `/cms-admin/`.
+
+The CMS cache uses `CMS_CACHE_URL_SETTINGS` (Redis URL) and falls back to
+a local memory cache when it is absent. If set, it must point at the same
+Redis server as `CELERY_BROKER_URL_SETTINGS`.

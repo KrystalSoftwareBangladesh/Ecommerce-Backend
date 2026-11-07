@@ -1,8 +1,9 @@
 # CMS — Technical Architecture & Data Model Design
 
-**Version:** 1.0 (draft for technical review)
-**Status:** Awaiting approval — implementation must not start before
-the open questions in [§16](#16-open-questions) are answered.
+**Version:** 1.1 (approved)
+**Status:** Approved 2026-11-06 — the 7 design decisions are recorded
+in [§16](#16-approved-decisions-2026-11-06); implementation proceeds
+phase by phase.
 **Input:** `CMS Backend Requirement Specification v1.0`
 **Date:** 2026-11-06
 
@@ -60,21 +61,23 @@ Verified 2026-11-06 on branch `463-cms-feature`:
 
 | # | Decision |
 |---|---|
-| AD-1 | Wagtail is embedded in this project (new third-party apps + `cms_api`); there is no separate CMS service, frontend or database. |
+| AD-1 | Wagtail is embedded in this project (new third-party apps + `cms_api`); there is no separate CMS service, frontend or database. Approved stack: **Wagtail 7.4 LTS with Django 5.2.x** (exact patch pinned in Phase 0). |
 | AD-2 | Pages are **never served by Django**. The Wagtail page `serve()` view is unused; Nuxt renders pages from the public API. `wagtail.urls` (page serving) is not mounted. |
 | AD-3 | One concrete page model, `CmsPage`, with a `template_key`. Templates only seed an initial composition at creation; they never constrain later editing. |
 | AD-4 | Global sections are Wagtail **snippets** (`CmsSection`) with `DraftStateMixin`, `RevisionMixin`, `PreviewableMixin`, `LockableMixin` — independent draft/publish/revisions. |
 | AD-5 | Section *types* are code-defined StreamField blocks (`cms_api/sections/`). Administrators cannot create new types. A read-only schema API lets Nuxt Admin render editing forms. |
 | AD-6 | Page composition = ordered `CmsPageSection` rows (Wagtail `Orderable`, `ParentalKey` to the page), each row being **either** a reference to a global `CmsSection` **or** inline page-specific content. Removing a row never deletes the referenced section. Page-specific content is revisioned with its page. |
 | AD-7 | Publishing = Wagtail revision publish. Saving a draft never touches published content; public APIs read only `live` state. A global section's published content is resolved live, so publishing it updates every referencing page at once. |
-| AD-8 | Redirects use `wagtail.contrib.redirects`. Slug-change redirects are created by our publish service (the API path, not only the Wagtail admin prompt). Chains are collapsed; every change is audit-logged. |
+| AD-8 | Redirects use `wagtail.contrib.redirects`. Slug-change redirects are created by our publish service (the API path, not only the Wagtail admin prompt). All historical paths are collapsed **directly to the latest canonical target** (no transitive chains); loops are rejected; the full change history stays in the audit log. |
 | AD-9 | Media for CMS content uses **Wagtail images/documents** (same `MEDIA_ROOT` storage as today — no new storage infrastructure). Existing plain-`ImageField` media (`ProductImage`, blog featured images) stays untouched. |
 | AD-10 | Audit logging uses Wagtail's `log_action` / `LogEntry`, so Wagtail Admin actions and API actions land in one trail. |
-| AD-11 | CMS permissions are Django model permissions on `cms_api` models (custom `Meta.permissions` codenames), enforced server-side by the existing permission classes. Wagtail Admin access is additionally gated by `is_staff` (see Q5). |
+| AD-11 | CMS permissions are Django model permissions on `cms_api` models (custom `Meta.permissions` codenames), enforced server-side by the existing permission classes. **Wagtail Admin ships in the initial release**: access requires `is_staff` **and** the relevant CMS model permissions, integrated with the existing RBAC (no separate Wagtail-only permission system). |
 | AD-12 | Caching: introduce `CACHES` (Redis in deployments, LocMem in dev) with **event-driven invalidation** on publish/unpublish/delete via `transaction.on_commit`. The consistency window after a successful publish is zero by design (keys are dropped in the same commit cycle); TTLs are a safety net only. |
 | AD-13 | Scheduling reuses Wagtail's `go_live_at` / `expire_at` machinery, swept by a task on the **existing Celery Beat** (exact entry point verified in Phase 0). |
 | AD-14 | E-commerce entities are **referenced, never copied**. Section content holds entity IDs; dynamic collections resolve to ordered product-ID lists at read time through existing `product_api` querysets. Pricing/product payloads come from existing product APIs — the CMS API returns references, not product data. |
-| AD-15 | Preview uses short-lived **signed preview tokens** (Django `TimestampSigner`); draft content is reachable only through a token, never through plain public endpoints. |
+| AD-15 | Preview uses **signed preview tokens** (Django `TimestampSigner`, TTL 30 minutes) that are read-only, scoped to one object and content revision, and bound to the authorized user who requested them. Draft content is reachable only through a token, never through plain public endpoints, and is never cached. |
+| AD-16 | Retention policy: **archive/unpublish is the default** retirement path for pages and sections. Permanent deletion requires elevated permissions and dependency checks (navigation, references, subtree) and preserves Wagtail tree integrity. |
+| AD-17 | Dynamic product collections resolve at read time: LATEST = product `created_at` DESC; BEST_SELLERS = **net quantity sold over a rolling 30-day window**; FEATURED = the existing product-domain featured flag; MANUAL = explicit product IDs with manual ordering. The authoritative fields are confirmed by a Phase 0 audit of the existing product/sale models. |
 
 ## 4. Project layout
 
@@ -160,16 +163,21 @@ unique `url_path` — the no-duplicate-URL guarantee), `draft_title`,
 `last_published_at`, `go_live_at`, `expire_at`, `owner`, tree fields.
 
 Hierarchy/URLs: URL = tree path of slugs (`/company/about-us/` = page
-`about-us` under `company`). No arbitrary path override (Q2). Reserved
-paths validated at create/move/slug-change in the service layer.
+`about-us` under `company`). No arbitrary path overrides (approved).
+Reserved paths validated at create/move/slug-change in the service
+layer.
 
-Delete semantics (Q3): **archive** (`archived_at`) is the everyday
-retire action — archived pages never appear in public APIs or sitemap.
-**Delete** is a Wagtail delete (cascades the subtree) behind
-`delete_cmspage`, guarded by a service pre-check that raises
-`ValidationError` listing referencing navigation items.
-This deviates from the repo's soft-delete preference; rationale: soft
-deleting tree nodes corrupts `url_path`/sibling-slug uniqueness.
+Delete semantics (approved): **archive** (`archived_at`) or unpublish is
+the default retirement path — archived pages never appear in public
+APIs or sitemap. **Permanent deletion** requires elevated permissions
+(`delete_cmspage`, held by a minimal set of roles) and passes
+dependency checks first — referencing navigation items, any other
+references (Wagtail `ReferenceIndex`) and the full subtree must be
+acknowledged; the service raises `ValidationError` listing every
+dependency otherwise. Deletion runs through Wagtail's own delete so
+tree integrity (`url_path`, `numchild`, sibling-slug uniqueness) is
+preserved. Soft delete is not used for pages: soft deleting tree nodes
+would corrupt `url_path`/sibling-slug uniqueness.
 
 ### 5.2 `CmsSection` (snippet — global section instance)
 
@@ -183,10 +191,13 @@ Mixins: `DraftStateMixin` (live / go_live_at / expire_at /
 first+last_published_at), `RevisionMixin`, `PreviewableMixin`,
 `LockableMixin`, plus `TimeStampedModel, UserStampedModel`.
 
-Delete: service pre-check via `ReferenceIndex.get_grouped_references_to`
-→ `ValidationError` while referenced (spec 4.2). Archive via
-`archived_at`. Soft-delete fields (`SoftDeleteModel`) back permanent
-delete for audit continuity (rows referenced from revisions stay).
+Delete: **archive/unpublish is the default** (approved). Permanent
+deletion requires elevated permissions (`delete_cmssection`) and passes
+dependency checks: service pre-check via
+`ReferenceIndex.get_grouped_references_to` → `ValidationError` while
+referenced (spec 4.2). Archive via `archived_at`. Soft-delete fields
+(`SoftDeleteModel`) back permanent delete for audit continuity (rows
+referenced from revisions stay).
 
 References to pages: automatic — `CmsPageSection.global_section` rows
 and StreamField FKs are tracked by `wagtailcore_referenceindex`, giving
@@ -229,9 +240,17 @@ Rules:
   `product_api.Brand`-equivalent (exact brand model confirmed in Phase 0;
   the repo's brand source of truth is `product_api`/`origin_api`).
 - Collection blocks (`ProductCollection`, `ProductSlider`, …) carry
-  `mode` (MANUAL / LATEST / BEST_SELLERS / FEATURED / BY_CATEGORY /
-  BY_BRAND — Q4), explicit entity lists (ordered), and `limit`.
-  Resolution happens at read time through `product_api` querysets.
+  `mode`, explicit entity lists (ordered), and `limit`. Resolution
+  happens at read time through `product_api` querysets. Approved
+  definitions (AD-17):
+  - **LATEST** — products by `created_at` DESC.
+  - **BEST_SELLERS** — net quantity sold (sales minus returns) over a
+    rolling 30-day window, ranked DESC.
+  - **FEATURED** — the existing product-domain featured flag
+    (authoritative field confirmed in the Phase 0 audit).
+  - **MANUAL** — selected product IDs with manual ordering.
+  - **BY_CATEGORY / BY_BRAND** — products of the selected
+    categories/brands (spec 8), ordered per block configuration.
 - `GET /api/v1/cms/section-types/` returns each type's JSON schema
   (name, label, block fields) so Nuxt Admin renders forms without
   hardcoding the registry.
@@ -261,9 +280,14 @@ small dedicated permission class checks
 
 ### 5.7 Preview tokens — no table
 
-`TimestampSigner` payload `{kind, object_id, revision_id}`. Issue via
-authenticated management endpoint; verify + expire on the public
-preview endpoint. TTL default 30 minutes (Q7).
+`TimestampSigner` payload `{user_id, kind, object_id, revision_id}`.
+Issued only to authenticated users holding the matching edit permission
+(`change_cmspage` / `change_cmssection`); the token is **read-only** and
+bound to that user and the specific content revision. Verification
+checks the signature, the user binding (and that the user still holds
+the edit permission), the revision and expiry — TTL 30 minutes.
+Preview responses send `Cache-Control: no-store`; draft payloads are
+never written to any cache.
 
 ## 6. API surface
 
@@ -342,7 +366,7 @@ custom codenames in `Meta.permissions`); spec capability names map as:
 | `cms.page.view` | `view_cmspage` | `CmsPage` | list/retrieve |
 | `cms.page.create` | `add_cmspage` | `CmsPage` | create |
 | `cms.page.edit` | `change_cmspage` | `CmsPage` | update |
-| `cms.page.delete` | `delete_cmspage` | `CmsPage` | delete (guarded) |
+| `cms.page.delete` | `delete_cmspage` | `CmsPage` | permanent delete (elevated + dependency-guarded) |
 | `cms.page.publish` | `publish_cms_page` | `CmsPage` | publish/rollback |
 | (spec: archive) | `archive_cms_page` | `CmsPage` | archive/restore |
 | (publishing needs it) | `unpublish_cms_page` | `CmsPage` | unpublish |
@@ -350,7 +374,7 @@ custom codenames in `Meta.permissions`); spec capability names map as:
 | `cms.section.create` | `add_cmssection` | `CmsSection` | create |
 | `cms.section.edit` | `change_cmssection` | `CmsSection` | update |
 | `cms.section.archive` | `archive_cms_section` | `CmsSection` | archive |
-| `cms.section.delete` | `delete_cmssection` | `CmsSection` | delete (guarded) |
+| `cms.section.delete` | `delete_cmssection` | `CmsSection` | permanent delete (elevated + dependency-guarded) |
 | (publishing needs it) | `publish_cms_section` / `unpublish_cms_section` | `CmsSection` | publish/unpublish |
 | `cms.navigation.manage` | `manage_cms_navigation` | `CmsNavigationMenu` | all nav ops |
 | `cms.media.manage` | `manage_cms_media` | `CmsMediaConfig` | all media ops |
@@ -361,6 +385,11 @@ actions through `custom_permissions` mappings /
 server-side on every management endpoint. Public endpoints are
 `AllowAny` but expose only published content.
 
+Wagtail Admin (initial release, approved): access requires `is_staff`
+**and** the relevant CMS model permissions above, integrated with the
+existing RBAC — Wagtail's own permission panels are not a second
+permission system for CMS content.
+
 ## 9. URLs, SEO, redirects, sitemap
 
 - **Uniqueness**: Wagtail's unique `url_path` per page guarantees no
@@ -368,16 +397,16 @@ server-side on every management endpoint. Public endpoints are
 - **Reserved paths**: service-level validation against
   `CMS_RESERVED_PATHS` (default: `/api/`, `/admin/`, `/cms-admin/`,
   `/docs/`, `/redoc/`, `/schema/`, `/media/`, `/static/`, `/accounts/`,
-  plus the Nuxt reserved routes — Q2). Checked on create, move and
-  slug change, for the full public path.
+  plus the Nuxt reserved routes). The existing Nuxt routes are audited
+  for conflicts in Phase 0 and folded into the setting (approved).
+  Checked on create, move and slug change, for the full public path.
 - **Slug changes**: on publish, if the published path changed, the
   service creates/updates a `wagtailcontrib_redirects` redirect
-  (old → new). **Chains collapse**: a redirect whose target later moves
-  is updated to the final target (A→C when B→C is created). **Loops are
-  rejected**: a redirect whose target resolves back to its source is a
-  `ValidationError`. **History**: every old published path keeps
-  redirecting to the current canonical path, and each redirect change
-  is a Wagtail log entry (AD-8).
+  (old → new). **Direct collapse**: every historical path redirects
+  directly to the latest canonical target (A→C when B→C is created) —
+  no transitive chains. **Loops are rejected**: a redirect whose target
+  resolves back to its source is a `ValidationError`. **History**: the
+  full change history stays in the audit log (AD-8).
 - **SEO**: fields on `CmsPage` (§5.1) — rendered by Nuxt; `canonical_url`,
   robots directives included in the page payload.
 - **Sitemap**: `GET /sitemap/` returns live, non-archived,
@@ -398,6 +427,9 @@ server-side on every management endpoint. Public endpoints are
   navigation keys on nav changes, sitemap keys on any publish.
 - Cache safety net TTLs (e.g. 5 min) exist only for missed events; the
   defined consistency window after a successful publish is **zero**.
+- **Drafts and previews are never cached** (approved): preview responses
+  send `Cache-Control: no-store`, and no draft payload is ever written
+  to the cache.
 
 ## 11. Audit & security
 
@@ -406,8 +438,9 @@ server-side on every management endpoint. Public endpoints are
   changes. One trail regardless of interface; exposed read-only via
   `GET /audit-logs/`.
 - **Draft safety**: public serializers read published/live state only;
-  unpublished → 404 on public endpoints; preview only via signed token
-  (AD-15) with expiry.
+  unpublished → 404 on public endpoints; preview only via signed,
+  user-bound, revision-scoped **read-only** tokens (AD-15, 30-minute
+  expiry, re-checked permissions) that are never cached.
 - **Injection**: rich text limited to the feature whitelist (§5.4);
   external URLs validated (scheme http/https, length); file uploads
   validated by type/size from `CmsMediaConfig`.
@@ -426,18 +459,58 @@ server-side on every management endpoint. Public endpoints are
 
 ## 13. Phase 0 verification items
 
-1. Pin the Wagtail release compatible with Django 5.2.x and add to
-   `requirements.txt` (`wagtail`, `modelcluster`, `taggit` pinned).
-   Version search was unavailable when this document was written.
+1. Pin **Wagtail 7.4 LTS** with Django 5.2.x: the exact compatible patch
+   release goes into `requirements.txt` (`wagtail`, `modelcluster`,
+   `taggit` pinned) — approved decision 1.
 2. Confirm the scheduled publish/expire sweep entry point for that
    Wagtail version and wire it to the Beat task.
 3. Confirm the model that owns "brands" for the BrandCollection block
    (`product_api` vs `origin_api`).
-4. `wagtail.sites` needs a `Site` row (hostname = frontend domain) per
+4. **Audit the existing Nuxt routes** for conflicts and fold them into
+   `CMS_RESERVED_PATHS` (approved decision 2).
+5. **Audit the existing product/sale models** (approved decision 4):
+   the authoritative "featured" flag/field and the net-quantity source
+   for best sellers (sales minus returns over 30 days, `sale_api`).
+6. `wagtail.sites` needs a `Site` row (hostname = frontend domain) per
    deployment — set via admin/management command, documented in
    `docs/deployment.md` (never env values in data migrations).
-5. Run the full existing test suite after the Wagtail install to prove
+7. Run the full existing test suite after the Wagtail install to prove
    zero impact on e-commerce functionality (acceptance criterion).
+
+### Phase 0 verification results (2026-11-06)
+
+1. **Done** — `requirements.txt` pins `wagtail==7.4.4`,
+   `django-modelcluster==6.5`, `django-taggit==6.1.0`. Wagtail 7.4
+   requires Django >= 5.2; the repo's 5.2.x pin is compatible
+   (`pip check` clean).
+2. **Confirmed** — the sweep entry point is Wagtail's
+   `publish_scheduled` management command (covers `go_live_at`
+   revisions and `expire_at` for `Page` and every `DraftStateMixin`
+   model, so section models and scheduled specs are swept too). The
+   `cms-publish-scheduled` Beat task calling it is created in Phase 3.
+3. **Confirmed** — brands are owned by `product_api.Brand`
+   (`slug`, `logo`, `display_order`, soft delete); `origin_api.Origin`
+   is product country-of-origin, a different concept.
+4. **Done** — `CMS_RESERVED_PATHS` in `settings.py` holds the API/
+   Django/Wagtail mounts plus every static top-level route of the
+   three storefront frontends (Nuxt: bikkhato, BestComputerHub;
+   Vue/Vite: ZayrahLife), audited 2026-11-06. Notably
+   BestComputerHub already serves arbitrary top-level slugs via
+   `pages/[slug].vue` — the catch-all CMS pages will populate.
+5. **Partially confirmed — gap found.** Best-seller net quantity:
+   `sale_api.SaleItem.quantity` joined to `Sale` over a 30-day
+   window, excluding `RETURNED`/`CANCELLED` (returns exist only as
+   whole-order `SaleStatus.RETURNED` and inventory
+   `ReferenceType.RETURN` movements). **No "featured" flag exists on
+   the product domain** — `Product` has no featured field today, so
+   the FEATURED collection mode (AD-17) needs a new product-domain
+   flag; deferred to Phase 2 with a design decision.
+6. **Done** — `manage.py setup_cms_site` (idempotent, points the
+   default `wagtail.sites.Site` at the `FRONTEND_BASE_URL` hostname,
+   `--hostname` override) documented in `docs/deployment.md`.
+7. **Done** — full suite after install: 799 tests, 30 failures +
+   5 errors + 8 skipped, identical to the clean-HEAD baseline (all
+   pre-existing; no regression from the Wagtail install).
 
 ## 14. Implementation phases
 
@@ -461,32 +534,32 @@ redirect creation/collapse/loop rejection, reference guard on delete,
 permission enforcement per matrix row, preview token expiry, sitemap
 filtering. Wagtail model tests only where services own logic.
 
-## 16. Open questions
+## 16. Approved decisions (2026-11-06)
 
-1. **Wagtail version pin** — confirm the target Wagtail release for
-   Django 5.2.x (or approve "latest compatible" for Phase 0 to pin).
-2. **URL derivation & reserved routes** — confirm URLs are derived from
-   tree position + slugs only (no arbitrary path overrides), and supply
-   the Nuxt reserved-route list (or approve the `CMS_RESERVED_PATHS`
-   default in §9 as the starting set).
-3. **Page delete semantics** — approve hard delete (Wagtail subtree
-   cascade) with archive as the retire path (deviation from the repo's
-   soft-delete preference, rationale in §5.1)?
-4. **Dynamic product sections** — define "best sellers" (e.g. by
-   quantity sold within a rolling window from `sale_api`?) and confirm
-   "latest" = `created_at` desc and "featured" = product flag. Which
-   flag/field is authoritative for "featured"?
-5. **Wagtail Admin access** — Wagtail Admin requires `is_staff` (session
-   auth); existing RBAC is `role` + model perms. Approve: Wagtail Admin
-   access = `is_staff AND (view_cmspage OR change_cmspage)`? And confirm
-   Wagtail Admin ships in the initial release (Phase 5) rather than
-   engine-only.
-6. **Redirect history** — confirm the §9 interpretation: all historical
-   paths redirect to the current canonical path (chains collapsed),
-   full change history in the audit log — as opposed to keeping
-   transitive redirect chains.
-7. **Preview tokens** — TTL (proposal: 30 min) and issuing permission
-   (proposal: `change_cmspage` / `change_cmssection` respectively).
+The design questions raised in review are resolved as follows:
+
+1. **Wagtail version** — Wagtail 7.4 LTS with Django 5.2.x; the exact
+   compatible patch version is pinned in Phase 0 (AD-1, §13.1).
+2. **URLs** — derived from page hierarchy and slugs only; no arbitrary
+   path overrides. `CMS_RESERVED_PATHS` is used, auditing existing
+   Nuxt routes for conflicts (AD-1, §9).
+3. **Deletion** — archive/unpublish is the default. Permanent deletion
+   requires elevated permissions and dependency checks; Wagtail tree
+   integrity is preserved (AD-16, §5.1, §5.2).
+4. **Product sections** — LATEST = `created_at` DESC; BEST_SELLERS =
+   net quantity sold over a rolling 30-day window; FEATURED = the
+   existing product-domain flag; MANUAL = selected product IDs and
+   ordering. Existing models are audited before implementation
+   (AD-17, §5.4, §13.5).
+5. **Wagtail Admin** — included in the initial release. Access requires
+   `is_staff` and the appropriate CMS model permissions, integrated
+   with the existing RBAC (AD-11, §8).
+6. **Redirects** — historical redirects collapse directly to the latest
+   canonical URL; loops are rejected; audit history is retained
+   (AD-8, §9).
+7. **Preview** — 30-minute, scoped, read-only tokens tied to authorized
+   users and specific content revisions; drafts are never exposed
+   through public endpoints nor cached (AD-15, §5.7, §10, §11).
 
 ## 17. Out of scope (per spec §15)
 

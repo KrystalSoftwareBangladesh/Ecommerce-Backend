@@ -17,3 +17,6 @@ pandas
 Pillow
 PyMySQL==1.2.0
 requests
+wagtail==7.4.4
+django-modelcluster==6.5
+django-taggit==6.1.0
