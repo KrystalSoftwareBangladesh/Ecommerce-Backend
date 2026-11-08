@@ -26,6 +26,7 @@ from .env import (
     EMAIL_FROM_SETTINGS,
     CELERY_BROKER_URL_SETTINGS,
     FRONTEND_BASE_URL_SETTINGS,
+    REDIS_CACHE_URL_SETTINGS,
 )
 from . import env
 
@@ -265,6 +266,19 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
+
+# Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_CACHE_URL_SETTINGS,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+# Endpoint-specific cache lifetimes, in seconds.
+CATEGORY_NAVIGATION_CACHE_TTL = 60 * 60 * 24  # 24 hours
 
 # Celery
 CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS

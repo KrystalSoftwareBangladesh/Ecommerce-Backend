@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -551,3 +552,113 @@ class CategoryPriceRangeTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+
+class CategoryNavigationCacheTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='category-cache-staff',
+            email='category-cache-staff@example.com',
+            password='test-pass-123',
+            role='STAFF',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.addCleanup(cache.clear)
+
+    def test_roots_response_is_cached_until_invalidated(self):
+        category = Category.objects.create(name='Electronics')
+
+        first_response = self.client.get('/api/v1/categories/roots/')
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(
+            [item['name'] for item in first_response.data['results']],
+            ['Electronics'],
+        )
+
+        # Bypass the API so the view's cache invalidation never runs,
+        # proving the second call is served from the cache.
+        Category.objects.filter(pk=category.pk).update(name='Renamed')
+
+        cached_response = self.client.get('/api/v1/categories/roots/')
+        self.assertEqual(
+            [item['name'] for item in cached_response.data['results']],
+            ['Electronics'],
+        )
+
+        # An API write invalidates the cache, so the next call is fresh.
+        self.client.patch(
+            f'/api/v1/categories/{category.id}/',
+            {'description': 'Updated via API'},
+            format='json',
+        )
+
+        fresh_response = self.client.get('/api/v1/categories/roots/')
+        self.assertEqual(
+            [item['name'] for item in fresh_response.data['results']],
+            ['Renamed'],
+        )
+
+    def test_roots_cache_key_varies_by_query_params(self):
+        Category.objects.create(name='Electronics', show_in_menu=True)
+        Category.objects.create(name='Books', show_in_menu=False)
+
+        menu_response = self.client.get(
+            '/api/v1/categories/roots/?is_menu=true'
+        )
+        not_menu_response = self.client.get(
+            '/api/v1/categories/roots/?is_menu=false'
+        )
+
+        self.assertEqual(
+            [item['name'] for item in menu_response.data['results']],
+            ['Electronics'],
+        )
+        self.assertEqual(
+            [item['name'] for item in not_menu_response.data['results']],
+            ['Books'],
+        )
+
+    def test_children_cache_invalidated_on_create(self):
+        parent = Category.objects.create(name='Electronics')
+
+        empty_response = self.client.get(
+            f'/api/v1/categories/children/?ids={parent.id}'
+        )
+        self.assertEqual(empty_response.data, [])
+
+        create_response = self.client.post(
+            '/api/v1/categories/',
+            {'name': 'Phones', 'parent': parent.id},
+            format='json',
+        )
+        self.assertEqual(create_response.status_code, 201)
+
+        updated_response = self.client.get(
+            f'/api/v1/categories/children/?ids={parent.id}'
+        )
+        self.assertEqual(
+            [item['name'] for item in updated_response.data],
+            ['Phones'],
+        )
+
+    def test_children_cache_invalidated_on_delete(self):
+        parent = Category.objects.create(name='Electronics')
+        child = Category.objects.create(name='Phones', parent=parent)
+
+        populated_response = self.client.get(
+            f'/api/v1/categories/children/?ids={parent.id}'
+        )
+        self.assertEqual(
+            [item['name'] for item in populated_response.data],
+            ['Phones'],
+        )
+
+        delete_response = self.client.delete(
+            f'/api/v1/categories/{child.id}/'
+        )
+        self.assertEqual(delete_response.status_code, 204)
+
+        empty_response = self.client.get(
+            f'/api/v1/categories/children/?ids={parent.id}'
+        )
+        self.assertEqual(empty_response.data, [])
