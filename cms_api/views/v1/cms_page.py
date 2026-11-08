@@ -43,6 +43,7 @@ from cms_api.services import (
     get_page_section,
     list_page_revisions,
     publish_page,
+    published_url_path,
     remove_page_section,
     reorder_page_sections,
     restore_page,
@@ -312,7 +313,9 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     queryset = CmsPage.objects.filter(
         live=True, archived_at__isnull=True,
-    ).prefetch_related("sections__global_section")
+    ).select_related("live_revision").prefetch_related(
+        "sections__global_section",
+    )
 
     @extend_schema(
         parameters=[],
@@ -324,9 +327,13 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
     def list(self, request):
         path = request.query_params.get("path")
         if path is not None:
-            page = self.get_queryset().filter(
-                url_path=path,
-            ).first()
+            page = next(
+                (
+                    row for row in self.get_queryset()
+                    if published_url_path(row) == path
+                ),
+                None,
+            )
             if page is None:
                 return Response(
                     {"detail": "Not found."},

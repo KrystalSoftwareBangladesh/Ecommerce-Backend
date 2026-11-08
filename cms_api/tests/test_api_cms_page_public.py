@@ -68,6 +68,32 @@ class PublicDetailTests(CmsPagePublicTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['title'], 'Published')
 
+    def test_draft_slug_path_is_not_served(self):
+        page = self.published_page(slug='about', title='About us')
+        page.refresh_from_db()
+        page.slug = 'about-v2'
+        page.save()
+        page.save_revision(user=self.owner)
+        page.refresh_from_db()
+        self.assertEqual(page.url_path, '/about-v2/')
+
+        response = self.get_page('/about-v2/')
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_published_path_resolves_after_a_draft_slug_change(self):
+        page = self.published_page(slug='about', title='About us')
+        page.refresh_from_db()
+        page.slug = 'about-v2'
+        page.save()
+        page.save_revision(user=self.owner)
+
+        response = self.get_page('/about/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['slug'], 'about')
+        self.assertEqual(response.data['path'], '/about/')
+
 
 class PublicListTests(CmsPagePublicTestCase):
     def test_list_includes_only_published_pages(self):
@@ -86,6 +112,20 @@ class PublicListTests(CmsPagePublicTestCase):
         response = self.client.get(PUBLIC_URL)
 
         self.assertEqual(response.status_code, 200)
+
+    def test_list_reports_published_urls_after_a_draft_slug_change(self):
+        page = self.published_page(slug='about', title='About us')
+        page.refresh_from_db()
+        page.slug = 'about-v2'
+        page.save()
+        page.save_revision(user=self.owner)
+
+        response = self.client.get(PUBLIC_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['slug'], 'about')
+        self.assertEqual(response.data[0]['path'], '/about/')
 
 
 class PublicCompositionTests(CmsPagePublicTestCase):

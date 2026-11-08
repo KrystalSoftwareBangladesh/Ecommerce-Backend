@@ -399,7 +399,8 @@ permission system for CMS content.
   `/docs/`, `/redoc/`, `/schema/`, `/media/`, `/static/`, `/accounts/`,
   plus the Nuxt reserved routes). The existing Nuxt routes are audited
   for conflicts in Phase 0 and folded into the setting (approved).
-  Checked on create, move and slug change, for the full public path.
+  Checked on create, move, slug change and rollback (the URL the
+  restored revision would generate), for the full public path.
 - **Slug changes**: on publish, if the published path changed, the
   service creates/updates a `wagtailcontrib_redirects` redirect
   (old → new). **Direct collapse**: every historical path redirects
@@ -601,6 +602,25 @@ scheduled publishing (Phase 3), `page.parent`/nesting is modelled and
 tested but the public resolver serves flat paths, and the
 featured-flag gap on product collections (open since Phase 0, §13.5
 item 5) remains deferred.
+
+**Phase 2 observation outcomes (2026-11-09):**
+
+1. **Rollback reserved-path validation (RESOLVED)** — `rollback_page`
+   now validates the *prospective* URL of the restored revision
+   (`_prospective_url_path(parent, restored.slug)`) before applying it:
+   reserved paths (`CMS_RESERVED_PATHS`) are rejected and a URL
+   already held by another page is rejected (400). Previously the
+   stale pre-rollback `page.url_path` was checked. Regression tests:
+   `test_rollback_rejects_a_reserved_prospective_path`,
+   `test_rollback_rejects_a_url_conflict`.
+2. **Public path resolution (RESOLVED)** — public lookup and the
+   public serializers' `path` resolve through `published_url_path()`
+   (live-revision slug chain), never the draft `url_path`. A draft
+   slug change no longer serves the unpublished URL (404) and the
+   published URL keeps resolving until the change is published.
+   Regression tests: `test_draft_slug_path_is_not_served`,
+   `test_published_path_resolves_after_a_draft_slug_change`,
+   `test_list_reports_published_urls_after_a_draft_slug_change`.
 
 ## 14. Implementation phases
 

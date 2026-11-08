@@ -8,7 +8,8 @@ and Wagtail actions run with ``skip_permission_checks=True``.
 
 A page is created as a draft. ``template_key`` seeds the initial
 composition (AD-3) unless explicit ``sections`` are given. Reserved
-paths (``CMS_RESERVED_PATHS``) are rejected on create and slug change.
+paths (``CMS_RESERVED_PATHS``) are rejected on create, slug change
+and rollback (the prospective restored URL is validated).
 """
 from django.conf import settings
 from django.db import transaction
@@ -46,6 +47,46 @@ def _validate_reserved_path(url_path):
 
 def _prospective_url_path(parent, slug):
     return "%s%s/" % (parent.url_path, slug)
+
+
+def _validate_url_available(prospective, page):
+    """Reject a prospective URL already held by another page."""
+    if (
+        Page.objects.filter(url_path=prospective)
+        .exclude(pk=page.pk)
+        .exists()
+    ):
+        raise ValidationError({
+            "slug": (
+                "Path '%s' is already in use by another "
+                "page." % prospective
+            )
+        })
+
+
+def published_slug(page):
+    """The page's published slug (live revision), else the row's."""
+    revision = page.live_revision
+    if revision is not None:
+        return revision.as_object().slug or page.slug
+    return page.slug
+
+
+def published_url_path(page):
+    """Public URL built from published state (spec 9).
+
+    Wagtail rewrites ``url_path`` on every save, so a draft slug
+    change is visible in ``url_path`` before publish. The public URL
+    chain uses each node's live-revision slug, never the draft one.
+    """
+    nodes = list(page.get_ancestors().select_related("live_revision"))
+    nodes.append(page)
+    slugs = [
+        published_slug(node) for node in nodes if not node.is_root()
+    ]
+    if not slugs:
+        return "/"
+    return "/%s/" % "/".join(slugs)
 
 
 def _page_revision(page, revision_id):
@@ -198,6 +239,11 @@ def rollback_page(*, page, revision_id, user):
     """
     old_revision = _page_revision(page, revision_id)
     restored = old_revision.as_object()
+    prospective = _prospective_url_path(
+        page.get_parent(), restored.slug,
+    )
+    _validate_reserved_path(prospective)
+    _validate_url_available(prospective, page)
     for field in (
         "title", "slug", "draft_title", "seo_title",
         "template_key", "seo_description", "meta_keywords",
@@ -205,7 +251,6 @@ def rollback_page(*, page, revision_id, user):
         "canonical_url", "seo_noindex", "seo_nofollow",
     ):
         setattr(page, field, getattr(restored, field))
-    _validate_reserved_path(page.url_path)
     sections_data = [
         {
             "name": row.name,

@@ -1,6 +1,7 @@
 # cms_api/tests/test_api_cms_page_lifecycle.py
 """Page lifecycle tests: publish, unpublish, archive, restore,
 dependency-guarded delete, revisions and rollback."""
+from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from cms_api.models import CmsPage
@@ -235,3 +236,67 @@ class RevisionTests(CmsPageLifecycleTestCase):
         page.refresh_from_db()
         self.assertEqual(page.title, 'Page')
         self.assertTrue(page.live)
+
+    def test_rollback_rejects_a_reserved_prospective_path(self):
+        self.authenticate()
+        page = factories.page(self.editor, slug='checkout')
+        self.client.post(
+            action_url(page, 'publish'), {}, format='json',
+        )
+        first = page.revisions.order_by('id').first()
+        page.refresh_from_db()
+        page.slug = 'plain'
+        page.save()
+        page.save_revision(user=self.editor)
+        self.client.post(
+            action_url(page, 'publish'), {}, format='json',
+        )
+        page.refresh_from_db()
+        live_before = page.live_revision_id
+
+        with override_settings(CMS_RESERVED_PATHS=['/checkout/']):
+            response = self.client.post(
+                action_url(page, 'rollback'),
+                {'revision_id': first.id},
+                format='json',
+            )
+
+        self.assertEqual(response.status_code, 400)
+        page.refresh_from_db()
+        self.assertEqual(page.slug, 'plain')
+        self.assertEqual(page.url_path, '/plain/')
+        self.assertEqual(page.live_revision_id, live_before)
+        self.assertEqual(page.live_revision.as_object().slug, 'plain')
+
+    def test_rollback_rejects_a_url_conflict(self):
+        self.authenticate()
+        mover = factories.page(self.editor, slug='alpha')
+        self.client.post(
+            action_url(mover, 'publish'), {}, format='json',
+        )
+        first = mover.revisions.order_by('id').first()
+        mover.refresh_from_db()
+        mover.slug = 'moved'
+        mover.save()
+        mover.save_revision(user=self.editor)
+        owner = factories.page(self.editor, slug='alpha', title='Alpha')
+        self.client.post(
+            action_url(owner, 'publish'), {}, format='json',
+        )
+
+        response = self.client.post(
+            action_url(mover, 'rollback'),
+            {'revision_id': first.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        mover.refresh_from_db()
+        self.assertEqual(mover.slug, 'moved')
+        self.assertEqual(mover.url_path, '/moved/')
+        self.assertEqual(
+            CmsPage.objects.filter(url_path='/alpha/').count(), 1,
+        )
+        self.assertEqual(
+            CmsPage.objects.get(url_path='/alpha/').pk, owner.pk,
+        )

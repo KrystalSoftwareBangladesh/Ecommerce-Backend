@@ -17,6 +17,7 @@ from cms_api.serializers.cms_section import SectionContentField
 from cms_api.services import (
     add_page_section,
     create_page,
+    published_url_path,
     update_page,
     update_page_section,
 )
@@ -337,7 +338,7 @@ class CmsPagePublicListSerializer(serializers.Serializer):
             "id": instance.pk,
             "title": source.title,
             "slug": source.slug,
-            "path": instance.url_path,
+            "path": published_url_path(instance),
             "seo_noindex": source.seo_noindex,
             "lastmod": instance.last_published_at,
         }
@@ -371,7 +372,7 @@ class CmsPagePublicDetailSerializer(serializers.Serializer):
             "id": instance.pk,
             "title": source.title,
             "slug": source.slug,
-            "path": instance.url_path,
+            "path": published_url_path(instance),
             "template_key": source.template_key,
             "seo_title": source.seo_title,
             "seo_description": source.seo_description,
