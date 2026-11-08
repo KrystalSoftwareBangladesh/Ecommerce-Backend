@@ -11,11 +11,11 @@ import uuid
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 
-from wagtail.models import ReferenceIndex
+from wagtail.models import Page, ReferenceIndex
 
 from user_api.models import User
 
-from cms_api.models import CmsSection
+from cms_api.models import CmsPage, CmsPageSection, CmsSection
 
 
 def user(username, **kwargs):
@@ -79,6 +79,63 @@ def section(name='Home hero', section_type='hero_banner',
     if user is not None:
         instance.save_revision(user=user)
     return instance
+
+
+def root_page():
+    return Page.objects.get(depth=1)
+
+
+def page(user, slug='page', title='Page', parent=None, **kwargs):
+    """Create a draft CmsPage under the root (or a given parent)."""
+    if parent is None:
+        parent = root_page()
+    instance = CmsPage(
+        title=title,
+        slug=slug,
+        live=False,
+        owner=user,
+        **kwargs,
+    )
+    parent.add_child(instance=instance)
+    instance.save_revision(user=user)
+    return instance
+
+
+def page_row(name='Row', content=None, global_section=None):
+    """One composition row payload (services input shape)."""
+    row = {'name': name, 'archived': False}
+    if global_section is not None:
+        row['global_section'] = global_section
+    else:
+        row['content'] = content or hero_content()
+    return row
+
+
+def page_section(page, user, **kwargs):
+    """Attach one composition row to a page and snapshot a revision.
+
+    Appends (does not replace existing rows). ``global_section`` may
+    be given as a pk; it is resolved to a ``CmsSection`` instance.
+    """
+    global_section = kwargs.get('global_section')
+    if isinstance(global_section, int):
+        kwargs['global_section'] = CmsSection.objects.get(
+            pk=global_section,
+        )
+    content = kwargs.get('content')
+    row = CmsPageSection.objects.create(
+        page=page,
+        name=kwargs.get('name', 'Row'),
+        global_section=kwargs.get('global_section'),
+        content=(
+            content if content is not None
+            else (None if kwargs.get('global_section')
+                  else hero_content())
+        ),
+        sort_order=page.sections.count(),
+    )
+    page.save_revision(user=user)
+    return row
 
 
 def reference_to(target, source=None):

@@ -73,6 +73,19 @@ def _get_revision(*, section, revision_id):
         )
 
 
+def _check_base_revision(obj, base_revision_id):
+    """Optimistic-lock check shared by section and page writes.
+
+    When ``base_revision_id`` is given it must equal the object's
+    ``latest_revision_id`` or a 409 is raised.
+    """
+    if (
+        base_revision_id is not None
+        and base_revision_id != obj.latest_revision_id
+    ):
+        raise RevisionConflictError()
+
+
 @transaction.atomic
 def create_section(*, validated_data, user):
     """Create a new draft ``CmsSection`` and its first revision."""

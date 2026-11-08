@@ -510,6 +510,37 @@ type matches its immutable `section_type`. Architecture:
   `GET /api/v1/cms/section-types/` (authenticated, no model permission);
   the type registry is code-owned, not admin-defined.
 
+## CMS (Phase 2 — pages)
+
+`cms_api.CmsPage` is a Wagtail page composed of ordered
+`CmsPageSection` rows. Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **Create never implies publish.** A new page is a draft
+  (`live=False`). Publishing is `POST /api/v1/cms/pages/{id}/publish/`
+  behind `publish_cms_page`; unpublish and archive/restore have their
+  own permissions. Rollback restores an old revision and publishes it
+  as a new one, gated by `publish_cms_page`.
+- **Templates seed, never constrain.** `template_key` is code-owned
+  (`cms_api/pages/templates.py`) and only seeds the initial
+  composition; sending both `template_key` and `sections` is a 400.
+- **Reserved paths.** A slug that would land on a `CMS_RESERVED_PATHS`
+  storefront route is rejected with 400 on create and update.
+- **Composition XOR.** Each row is either a link to a global
+  `CmsSection` or exactly one local content block — never both, never
+  neither. Removing a row never deletes the referenced section, and
+  every composition write snapshots a page revision.
+- **Optimistic locking.** A write carrying `base_revision_id` that is
+  not the page's latest revision is rejected with 409
+  (`revision_conflict`).
+- **Dependency-guarded delete** (`delete_cmspage`): a page with child
+  pages is refused with 400 listing them; deleting the subtree requires
+  `?acknowledge=true`.
+- **Public reads are draft-isolated.**
+  `GET /api/v1/cms/public/pages/?path=` serves published pages only:
+  content comes from the published revision, and rows referencing
+  unpublished or archived global sections are omitted.
+
 ## Permissions
 
 Protected endpoints require authentication.

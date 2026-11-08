@@ -125,15 +125,22 @@ Ecommerce-Backend/
 │   └── tests.py
 │
 ├── cms_api/                           # Wagtail CMS (issue#463)
-│   ├── models/{__init__.py,cms_section.py}      # CmsSection snippet
+│   ├── models/{__init__.py,cms_section.py,      # CmsSection snippet
+│   │        cms_page.py,cms_page_section.py}    # CmsPage + rows
 │   ├── sections/{__init__.py,blocks.py,registry.py}  # type registry
-│   ├── serializers/{__init__.py,cms_section.py}
-│   ├── services/{__init__.py,cms_section.py}
-│   ├── views/{__init__.py,v1/{__init__.py,cms_section.py}}
-│   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types
+│   ├── pages/{__init__.py,templates.py}         # page templates
+│   ├── serializers/{__init__.py,cms_section.py,cms_page.py}
+│   ├── services/{__init__.py,cms_section.py,
+│   │        pages.py,composition.py}
+│   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py}}
+│   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types,
+│   │                                 # pages, public/pages
 │   ├── tests/{__init__.py,factories.py,test_api_cms_section.py,
-│   │        test_api_cms_section_lifecycle.py,test_api_section_types.py}
-│   ├── migrations/0001_initial.py
+│   │        test_api_cms_section_lifecycle.py,test_api_section_types.py,
+│   │        test_api_cms_page.py,test_api_cms_page_lifecycle.py,
+│   │        test_api_cms_page_public.py}
+│   ├── migrations/{0001_initial.py,
+│   │        0002_cmspage_cmspagesection.py}
 │   ├── templates/cms_api/cms_section_preview.html
 │   ├── management/commands/setup_cms_site.py
 │   ├── wagtail_hooks.py               # snippet + log-action registration

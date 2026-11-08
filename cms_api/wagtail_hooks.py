@@ -37,9 +37,15 @@ def register_cms_log_actions(actions):
     """Register log actions not provided by Wagtail core.
 
     ``wagtail.create``/``wagtail.edit``/``wagtail.delete`` exist in
-    core; ``cms_api.archive`` covers the archive operation, which has
-    no Wagtail-native action.
+    core; the ``cms_api.*`` actions cover CMS service writes and the
+    archive operation, which have no Wagtail-native action.
     """
+    actions.register_action(
+        "cms_api.create", _("Create"), _("Created")
+    )
+    actions.register_action(
+        "cms_api.update", _("Update"), _("Updated")
+    )
     actions.register_action(
         "cms_api.archive", _("Archive"), _("Archived")
     )

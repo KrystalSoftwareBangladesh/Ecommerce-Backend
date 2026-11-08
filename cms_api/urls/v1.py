@@ -7,6 +7,16 @@ from cms_api.views import v1
 router = DefaultRouter()
 
 router.register(
+    r'cms/pages',
+    v1.CmsPageViewSet,
+    basename='cms-page',
+)
+router.register(
+    r'cms/public/pages',
+    v1.CmsPagePublicViewSet,
+    basename='cms-public-page',
+)
+router.register(
     r'cms/sections',
     v1.CmsSectionViewSet,
     basename='cms-section',

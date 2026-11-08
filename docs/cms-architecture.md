@@ -548,6 +548,60 @@ exists on the model but is not exposed by the API, no public storefront
 endpoints (Phase 3), and the featured-flag gap on product collections
 (open since Phase 0, §13.5 item 5).
 
+## Phase 2 verification results (2026-11-08)
+
+Scope delivered: §14 row 2 — `CmsPage` + `CmsPageSection`: CRUD from
+templates, composition writes/reorder/duplicate, revisions/rollback,
+publish/unpublish/archive/restore, dependency-guarded delete,
+reserved-path validation, and the public page read endpoints with
+draft isolation.
+
+1. **Templates** — code-owned `PAGE_TEMPLATES` registry in
+   `cms_api/pages/templates.py`; `template_key` seeds the initial
+   composition at creation only and `template_key` + explicit
+   `sections` together is rejected (400). Resolves the open design
+   question: templates are registry entries in code, like section
+   types, not DB records.
+2. **Reserved paths** — `CMS_RESERVED_PATHS` in settings is the
+   storefront route list; every path segment is rejected for CMS page
+   slugs on create and update (verified with `/api/`, `/admin/`,
+   `/about-us/`).
+3. **Composition rows** — XOR rule (global `CmsSection` link **or**
+   exactly one local registry block) enforced by model `clean()` and
+   the write serializers; add/update/reorder/duplicate/delete under
+   `/pages/{id}/sections/`; every write snapshots a page revision and
+   is optimistic-locked via `base_revision_id` (409 on stale).
+4. **modelcluster commit semantics** — services read and mutate rows
+   through `page.sections.get_object_list()` (the page's tracked
+   in-memory child list) so `page.save()` commits them. `.all()` on a
+   relation that was never initialised returns untracked live-query
+   objects whose field changes are silently dropped by
+   `ClusterableModel.save()`; this was found and fixed during test
+   bring-up (reorder and row-update writes).
+5. **Revisions/rollback** — rollback per interpretation R1: restore an
+   old revision's fields **and** composition, save as a new revision
+   and publish it. Rollback requires the `publish_cms_page` permission;
+   publish accepts an optional `revision_id`.
+6. **Lifecycle + delete** — publish/unpublish/archive/restore behind
+   `publish_cms_page`, `unpublish_cms_page`, `archive_cms_page`;
+   delete is dependency-guarded (child pages listed in a 400
+   `dependencies` payload) and subtree-deletes only with
+   `?acknowledge=true`. Wagtail log actions `cms_api.create`,
+   `cms_api.update`, `cms_api.archive` are registered via
+   `register_log_actions` (core Wagtail has no such actions).
+7. **Public endpoints** — `/api/v1/cms/public/pages/?path=` serves
+   published pages only: unpublished/archived pages 404, draft edits
+   are never served (content comes from `live_revision`), unpublished
+   or archived global sections are omitted from resolved rows.
+8. **Tests + lint** — 40 new Phase 2 API tests (75 total in
+   `cms_api`, all passing); `flake8` clean.
+
+**Spec gaps inherited from Phase 2 scope:** preview tokens (Phase 3),
+scheduled publishing (Phase 3), `page.parent`/nesting is modelled and
+tested but the public resolver serves flat paths, and the
+featured-flag gap on product collections (open since Phase 0, §13.5
+item 5) remains deferred.
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs

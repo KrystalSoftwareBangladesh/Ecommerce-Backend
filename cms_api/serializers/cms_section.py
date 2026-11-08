@@ -46,6 +46,8 @@ class SectionContentField(serializers.Field):
     Wagtail's API representation of the stream.
     """
 
+    model = CmsSection
+
     default_error_messages = {
         "invalid": "Content must be a list of block objects.",
         "not_single_block": (
@@ -60,7 +62,7 @@ class SectionContentField(serializers.Field):
     def to_representation(self, value):
         if value is None:
             return []
-        model_field = CmsSection._meta.get_field("content")
+        model_field = self.model._meta.get_field("content")
         return model_field.stream_block.get_api_representation(value)
 
     def to_internal_value(self, data):
@@ -77,7 +79,7 @@ class SectionContentField(serializers.Field):
             self.fail("invalid_item")
         if item["type"] not in SECTION_TYPES:
             self.fail("unknown_type")
-        model_field = CmsSection._meta.get_field("content")
+        model_field = self.model._meta.get_field("content")
         try:
             stream = model_field.to_python(json.dumps(data))
         except (KeyError, TypeError, ValueError):

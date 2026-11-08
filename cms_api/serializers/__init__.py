@@ -1,4 +1,20 @@
 # cms_api/serializers/__init__.py
+from .cms_page import (
+    CmsPageCreateSerializer,
+    CmsPageDetailSerializer,
+    CmsPageListSerializer,
+    CmsPagePublishSerializer,
+    CmsPagePublicDetailSerializer,
+    CmsPagePublicListSerializer,
+    CmsPageRevisionSerializer,
+    CmsPageRollbackSerializer,
+    CmsPageSectionCreateSerializer,
+    CmsPageSectionReorderSerializer,
+    CmsPageSectionSerializer,
+    CmsPageSectionUpdateSerializer,
+    CmsPageSectionWriteSerializer,
+    CmsPageUpdateSerializer,
+)
 from .cms_section import (
     CmsSectionCreateSerializer,
     CmsSectionDetailSerializer,
@@ -13,6 +29,20 @@ from .cms_section import (
 )
 
 __all__ = [
+    "CmsPageCreateSerializer",
+    "CmsPageDetailSerializer",
+    "CmsPageListSerializer",
+    "CmsPagePublishSerializer",
+    "CmsPagePublicDetailSerializer",
+    "CmsPagePublicListSerializer",
+    "CmsPageRevisionSerializer",
+    "CmsPageRollbackSerializer",
+    "CmsPageSectionCreateSerializer",
+    "CmsPageSectionReorderSerializer",
+    "CmsPageSectionSerializer",
+    "CmsPageSectionUpdateSerializer",
+    "CmsPageSectionWriteSerializer",
+    "CmsPageUpdateSerializer",
     "CmsSectionCreateSerializer",
     "CmsSectionDetailSerializer",
     "CmsSectionListSerializer",
