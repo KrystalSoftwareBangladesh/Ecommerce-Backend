@@ -247,26 +247,11 @@ WAGTAILIMAGES_SERVE_METHOD = "direct"
 # architecture.md AD-8, §9).
 WAGTAILREDIRECTS_AUTO_CREATE = False
 
-# CMS cache. CMS_CACHE_URL_SETTINGS (env.py) is a Redis URL; falls
-# back to a local memory cache when absent.
+# CMS cache (AD-12, Phase 5 — not wired up to any code yet).
+# CMS_CACHE_URL_SETTINGS (env.py) is a Redis URL; falls back to a
+# local memory cache when absent. Consolidated into the single
+# CACHES setting below as the "cms" alias.
 CMS_CACHE_URL_SETTINGS = getattr(env, "CMS_CACHE_URL_SETTINGS", "")
-if CMS_CACHE_URL_SETTINGS.startswith("redis"):
-    CACHES = {
-        "default": {
-            "BACKEND": (
-                "django.core.cache.backends.redis.RedisCache"
-            ),
-            "LOCATION": CMS_CACHE_URL_SETTINGS,
-        }
-    }
-else:
-    CACHES = {
-        "default": {
-            "BACKEND": (
-                "django.core.cache.backends.locmem.LocMemCache"
-            ),
-        }
-    }
 
 # Wagtail background tasks (django-tasks) run inline so reference
 # tracking behind dependency-guarded deletes stays consistent
@@ -395,7 +380,13 @@ CORS_ALLOW_METHODS = [
 ]
 CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
 
-# Cache
+# Cache. "default" backs general app caching (category navigation,
+# etc.) via the existing Redis infrastructure. "cms" is a separate
+# alias reserved for Wagtail CMS caching (AD-12, Phase 5 — no CMS
+# code reads from it yet): a distinct CMS_CACHE_URL_SETTINGS Redis
+# URL when one is configured, a local memory cache otherwise, so the
+# CMS cache can be isolated from (or share, if left unset) the app
+# cache without standing up a second Redis instance.
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -403,7 +394,20 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
-    }
+    },
+    "cms": (
+        {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": CMS_CACHE_URL_SETTINGS,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+        if CMS_CACHE_URL_SETTINGS.startswith("redis")
+        else {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    ),
 }
 # Endpoint-specific cache lifetimes, in seconds.
 CATEGORY_NAVIGATION_CACHE_TTL = 60 * 60 * 24  # 24 hours

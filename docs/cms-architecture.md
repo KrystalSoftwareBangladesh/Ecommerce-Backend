@@ -765,14 +765,20 @@ redirects service, preview tokens, sitemap endpoint.
    baseline — no regressions. No migrations (`makemigrations --check`
    clean): `go_live_at`/`expire_at` are inherited `DraftStateMixin`
    fields, and `Redirect` is Wagtail's own model.
-8. **Pre-existing issue, reported, not fixed:** `EcommerceBackend/
-   settings.py` assigns `CACHES` twice — the CMS-specific block
-   (±line 243, intended per AD-12) is unconditionally overwritten by
-   the general Redis `CACHES` block (±line 389) a little further down
-   the file. `CMS_CACHE_URL_SETTINGS` is therefore currently inert;
-   both caches happen to be the same Redis instance today, but the
-   dedicated setting does nothing. Left alone, as it is Phase 5's
-   (cache layer) concern and out of Phase 3 scope.
+8. **Pre-existing issue, reported in this phase, fixed as a follow-up
+   (2026-11-09):** `EcommerceBackend/settings.py` assigned `CACHES`
+   twice — the CMS-specific block (intended per AD-12) was
+   unconditionally overwritten by the general Redis `CACHES` block
+   further down the file, making `CMS_CACHE_URL_SETTINGS` inert.
+   Consolidated into one `CACHES` setting: `"default"` is the
+   existing, unchanged Redis config every other app cache consumer
+   already uses; `"cms"` is a new alias carrying the original
+   Redis-when-configured/LocMem-otherwise fallback behaviour, reserved
+   for Phase 5 (no code reads it yet). Verified: the effective
+   `settings.CACHES` matches the pre-fix `"default"` exactly, the full
+   suite (927 tests) shows the same 30 failures/5 errors/8 skipped as
+   baseline, and `flake8` is clean. This is a settings fix only — no
+   CMS cache *logic* was added, so Phase 5 is not started by it.
 
 **Spec gaps inherited from Phase 3 scope:** navigation, media
 management and the audit-log read API (Phase 4); the cache layer,
