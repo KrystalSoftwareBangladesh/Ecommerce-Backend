@@ -7,6 +7,7 @@ from EcommerceBackend.core.serializers.fields import (
 )
 from product_api.models import Product, ProductImage
 from product_api.services.product import set_product_image_default
+from product_api.services.product_image import set_product_image_resolution
 
 
 class ProductDefaultImageSerializer(serializers.Serializer):
@@ -36,9 +37,11 @@ class ProductImageListSerializer(serializers.ModelSerializer):
             'alt_text',
             'display_order',
             'is_default',
+            'width',
+            'height',
             'created_at',
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'width', 'height']
 
 
 class ProductImageDetailSerializer(serializers.ModelSerializer):
@@ -57,6 +60,8 @@ class ProductImageDetailSerializer(serializers.ModelSerializer):
             'alt_text',
             'display_order',
             'is_default',
+            'width',
+            'height',
             'is_active',
             'created_at',
             'updated_at',
@@ -65,6 +70,8 @@ class ProductImageDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id',
+            'width',
+            'height',
             'created_at',
             'updated_at',
             'created_by',
@@ -143,7 +150,11 @@ class ProductImageCreateUpdateSerializer(serializers.ModelSerializer):
                 updated_by=self.context['request'].user,
             )
             validated_data.pop('is_default')
-        return super().update(instance, validated_data)
+        has_new_image = 'image' in validated_data
+        instance = super().update(instance, validated_data)
+        if has_new_image:
+            set_product_image_resolution(instance)
+        return instance
 
 
 class BulkProductImageItemSerializer(serializers.Serializer):
