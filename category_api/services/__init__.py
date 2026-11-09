@@ -10,6 +10,11 @@ from .featured_category import (
     reorder_featured_categories,
     remove_featured_category_icon,
 )
+from .cache import (
+    get_cached_category_navigation,
+    set_cached_category_navigation,
+    invalidate_category_navigation_cache,
+)
 
 
 __all__ = [
@@ -22,4 +27,7 @@ __all__ = [
     "upload_featured_category_icon",
     "reorder_featured_categories",
     "remove_featured_category_icon",
+    "get_cached_category_navigation",
+    "set_cached_category_navigation",
+    "invalidate_category_navigation_cache",
 ]
