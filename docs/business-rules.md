@@ -604,6 +604,84 @@ Architecture: [cms-architecture.md](cms-architecture.md), §12 (scheduling),
   public reads use the published revision for composition: a draft
   edit writes the field straight to the row before any publish.
 
+## CMS (Phase 4A — navigation)
+
+`cms_api.CmsNavigationMenu`/`CmsNavigationItem` are plain Django
+models (no Wagtail revisions). Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **One permission for everything.** `manage_cms_navigation` gates
+  every menu and item operation — create, read, update, delete,
+  reorder — not the usual add/view/change/delete split. The model's
+  own auto-generated codenames (`add_cmsnavigationmenu`, etc.) grant
+  nothing on their own.
+- **`is_active` is the soft-delete flag, not a separate toggle.**
+  `DELETE /api/v1/cms/navigation/{id}/` soft-deletes a menu
+  (`is_active=False`), which also removes it from every read —
+  management or public. The write serializers never expose
+  `is_active` directly (a `PATCH` setting it is accepted but has no
+  effect), so there is exactly one path that deactivates a menu.
+  There is no restore action.
+- **Items are an ordered, nestable tree per menu.** `label`,
+  `link_type` (`PAGE`/`EXTERNAL`), and exactly one of `page`/
+  `external_url` matching it (database `CheckConstraint`, re-checked
+  in `clean()` and the write serializers). `parent` must belong to
+  the same menu and cannot create a cycle (a descendant cannot become
+  an ancestor of itself). `external_url` only accepts `http`/`https`.
+  Switching `link_type` on an update requires explicitly providing the
+  new target *and* clearing the old one in the same request — a
+  partial update never silently clears a field it no longer needs.
+  Deleting a parent item cascades to its children.
+- **Public reads are draft-isolated and prune by subtree.**
+  `GET /api/v1/cms/public/navigation/{key}/` 404s for an unknown or
+  inactive menu key. An invisible item (`is_visible=False`) prunes
+  its *entire* subtree (not just itself), and a `PAGE` item whose
+  target is not live or is archived is omitted — the same rule every
+  other public CMS endpoint enforces. Not cached (Phase 5).
+- **`delete_page` is guarded against navigation references.** A
+  `CmsPage` referenced by a `CmsNavigationItem` can never be deleted
+  (the FK is `PROTECT`): unlike child pages and `ReferenceIndex`
+  references, this dependency is **not** acknowledgeable —
+  `?acknowledge=true` still returns 400 while any navigation item
+  points at the page. The item must be removed or repointed first.
+
+## CMS (Phase 4B — media)
+
+`cms_api.CmsMediaConfig` is a singleton controlling upload limits for
+Wagtail's own `Image`/`Document` models (no custom model). Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **Exactly one `CmsMediaConfig` row can ever exist.** `save()` always
+  writes to a fixed primary key, and a database `CheckConstraint`
+  rejects any other row even if something bypasses `save()`.
+  `get_solo()` is the only way code should read it — it creates the
+  row with its defaults on first access.
+- **One permission for everything.** `manage_cms_media` gates the
+  config endpoint and both media resources alike.
+- **Wagtail's own upload limits do not apply here.** They live only in
+  Wagtail's admin *form fields*, never in `Image`/`Document.
+  full_clean()` or a DRF serializer. Every limit is read from
+  `CmsMediaConfig.get_solo()` instead, never from `WAGTAILIMAGES_*`/
+  `WAGTAILDOCS_*` settings (none of which this project sets).
+- **Upload validation never trusts the browser.** Images: size →
+  allowed-extension check → a real Pillow decode (not just the
+  filename) → the decoded format must match the claimed extension →
+  pixel-count limit. Documents: size → allowed-extension check (no
+  decode attempted). The `content_type` the browser sends is never
+  the basis for a decision.
+- **`alt_text` is `Image.description`, renamed, not a new field.**
+  `title` is Wagtail's native field on both `Image` and `Document`,
+  defaulting to the uploaded filename when omitted. `Document` has no
+  description/alt-text equivalent.
+- **Media is two resources.** `GET/POST/PATCH/DELETE
+  /api/v1/cms/media/images/` and `.../media/documents/` — not one
+  combined endpoint. There is no public read for either; media
+  management is authenticated-only.
+- **Delete is reference-guarded, never acknowledgeable.** A referenced
+  image or document (via Wagtail's `ReferenceIndex`, the same
+  mechanism `delete_section` uses) cannot be deleted; there is no
+  `acknowledge` override, unlike the page delete guard.
+
 ## Permissions
 
 Protected endpoints require authentication.

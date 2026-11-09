@@ -309,7 +309,7 @@ the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
 |---|---|
 | `GET /public/pages/?path=/about-us/` | published page + resolved composition (global sections → published version; entity refs as IDs) |
 | `GET /public/pages/` | published page list (lightweight, for sitemap/nav) |
-| `GET /navigation/{key}/` | menu tree (cached) — Phase 4 |
+| `GET /public/navigation/{key}/` | resolved menu tree for an active menu; 404 for an unknown/inactive key. **Not cached** — the cache layer is Phase 5; this follows the Phase 2/3 precedent of leaving public reads uncached until then |
 | `GET /redirects/resolve/?path=…` | old path → current canonical path (Nuxt redirect middleware) |
 | `GET /public/sitemap/` | published, non-noindex, non-archived URLs + lastmod |
 | `GET /public/preview/{token}/` | signed draft preview (AD-15) |
@@ -329,10 +329,13 @@ the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
 | `GET /sections/{id}/revisions/` `POST /sections/{id}/rollback/` | section revisions |
 | `POST /sections/{id}/preview-token/` | issue preview token (Phase 3, extended to sections per §16 item 9) |
 | `GET /section-types/` | code registry schema (read-only) |
-| `GET/POST/PATCH/DELETE /navigation/` (+ items) | menu management — Phase 4 |
-| `GET/POST/PATCH/DELETE /media/` | Wagtail images/documents: upload, metadata, alt text, delete-with-reference-check — Phase 4 |
+| `GET/POST/PATCH/DELETE /navigation/` | menu CRUD, gated on `manage_cms_navigation` |
+| `POST /navigation/{id}/items/` `GET/PATCH/DELETE /navigation/{id}/items/{item_id}/` `PUT /navigation/{id}/items/reorder/` | nested item management (same sub-resource shape as page composition rows); same permission |
+| `GET/PATCH /media-config/` | the `CmsMediaConfig` singleton, gated on `manage_cms_media` |
+| `GET/POST/PATCH/DELETE /media/images/` | Wagtail `Image` CRUD: upload, title, `alt_text` (`Image.description`), delete-with-reference-check |
+| `GET/POST/PATCH/DELETE /media/documents/` | Wagtail `Document` CRUD: upload, title, delete-with-reference-check |
 | `GET /redirects/` | redirect list/history, gated on `view_cmspage` per §16 item 8 |
-| `GET /audit-logs/` | CMS activity (actor, action, object, timestamp) — Phase 4 |
+| `GET /audit-logs/` | CMS activity (actor, action, object, timestamp) — Phase 4C |
 
 Errors: standard DRF `ValidationError` (400) for rule violations,
 404 for unpublished content on public endpoints (no draft leakage),
@@ -853,10 +856,11 @@ this phase (Phase 4B).
    `GET /api/v1/cms/public/navigation/{key}/`, mounted under
    `cms/public/...` per the Phase 2/3 local convention, looked up by
    `key` (not `pk`); 404 for an unknown or inactive key. **No caching**
-   — §6 annotates this endpoint "(cached)", but the cache layer is
-   Phase 5 scope and Phase 2/3 deliberately left every other public
-   read uncached for the same reason; this phase follows that
-   precedent rather than building ahead of Phase 5.
+   — §6's original table annotated this endpoint "(cached)", but the
+   cache layer is Phase 5 scope and Phase 2/3 deliberately left every
+   other public read uncached for the same reason; this phase follows
+   that precedent rather than building ahead of Phase 5. §6's table
+   above is updated to reflect this.
 6. **`delete_page` navigation guard (docs §5.1, 11)** — a
    `CmsNavigationItem` referencing the page is now listed in the
    structured `dependencies` response instead of surfacing as a raw
@@ -879,18 +883,131 @@ this phase (Phase 4B).
    5 errors + 8 skipped — identical to the Phase 3 baseline, no
    regressions.
 9. **Docs scope note**: per this phase's instructions, only this
-   architecture document was updated with verified implementation
-   details. `docs/business-rules.md`, `docs/project-structure.md` and
-   the `AGENTS.md` decisions log still need their usual Phase 4
-   entries — deferred to whenever Phase 4 (media + audit-log, i.e.
-   4B) is complete, so navigation and media are documented together
-   in one pass rather than twice.
+   architecture document was updated at the time. `docs/business-
+   rules.md`, `docs/project-structure.md` and the `AGENTS.md`
+   decisions log were synchronised once Phase 4B (media) was also
+   complete — see the dated documentation-synchronisation note at the
+   end of the Phase 4B section below.
 
-**Spec gaps inherited from Phase 4A scope:** media management and the
-audit-log read API (Phase 4B); the cache layer, Wagtail Admin and the
-pre-existing `CACHES` duplication (already fixed separately, see the
-Phase 3 section above) remain Phase 5 concerns; the featured-flag gap
-on product collections (open since Phase 0, §13.5 item 5).
+**Spec gaps inherited from Phase 4A scope:** media management (Phase
+4B, now complete — see below) and the audit-log read API (Phase 4C);
+the cache layer, Wagtail Admin and the pre-existing `CACHES`
+duplication (already fixed separately, see the Phase 3 section above)
+remain Phase 5 concerns; the featured-flag gap on product collections
+(open since Phase 0, §13.5 item 5).
+
+## Phase 4B verification results (2026-11-09)
+
+Scope delivered: the media half of §14 row 4 — `CmsMediaConfig`
+singleton, upload validation, `GET/POST/PATCH/DELETE` for Wagtail
+`Image`/`Document`, and reference-aware deletion. The audit-log read
+API (Phase 4C) is **not** part of this phase.
+
+1. **`CmsMediaConfig`** (`cms_api/models/cms_media.py`) —
+   `max_image_upload_size` (default 10 MiB), `max_image_pixels`
+   (default 128,000,000), `allowed_image_extensions` (`JSONField`,
+   default `["jpg", "jpeg", "png", "webp"]` — matching this project's
+   own `product_api.ProductImage` convention rather than Wagtail's
+   own, broader default list), `max_document_upload_size` (default 20
+   MiB), `allowed_document_extensions` (`JSONField`, default
+   `["pdf"]`, per spec §5.6). `TimeStampedModel, UserStampedModel`
+   base classes (no soft delete — a singleton config row is never
+   deleted). `manage_cms_media` in `Meta.permissions`.
+2. **Singleton enforcement, two layers** — `save()` always writes
+   `pk=SINGLETON_PK` (`1`), and a `CheckConstraint(pk=1)` is the
+   database-level backstop (a raw insert bypassing `save()`, e.g.
+   `bulk_create`, still cannot create a second row). Verified directly:
+   `bulk_create([CmsMediaConfig(pk=2, ...)])` raises `IntegrityError`.
+   `get_solo()` (`classmethod`, `get_or_create(pk=SINGLETON_PK)`) is
+   the one way callers read it, so the row always exists with sane
+   defaults from the first access — no "config not yet created" state
+   to handle anywhere else.
+3. **Finding (confirmed, drove the validation design): Wagtail's own
+   upload limits do not apply outside its admin forms.** Traced the
+   installed package directly: image size/pixel/format checks live
+   only in `wagtail.images.fields.WagtailImageField`, a Django **form**
+   field wired in by Wagtail's admin views, never by `Image.full_clean()`
+   (`Image` has no `clean()` method at all) or by a plain DRF
+   serializer. `Document.clean()` does check `WAGTAILDOCS_EXTENSIONS`,
+   but that setting is unset in this project, so it is a no-op today
+   either way. Every limit `CmsMediaConfig` provides is therefore
+   enforced entirely in `cms_api/services/media.py`, read from
+   `CmsMediaConfig.get_solo()` — never from `WAGTAILIMAGES_*`/
+   `WAGTAILDOCS_*` settings (none of which are set).
+4. **Upload validation** (`cms_api/services/media.py`) — images: size
+   → extension allowlist → a real Pillow decode (`PIL.Image.open(...)
+   .verify()`, adapting the existing pattern in
+   `product_api/serializers/product_image.py` instead of adding a
+   dependency) → decoded format must match the claimed extension →
+   pixel-count limit. Documents: size → extension allowlist (no Pillow
+   decode attempted; documents are not necessarily an image format).
+   The browser-supplied `content_type` is never trusted — verified
+   with a renamed non-image file (rejected on content) and a real JPEG
+   renamed to `.png` (decodes, but format/extension mismatch is
+   rejected).
+5. **Metadata** — `alt_text` is exposed as a renamed view of Wagtail's
+   own `Image.description` (`source="description"` in both read and
+   write serializers) rather than a new field or a custom `Image`
+   model, resolving the naming mismatch the Phase 4B audit flagged
+   against `product_api.ProductImage.alt_text`. `title` is Wagtail's
+   native field on both models, defaulting to the uploaded filename
+   when omitted. `Document` has no description/alt-text equivalent in
+   Wagtail core and none was added (no custom model, per this phase's
+   constraints).
+6. **Reference-aware deletion** — `ReferenceIndex.get_grouped_
+   references_to(obj)`, the exact call `delete_section` already uses;
+   `Image`/`Document` are registered as `ReferenceIndex` targets by
+   Wagtail's own `wagtail.images`/`wagtail.documents` app configs, so
+   no new registration was needed. A referenced image or document is
+   never deletable (no `acknowledge` override, matching `delete_
+   section`, not the page delete-guard's acknowledgeable dependencies)
+   and returns the same structured `dependencies` response every
+   other CMS delete guard uses. Verified with synthetic
+   `ReferenceIndex` rows (`factories.reference_to()`, the same helper
+   the section-lifecycle tests already use) for both images and
+   documents — no content type in this project links to a `Document`
+   yet (no block uses `DocumentChooserBlock`), so the document guard,
+   while correct, has nothing real to find outside this synthetic
+   test today. Several section blocks already use `ImageChooserBlock`
+   (`HeroBannerBlock`, `ImageWithTextBlock`, `GalleryImageBlock`, the
+   video block's thumbnail) and `CmsPage.og_image` is a plain FK, so
+   the image guard is exercised by real content references too.
+7. **API** (`cms_api/views/v1/cms_media.py`,
+   `cms_api/urls/v1.py`) — `GET/PATCH /api/v1/cms/media-config/`
+   (singleton); `GET/POST/PATCH/DELETE /api/v1/cms/media/images/` and
+   `.../media/documents/` (two resources, not one combined `/media/`
+   endpoint — resolved from the Phase 4B audit's open question in
+   favour of the two Wagtail models' different fields). One
+   permission, `manage_cms_media`, for every action on all three
+   (`CmsMediaPermission`, the same one-permission-for-everything shape
+   `CmsNavigationPermission` uses). No public read — media is
+   management-only per §6.
+8. **Admin** — `CmsMediaConfig` registered in `cms_api/admin.py`
+   (`has_add_permission` refuses "Add" once the row exists;
+   `has_delete_permission` always refuses). `Image`/`Document`
+   themselves are not separately admin-registered (Wagtail Admin
+   integration is Phase 5 scope; nothing in this phase needed a plain
+   Django-admin view for them).
+9. **Tests + lint** — 30 new tests in
+   `cms_api/tests/test_api_cms_media.py` (193 total in `cms_api`, all
+   passing); `flake8` clean; full suite 996 tests, 30 failures + 5
+   errors + 8 skipped — identical to the Phase 4A baseline, no
+   regressions. One migration, `0004_cmsmediaconfig.py`
+   (`makemigrations --check` clean afterwards).
+
+**Spec gaps inherited from Phase 4B scope:** the audit-log read API
+(Phase 4C); the cache layer, Wagtail Admin and the `CACHES`
+duplication (already fixed, Phase 3 section) remain Phase 5 concerns;
+the featured-flag gap on product collections (open since Phase 0,
+§13.5 item 5).
+
+**Documentation synchronisation (2026-11-09):** this architecture
+document, `docs/business-rules.md`, `docs/project-structure.md` and
+the `AGENTS.md` decisions log were updated together once Phase 4A and
+4B were both implemented and verified, so navigation and media are
+documented in one consistent pass rather than twice. No code,
+settings, migrations or tests were changed as part of this
+documentation update.
 
 ## 14. Implementation phases
 
@@ -903,7 +1020,7 @@ updates.
 | 1 | Section-type registry + `CmsSection` snippet: CRUD, publish/unpublish, revisions/rollback, archive, reference guard, section-type schema API |
 | 2 | `CmsPage` + `CmsPageSection`: CRUD from templates, composition writes/reorder, revisions/rollback, publish/unpublish/archive, reserved-path validation |
 | 3 | Lifecycle: scheduled publish/unpublish (Beat), redirects service, preview tokens, sitemap endpoint |
-| 4 | Navigation + media management + audit-log API |
+| 4 | Navigation + media management + audit-log API — delivered as three sub-phases: **4A** navigation (`CmsNavigationMenu`/`CmsNavigationItem`), **4B** media (`CmsMediaConfig`, images/documents), **4C** audit-log read API (not started) |
 | 5 | Cache layer + invalidation, Wagtail Admin at `/cms-admin/`, full test pass, docs |
 
 ## 15. Testing approach
@@ -953,6 +1070,37 @@ Phase 3 implementation-time decisions (approved in review, 2026-11-09):
    generically (`kind`: page/section) and `CmsSection` already carries
    `PreviewableMixin` and a preview template from Phase 1, so `POST
    /sections/{id}/preview-token/` is added alongside the page one.
+
+Phase 4A implementation-time decision (approved in review, 2026-11-09):
+
+10. **Navigation history/management has one permission, not four** —
+    `manage_cms_navigation` gates every action on both
+    `CmsNavigationMenu` and `CmsNavigationItem` (menu and item CRUD
+    alike), not the usual `ModelPermissionAccess` add/view/change/
+    delete split, matching §8's "all nav ops" row literally. There is
+    deliberately no restore action for a soft-deleted menu (§6's table
+    gives navigation none, unlike pages/sections).
+
+Phase 4B implementation-time decisions (approved in review, 2026-11-09):
+
+11. **Media is two resources, not one** — `/media/images/` and
+    `/media/documents/` (not a single combined `/media/` endpoint):
+    `Image` and `Document` have different fields, and this matches the
+    two-ViewSet shape the rest of the API already uses for
+    structurally different resources, resolving the Phase 4B audit's
+    open question in favour of the split.
+12. **`CmsMediaConfig` is exposed via its own endpoint** —
+    `GET/PATCH /media-config/`, gated on `manage_cms_media`, even
+    though the original spec table (before this phase) listed only
+    `/media/` for images/documents and no config endpoint at all. A
+    DB-backed config that nothing can read or edit through the API
+    would be no more useful than a static setting; this was the Phase
+    4B audit's other open question, resolved the same way.
+13. **`alt_text` is `Image.description`, renamed** — not a new field
+    and not a custom `Image` model subclass (both were explicitly
+    ruled out for this phase); `source="description"` in the
+    serializer reconciles Wagtail's own naming with this project's
+    `ProductImage.alt_text` convention without a schema change.
 
 ## 17. Out of scope (per spec §15)
 

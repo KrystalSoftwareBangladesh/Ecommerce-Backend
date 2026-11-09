@@ -59,7 +59,7 @@ Ecommerce-Backend/
 │       ├── models.py
 │       ├── pagination.py
 │       ├── permission.py
-│       └── serializers/fields.py    # AbsoluteImageField
+│       └── serializers/fields.py    # AbsoluteImageField, AbsoluteFileField
 │
 ├── blog_api/
 │   ├── models/{choices.py,blog_post.py,blog_tag.py}
@@ -126,19 +126,25 @@ Ecommerce-Backend/
 │
 ├── cms_api/                           # Wagtail CMS (issue#463)
 │   ├── models/{__init__.py,cms_section.py,      # CmsSection snippet
-│   │        cms_page.py,cms_page_section.py}    # CmsPage + rows
+│   │        cms_page.py,cms_page_section.py,    # CmsPage + rows
+│   │        cms_navigation.py,                  # CmsNavigationMenu/Item
+│   │        cms_media.py}                       # CmsMediaConfig singleton
 │   ├── sections/{__init__.py,blocks.py,registry.py}  # type registry
 │   ├── pages/{__init__.py,templates.py}         # page templates
 │   ├── serializers/{__init__.py,cms_section.py,cms_page.py,
-│   │        cms_redirect.py}
+│   │        cms_redirect.py,cms_navigation.py,cms_media.py}
 │   ├── services/{__init__.py,cms_section.py,
 │   │        pages.py,composition.py,paths.py,redirects.py,
-│   │        preview.py,scheduling.py}
+│   │        preview.py,scheduling.py,navigation.py,media.py}
 │   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py,
-│   │        cms_redirect.py,cms_preview.py}}
+│   │        cms_redirect.py,cms_preview.py,cms_navigation.py,
+│   │        cms_media.py}}
 │   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types,
 │   │                                 # pages, public/pages, public/sitemap,
-│   │                                 # public/preview/{token}, redirects
+│   │                                 # public/preview/{token}, redirects,
+│   │                                 # navigation, public/navigation/{key},
+│   │                                 # media/images, media/documents,
+│   │                                 # media-config
 │   ├── tasks.py                       # run_scheduled_publishing_task (Beat)
 │   ├── tests/{__init__.py,factories.py,test_api_cms_section.py,
 │   │        test_api_cms_section_lifecycle.py,test_api_section_types.py,
@@ -146,14 +152,17 @@ Ecommerce-Backend/
 │   │        test_api_cms_page_public.py,test_api_cms_redirects.py,
 │   │        test_api_cms_page_scheduling.py,
 │   │        test_api_cms_section_scheduling.py,test_api_cms_preview.py,
-│   │        test_api_cms_sitemap.py}
+│   │        test_api_cms_sitemap.py,test_api_cms_navigation.py,
+│   │        test_api_cms_media.py}
 │   ├── migrations/{0001_initial.py,
-│   │        0002_cmspage_cmspagesection.py}
+│   │        0002_cmspage_cmspagesection.py,
+│   │        0003_cmsnavigationmenu_cmsnavigationitem.py,
+│   │        0004_cmsmediaconfig.py}
 │   ├── templates/cms_api/cms_section_preview.html
 │   ├── management/commands/setup_cms_site.py
 │   ├── wagtail_hooks.py               # snippet + log-action registration
 │   ├── apps.py
-│   └── admin.py
+│   └── admin.py                       # CmsNavigationMenu/Item, CmsMediaConfig
 │
 ├── category_api/
 │   ├── models/category.py
