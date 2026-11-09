@@ -214,3 +214,14 @@ class ProductImageOptimizationSerializer(serializers.Serializer):
 
     original_size = serializers.IntegerField()
     optimized_size = serializers.IntegerField()
+
+
+class BulkProductImageOptimizationSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    optimized = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    failed = serializers.IntegerField()
+    not_found = serializers.IntegerField()
+    results = serializers.ListField(
+        child=serializers.DictField()
+    )

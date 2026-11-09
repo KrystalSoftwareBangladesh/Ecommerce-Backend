@@ -2,9 +2,15 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
-from PIL import Image
+from PIL import Image, ImageOps
 
+import logging
+
+from product_api.models import ProductImage
 from product_api.utils import optimize_image_file
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_product_image_summary(product_images):
@@ -135,4 +141,103 @@ def optimize_product_image(image_instance, updated_by=None):
     return {
         'optimized': True,
         **metadata,
+    }
+
+
+def bulk_optimize_product_images(image_ids, updated_by=None):
+    """
+    Optimize multiple product images independently.
+
+    Images that already satisfy the dimension limit are skipped.
+    Individual failures do not interrupt the remaining images.
+    """
+    images = ProductImage.objects.filter(
+        id__in=image_ids,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).in_bulk()
+
+    results = []
+
+    for image_id in image_ids:
+        image_instance = images.get(image_id)
+
+        if image_instance is None:
+            results.append({
+                'id': image_id,
+                'status': 'not_found',
+                'message': 'Product image not found.',
+            })
+            continue
+
+        try:
+            if not image_instance.image:
+                raise ValidationError('Image file is missing.')
+
+            with image_instance.image.open('rb') as image_file:
+                with Image.open(image_file) as source:
+                    image = ImageOps.exif_transpose(source)
+                    width, height = image.size
+
+            if max(width, height) <= 500:
+                results.append({
+                    'id': image_id,
+                    'status': 'skipped',
+                    'message': 'Image dimensions are already within the limit.',    # noqa
+                    'original_dimensions': {
+                        'width': width,
+                        'height': height,
+                    },
+                    'optimized_dimensions': {
+                        'width': width,
+                        'height': height,
+                    },
+                })
+                continue
+
+            result = optimize_product_image(
+                image_instance=image_instance,
+                updated_by=updated_by,
+            )
+
+            results.append({
+                'id': image_id,
+                'status': 'optimized',
+                **result,
+            })
+
+        except ValidationError as exc:
+            results.append({
+                'id': image_id,
+                'status': 'failed',
+                'message': ' '.join(exc.messages),
+            })
+
+        except Exception:
+            logger.exception(
+                'Failed to optimize product image ID %s',
+                image_id,
+            )
+
+            results.append({
+                'id': image_id,
+                'status': 'failed',
+                'message': 'An unexpected error occurred during optimization.',
+            })
+
+    return {
+        'total': len(image_ids),
+        'optimized': sum(
+            item['status'] == 'optimized' for item in results
+        ),
+        'skipped': sum(
+            item['status'] == 'skipped' for item in results
+        ),
+        'failed': sum(
+            item['status'] == 'failed' for item in results
+        ),
+        'not_found': sum(
+            item['status'] == 'not_found' for item in results
+        ),
+        'results': results,
     }
