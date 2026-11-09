@@ -12,6 +12,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
+from wagtail.log_actions import log
+
 from cms_api.models import CmsNavigationItem, CmsNavigationMenu
 from cms_api.services.paths import published_url_path
 
@@ -60,6 +62,7 @@ def create_menu(*, validated_data, user):
     )
     _full_clean(menu)
     menu.save()
+    log(menu, "wagtail.create", user=user)
     return menu
 
 
@@ -70,6 +73,7 @@ def update_menu(*, menu, validated_data, user):
     menu.updated_by = user
     _full_clean(menu)
     menu.save()
+    log(menu, "wagtail.edit", user=user)
     return menu
 
 
@@ -80,6 +84,7 @@ def delete_menu(*, menu, user):
     menu.updated_by = user
     menu.save(update_fields=["updated_by"])
     menu.soft_delete()
+    log(menu, "wagtail.delete", user=user)
     return menu
 
 
@@ -106,6 +111,7 @@ def add_navigation_item(*, menu, validated_data, user):
     )
     _full_clean(item)
     item.save()
+    log(item, "wagtail.create", user=user)
     return item
 
 
@@ -119,11 +125,15 @@ def update_navigation_item(*, menu, item, validated_data, user):
         setattr(item, field, value)
     _full_clean(item)
     item.save()
+    log(item, "wagtail.edit", user=user)
     return item
 
 
 @transaction.atomic
 def remove_navigation_item(*, menu, item, user):
+    # Logged before delete(): Django clears the in-memory pk once the
+    # row is actually removed, and log_action() requires a pk.
+    log(item, "wagtail.delete", user=user)
     item.delete()
 
 
@@ -142,6 +152,10 @@ def reorder_navigation_items(*, menu, parent_id, order, user):
         CmsNavigationItem.objects.filter(pk=item_id).update(
             sort_order=position,
         )
+    log(
+        menu, "cms_api.navigation.reorder", user=user,
+        data={"parent_id": parent_id, "order": order},
+    )
 
 
 def _page_is_publicly_visible(page):

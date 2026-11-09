@@ -1,4 +1,8 @@
 # cms_api/serializers/__init__.py
+from .cms_audit_log import (
+    CmsAuditLogEntrySerializer,
+    CmsAuditLogQuerySerializer,
+)
 from .cms_media import (
     CmsDocumentCreateSerializer,
     CmsDocumentDetailSerializer,
@@ -61,6 +65,8 @@ from .cms_section import (
 )
 
 __all__ = [
+    "CmsAuditLogEntrySerializer",
+    "CmsAuditLogQuerySerializer",
     "CmsDocumentCreateSerializer",
     "CmsDocumentDetailSerializer",
     "CmsDocumentListSerializer",

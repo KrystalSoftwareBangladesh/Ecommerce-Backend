@@ -1,4 +1,9 @@
 # cms_api/services/__init__.py
+from .audit_log import (
+    CMS_AUDIT_CONTENT_TYPES,
+    list_audit_log_entries,
+    resolve_audit_log_window,
+)
 from .cms_section import (
     RevisionConflictError,
     archive_section,
@@ -72,6 +77,7 @@ from .redirects import (
 from .scheduling import run_scheduled_publishing
 
 __all__ = [
+    "CMS_AUDIT_CONTENT_TYPES",
     "RevisionConflictError",
     "add_navigation_item",
     "add_page_section",
@@ -94,6 +100,7 @@ __all__ = [
     "get_navigation_item",
     "get_page_section",
     "issue_preview_token",
+    "list_audit_log_entries",
     "list_page_revisions",
     "list_revisions",
     "make_section_row",
@@ -107,6 +114,7 @@ __all__ = [
     "remove_page_section",
     "reorder_navigation_items",
     "reorder_page_sections",
+    "resolve_audit_log_window",
     "resolve_navigation_tree",
     "resolve_preview_token",
     "resolve_redirect_path",

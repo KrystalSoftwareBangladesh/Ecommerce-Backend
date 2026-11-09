@@ -19,6 +19,7 @@ from rest_framework.exceptions import ValidationError
 
 from wagtail.actions.publish_page_revision import PublishPageRevisionAction
 from wagtail.actions.unpublish_page import UnpublishPageAction
+from wagtail.log_actions import log
 from wagtail.models import Page, ReferenceIndex
 
 from cms_api.models import CmsNavigationItem, CmsPage
@@ -199,7 +200,12 @@ def delete_page(*, page, user, acknowledge=False):
             ),
             "dependencies": dependencies,
         })
-    page.delete()
+    # user=user so the log entry attributes the deletion correctly;
+    # skip_permission_checks=True because passing a user turns on
+    # DeletePageAction's own check against Wagtail's auto-generated
+    # delete permission, not our cms_api.delete_cmspage codename
+    # (already enforced in DRF).
+    page.delete(user=user, skip_permission_checks=True)
     return dependencies
 
 
@@ -273,6 +279,7 @@ def unpublish_page(*, page, user):
 def archive_page(*, page, user):
     page.archived_at = timezone.now()
     page.save()
+    log(page, "cms_api.archive", user=user)
     return page
 
 
@@ -280,6 +287,7 @@ def archive_page(*, page, user):
 def restore_page(*, page, user):
     page.archived_at = None
     page.save()
+    log(page, "cms_api.restore", user=user)
     return page
 
 
@@ -350,6 +358,7 @@ def rollback_page(*, page, revision_id, user):
     )
     PublishPageRevisionAction(
         revision, user=user, previous_revision=old_revision,
+        log_action="cms_api.rollback",
     ).execute(skip_permission_checks=True)
     page.refresh_from_db()
     create_redirects_for_published_change(

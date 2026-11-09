@@ -1,4 +1,5 @@
 # cms_api/views/v1/__init__.py
+from .cms_audit_log import CmsAuditLogView
 from .cms_media import (
     CmsDocumentViewSet,
     CmsImageViewSet,
@@ -18,6 +19,7 @@ from .cms_redirect import CmsRedirectViewSet
 from .cms_section import CmsSectionViewSet, SectionTypeViewSet
 
 __all__ = [
+    "CmsAuditLogView",
     "CmsDocumentViewSet",
     "CmsImageViewSet",
     "CmsMediaConfigView",

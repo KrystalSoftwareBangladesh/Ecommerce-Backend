@@ -50,7 +50,18 @@ def register_cms_log_actions(actions):
         "cms_api.archive", _("Archive"), _("Archived")
     )
     actions.register_action(
+        "cms_api.restore", _("Restore"), _("Restored")
+    )
+    actions.register_action(
+        "cms_api.rollback", _("Rollback"), _("Rolled back")
+    )
+    actions.register_action(
         "cms_api.redirect.create",
         _("Create redirect"),
         _("Created redirect"),
+    )
+    actions.register_action(
+        "cms_api.navigation.reorder",
+        _("Reorder navigation items"),
+        _("Reordered navigation items"),
     )

@@ -27,6 +27,7 @@ from rest_framework.exceptions import ValidationError
 
 from wagtail.documents.models import Document
 from wagtail.images.models import Image
+from wagtail.log_actions import log
 from wagtail.models import ReferenceIndex
 
 from cms_api.models import CmsMediaConfig
@@ -165,6 +166,7 @@ def create_image(*, validated_data, user):
     )
     image.full_clean()
     image.save()
+    log(image, "wagtail.create", user=user)
     return image
 
 
@@ -179,12 +181,16 @@ def update_image(*, image, validated_data, user):
         image.description = validated_data["description"]
     image.full_clean()
     image.save()
+    log(image, "wagtail.edit", user=user)
     return image
 
 
 @transaction.atomic
 def delete_image(*, image, user):
     _guard_delete(image)
+    # Logged before delete(): Django clears the in-memory pk once the
+    # row is actually removed, and log_action() requires a pk.
+    log(image, "wagtail.delete", user=user)
     image.delete()
 
 
@@ -199,6 +205,7 @@ def create_document(*, validated_data, user):
     )
     document.full_clean()
     document.save()
+    log(document, "wagtail.create", user=user)
     return document
 
 
@@ -211,12 +218,16 @@ def update_document(*, document, validated_data, user):
         document.title = validated_data["title"]
     document.full_clean()
     document.save()
+    log(document, "wagtail.edit", user=user)
     return document
 
 
 @transaction.atomic
 def delete_document(*, document, user):
     _guard_delete(document)
+    # Logged before delete(): Django clears the in-memory pk once the
+    # row is actually removed, and log_action() requires a pk.
+    log(document, "wagtail.delete", user=user)
     document.delete()
 
 
@@ -227,4 +238,5 @@ def update_media_config(*, config, validated_data, user):
     config.updated_by = user
     config.full_clean()
     config.save()
+    log(config, "wagtail.edit", user=user)
     return config

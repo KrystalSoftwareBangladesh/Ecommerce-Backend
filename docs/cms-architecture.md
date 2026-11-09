@@ -335,7 +335,7 @@ the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
 | `GET/POST/PATCH/DELETE /media/images/` | Wagtail `Image` CRUD: upload, title, `alt_text` (`Image.description`), delete-with-reference-check |
 | `GET/POST/PATCH/DELETE /media/documents/` | Wagtail `Document` CRUD: upload, title, delete-with-reference-check |
 | `GET /redirects/` | redirect list/history, gated on `view_cmspage` per §16 item 8 |
-| `GET /audit-logs/` | CMS activity (actor, action, object, timestamp) — Phase 4C |
+| `GET /audit-logs/` | CMS activity (actor, action, object, timestamp), gated on `view_cmspage`; `start_date`/`end_date`/`action`/`content_type` query params |
 
 Errors: standard DRF `ValidationError` (400) for rule violations,
 404 for unpublished content on public endpoints (no draft leakage),
@@ -1009,6 +1009,113 @@ documented in one consistent pass rather than twice. No code,
 settings, migrations or tests were changed as part of this
 documentation update.
 
+## Phase 4C verification results (2026-11-09)
+
+Scope delivered: the audit-log half of §14 row 4 — complete, correct
+audit-event coverage for every CMS write path, and the read-only
+`GET /api/v1/cms/audit-logs/`. This closes out Phase 4 in full (4A
+navigation, 4B media, 4C audit-log).
+
+1. **No new storage.** Reuses Wagtail's own `PageLogEntry` (pages)
+   and `ModelLogEntry` (everything else — registered by Wagtail core
+   itself, `wagtail/wagtail_hooks.py`, as the catch-all logger for
+   *any* Django model, confirmed by reading the installed package).
+   No new model, no migration.
+2. **Gaps found by the Phase 4C audit, fixed and verified
+   empirically** (ran the real service functions against a scratch
+   database and inspected the resulting log rows, not just read the
+   code):
+   - `archive_page`/`restore_page` previously logged nothing; now log
+     `cms_api.archive`/`cms_api.restore` (new action names,
+     registered via `register_log_actions`), mirroring
+     `archive_section`'s existing pattern.
+   - `delete_page` called `page.delete()` with no `user`, so the
+     resulting `wagtail.delete` entry was always attributed to
+     "system". Fixed to `page.delete(user=user,
+     skip_permission_checks=True)` — passing `user` turns on
+     `DeletePageAction`'s own internal permission check (against
+     Wagtail's auto-generated delete permission, not
+     `cms_api.delete_cmspage`, already enforced in DRF), so
+     `skip_permission_checks=True` was required alongside it; caught
+     by rerunning the full `cms_api` suite after the change, not by
+     inspection.
+   - `rollback_page`/`rollback_section` were logged, but as a plain
+     `wagtail.publish`/indistinguishable from an ordinary publish.
+     Both now pass `log_action="cms_api.rollback"` (new action name)
+     into the final `PublishPageRevisionAction`/`PublishRevisionAction`
+     call.
+3. **Navigation and media now log every write.** `cms_api/services/
+   navigation.py`: menu create/update/delete use `wagtail.create`/
+   `wagtail.edit`/`wagtail.delete` (core actions, semantically exact
+   fits, no new names needed); item create/update/delete the same,
+   logged against the item itself, not the menu; `reorder_navigation_
+   items` logs exactly **one** entry per call, against the menu, with
+   a new `cms_api.navigation.reorder` action and `data={"parent_id":
+   ..., "order": [...]}`  — reordering many siblings in one request
+   is one audit event, not one per item touched. `cms_api/services/
+   media.py`: image/document create/update/delete use the same core
+   actions; `CmsMediaConfig` updates log `wagtail.edit`. A delete is
+   always logged *before* the row is actually removed (`image.delete()`/
+   `item.delete()` clear the in-memory pk afterward, and
+   `log_action()` requires a pk) — the one ordering detail that would
+   otherwise raise `ValueError` or silently log nothing.
+4. **Read API** (`cms_api/services/audit_log.py`,
+   `cms_api/serializers/cms_audit_log.py`,
+   `cms_api/views/v1/cms_audit_log.py`) — `GET /api/v1/cms/
+   audit-logs/`, gated on `view_cmspage` (§16 item 8's reuse pattern,
+   extended here rather than inventing a new codename). `PageLogEntry`
+   and `ModelLogEntry` cannot be combined with a single queryset
+   (`PageLogEntry.object_id` is a Python `@cached_property`
+   — `page_id` — not a database column, confirmed by reading the
+   installed package), so each is queried and filtered separately —
+   by the resolved date window, and by `action`/`content_type` when
+   given — and only the two filtered, already-bounded results are
+   merged and sorted by timestamp in Python before pagination (the
+   project's existing `EcommerceBackend.core.pagination.Pagination`,
+   which works unmodified on a plain list). The content-type allowlist
+   (`CMS_AUDIT_CONTENT_TYPES`: `CmsPage`, `CmsSection`,
+   `CmsNavigationMenu`, `CmsNavigationItem`, `Image`, `Document`,
+   `CmsMediaConfig`) is explicit, not "every `ModelLogEntry` row":
+   `Product`/`Category`/`Brand` are registered as Wagtail snippets for
+   chooser-block support and would log to the same table if ever
+   edited through Wagtail Admin, which must never surface as "CMS
+   activity". Verified with a synthetic log entry on an unrelated
+   model (`user_api.User`, standing in for exactly this risk) —
+   confirmed absent from the response.
+5. **Query bounds** — default window is the most recent 90 days
+   (`resolve_audit_log_window`); an explicit `start_date`/`end_date`
+   wider than 365 days is clamped, not rejected (silently keeping the
+   safety property regardless of what a caller asks for, rather than
+   erroring on an honest mistake); `start_date` after `end_date` is a
+   400. The date filter is applied at the queryset level on both
+   sources *before* the Python merge, so memory use is bounded by the
+   filtered window, never by either table's full history.
+6. **Response shape** — `actor` (username, `null` for a system-
+   attributed entry such as the scheduled sweep's `wagtail.publish.
+   scheduled`/`wagtail.unpublish.scheduled`), `actor_id`, `action`,
+   `model` (`app_label.ModelName`, matching the existing dependency-
+   response convention in `delete_page`/`delete_section`, not the
+   lowercase `content_type.model` string), `object_id`, `object`
+   (the logged title), `timestamp`, `data`.
+7. **Tests + lint** — 27 new tests in
+   `cms_api/tests/test_api_cms_audit_log.py` (220 total in `cms_api`,
+   all passing); `flake8` clean; full suite 1023 tests, 30 failures +
+   5 errors + 8 skipped — identical to the Phase 4B baseline, no
+   regressions. No migrations (nothing new to migrate).
+
+**Spec gaps inherited from Phase 4C scope:** none within Phase 4 —
+navigation, media and audit-log are all complete. The cache layer,
+Wagtail Admin and the `CACHES` duplication (already fixed, Phase 3
+section) remain Phase 5 concerns; the featured-flag gap on product
+collections (open since Phase 0, §13.5 item 5).
+
+**Docs scope note**: per this phase's instructions, only this
+architecture document was updated with verified implementation
+details. `docs/business-rules.md`, `docs/project-structure.md` and
+the `AGENTS.md` decisions log still need their Phase 4C entries —
+the final cross-document Phase 4 synchronisation is a separate,
+explicitly deferred step.
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs
@@ -1020,7 +1127,7 @@ updates.
 | 1 | Section-type registry + `CmsSection` snippet: CRUD, publish/unpublish, revisions/rollback, archive, reference guard, section-type schema API |
 | 2 | `CmsPage` + `CmsPageSection`: CRUD from templates, composition writes/reorder, revisions/rollback, publish/unpublish/archive, reserved-path validation |
 | 3 | Lifecycle: scheduled publish/unpublish (Beat), redirects service, preview tokens, sitemap endpoint |
-| 4 | Navigation + media management + audit-log API — delivered as three sub-phases: **4A** navigation (`CmsNavigationMenu`/`CmsNavigationItem`), **4B** media (`CmsMediaConfig`, images/documents), **4C** audit-log read API (not started) |
+| 4 | Navigation + media management + audit-log API — delivered as three sub-phases, all complete: **4A** navigation (`CmsNavigationMenu`/`CmsNavigationItem`), **4B** media (`CmsMediaConfig`, images/documents), **4C** audit-log read API |
 | 5 | Cache layer + invalidation, Wagtail Admin at `/cms-admin/`, full test pass, docs |
 
 ## 15. Testing approach
@@ -1101,6 +1208,16 @@ Phase 4B implementation-time decisions (approved in review, 2026-11-09):
     ruled out for this phase); `source="description"` in the
     serializer reconciles Wagtail's own naming with this project's
     `ProductImage.alt_text` convention without a schema change.
+
+Phase 4C implementation-time decision (approved in review, 2026-11-09):
+
+14. **Audit-log read permission reuses `view_cmspage`** — same reuse
+    already approved for `GET /redirects/` (item 8 above) rather than
+    a new codename, even though audit history spans every CMS-owned
+    content type, not just pages. A wide date-range request is
+    clamped to 365 days rather than rejected with a 400, keeping the
+    "never load the full history" property regardless of what a
+    caller asks for.
 
 ## 17. Out of scope (per spec §15)
 

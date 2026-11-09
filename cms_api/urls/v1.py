@@ -70,5 +70,10 @@ urlpatterns = [
         v1.CmsMediaConfigView.as_view(),
         name='cms-media-config',
     ),
+    path(
+        'cms/audit-logs/',
+        v1.CmsAuditLogView.as_view(),
+        name='cms-audit-log',
+    ),
 ]
 urlpatterns += router.urls

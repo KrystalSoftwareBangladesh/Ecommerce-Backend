@@ -299,6 +299,7 @@ def rollback_section(*, section, revision_id, user):
         user=user, previous_revision=old_revision
     )
     PublishRevisionAction(
-        revision, user=user, previous_revision=old_revision
+        revision, user=user, previous_revision=old_revision,
+        log_action="cms_api.rollback",
     ).execute(skip_permission_checks=True)
     return section
