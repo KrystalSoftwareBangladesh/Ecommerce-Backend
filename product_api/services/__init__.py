@@ -17,6 +17,8 @@ from .product_image import (
     is_product_image_ratio_mismatch,
     optimize_product_image,
     bulk_optimize_product_images,
+    set_product_image_resolution,
+    recalculate_product_image_resolution,
 )
 
 
@@ -36,4 +38,6 @@ __all__ = [
     'is_product_image_ratio_mismatch',
     'optimize_product_image',
     'bulk_optimize_product_images',
+    'set_product_image_resolution',
+    'recalculate_product_image_resolution',
 ]

@@ -6,6 +6,8 @@ from django.utils import timezone
 
 from product_api.models import ProductImage, Product, ProductVariant
 
+from .product_image import set_product_image_resolution
+
 
 DEFAULT_VARIANT_SKU_PREFIX = 'P-'
 
@@ -64,6 +66,7 @@ def upload_product_image(
             created_by=created_by,
             updated_by=updated_by,
         )
+        set_product_image_resolution(image)
 
         return image
 
@@ -79,6 +82,7 @@ def replace_product_image(image_instance, new_image_file, updated_by=None):
         image_instance.image = new_image_file
         image_instance.updated_by = updated_by
         image_instance.save()
+        set_product_image_resolution(image_instance)
         return image_instance
 
 
@@ -289,6 +293,7 @@ def bulk_upload_product_images(
                 created_by=created_by,
                 updated_by=updated_by,
             )
+            set_product_image_resolution(image)
 
             created_images.append(image)
 
