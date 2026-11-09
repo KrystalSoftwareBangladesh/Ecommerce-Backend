@@ -203,3 +203,25 @@ class ProductImageSummarySerializer(serializers.Serializer):
     total_product_images = serializers.IntegerField()
     high_resolution_images = serializers.IntegerField()
     ratio_mismatch_images = serializers.IntegerField()
+
+
+class ProductImageOptimizationSerializer(serializers.Serializer):
+    optimized = serializers.BooleanField()
+    message = serializers.CharField(required=False)
+
+    original_dimensions = serializers.DictField()
+    optimized_dimensions = serializers.DictField()
+
+    original_size = serializers.IntegerField()
+    optimized_size = serializers.IntegerField()
+
+
+class BulkProductImageOptimizationSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    optimized = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    failed = serializers.IntegerField()
+    not_found = serializers.IntegerField()
+    results = serializers.ListField(
+        child=serializers.DictField()
+    )
