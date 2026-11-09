@@ -195,6 +195,10 @@ REST_FRAMEWORK = {
 AUTHENTICATION_BACKENDS = [
     'user_api.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
+    # Grants wagtailadmin.access_admin to staff/superusers only (issue
+    # #463, Phase 5A) — see cms_api/backends.py. Never authenticates a
+    # login and never grants any other permission.
+    'cms_api.backends.WagtailAdminAccessBackend',
 ]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000

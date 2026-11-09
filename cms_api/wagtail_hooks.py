@@ -19,9 +19,14 @@ from wagtail.snippets.models import register_snippet
 
 from category_api.models import Category
 from cms_api.models import CmsSection
+from cms_api.wagtail_permissions import CmsSectionSnippetViewSet
 from product_api.models import Brand, Product
 
-register_snippet(CmsSection)
+# CmsSectionSnippetViewSet (Phase 5A, docs/cms-architecture.md AD-11)
+# redirects the snippet's publish/unpublish/lock/unlock actions to the
+# existing cms_api permissions instead of Wagtail's auto-generated
+# codenames; standard CRUD is unaffected.
+register_snippet(CmsSection, viewset=CmsSectionSnippetViewSet)
 register_snippet(Product)
 register_snippet(Category)
 register_snippet(Brand)
