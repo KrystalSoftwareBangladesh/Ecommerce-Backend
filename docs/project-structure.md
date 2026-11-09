@@ -132,19 +132,21 @@ Ecommerce-Backend/
 │   ├── sections/{__init__.py,blocks.py,registry.py}  # type registry
 │   ├── pages/{__init__.py,templates.py}         # page templates
 │   ├── serializers/{__init__.py,cms_section.py,cms_page.py,
-│   │        cms_redirect.py,cms_navigation.py,cms_media.py}
+│   │        cms_redirect.py,cms_navigation.py,cms_media.py,
+│   │        cms_audit_log.py}
 │   ├── services/{__init__.py,cms_section.py,
 │   │        pages.py,composition.py,paths.py,redirects.py,
-│   │        preview.py,scheduling.py,navigation.py,media.py}
+│   │        preview.py,scheduling.py,navigation.py,media.py,
+│   │        audit_log.py}
 │   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py,
 │   │        cms_redirect.py,cms_preview.py,cms_navigation.py,
-│   │        cms_media.py}}
+│   │        cms_media.py,cms_audit_log.py}}
 │   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types,
 │   │                                 # pages, public/pages, public/sitemap,
 │   │                                 # public/preview/{token}, redirects,
 │   │                                 # navigation, public/navigation/{key},
 │   │                                 # media/images, media/documents,
-│   │                                 # media-config
+│   │                                 # media-config, audit-logs
 │   ├── tasks.py                       # run_scheduled_publishing_task (Beat)
 │   ├── tests/{__init__.py,factories.py,test_api_cms_section.py,
 │   │        test_api_cms_section_lifecycle.py,test_api_section_types.py,
@@ -153,7 +155,7 @@ Ecommerce-Backend/
 │   │        test_api_cms_page_scheduling.py,
 │   │        test_api_cms_section_scheduling.py,test_api_cms_preview.py,
 │   │        test_api_cms_sitemap.py,test_api_cms_navigation.py,
-│   │        test_api_cms_media.py}
+│   │        test_api_cms_media.py,test_api_cms_audit_log.py}
 │   ├── migrations/{0001_initial.py,
 │   │        0002_cmspage_cmspagesection.py,
 │   │        0003_cmsnavigationmenu_cmsnavigationitem.py,

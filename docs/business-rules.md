@@ -682,6 +682,47 @@ Wagtail's own `Image`/`Document` models (no custom model). Architecture:
   mechanism `delete_section` uses) cannot be deleted; there is no
   `acknowledge` override, unlike the page delete guard.
 
+## CMS (Phase 4C — audit log)
+
+`GET /api/v1/cms/audit-logs/` is read-only, backed entirely by
+Wagtail's own `PageLogEntry`/`ModelLogEntry` tables — no new storage.
+Architecture: [cms-architecture.md](cms-architecture.md).
+
+- **Gated on `view_cmspage`.** Same reuse already in place for
+  `GET /api/v1/cms/redirects/`: audit history is a cross-cutting read,
+  not a write on any one model, so it does not get its own codename.
+- **Restricted to CMS-owned content types.** Only `CmsPage`,
+  `CmsSection`, `CmsNavigationMenu`, `CmsNavigationItem`, `Image`,
+  `Document` and `CmsMediaConfig` are included. `Product`, `Category`
+  and `Brand` are registered as Wagtail snippets for chooser-block
+  support and would log to the same `ModelLogEntry` table if ever
+  edited through Wagtail Admin; that activity is explicitly excluded
+  rather than left to leak in.
+- **Two incompatible sources, merged in application code.** Page
+  activity lives in `PageLogEntry`; everything else in `ModelLogEntry`.
+  They cannot be combined in a single query (`PageLogEntry.object_id`
+  is a Python property, not a database column), so each is filtered
+  independently — by the date window and any `action`/`content_type`
+  filter — before being merged and sorted by timestamp.
+- **Query bounds are mandatory, not optional.** Defaults to the most
+  recent 90 days; an explicit range wider than 365 days is silently
+  clamped rather than rejected, so the "never load the full history"
+  property holds regardless of what a caller asks for. `start_date`
+  after `end_date` is a 400.
+- **Every CMS write now produces exactly one correctly-attributed log
+  entry.** This phase also closed three pre-existing gaps found by its
+  own audit: page `archive`/`restore` previously logged nothing (now
+  `cms_api.archive`/`cms_api.restore`); page deletion attributed the
+  actor as "system" instead of the real user (`page.delete()` was
+  missing `user=user`); page and section rollback were logged as a
+  plain publish, indistinguishable from an ordinary one (now
+  `cms_api.rollback`, a distinct action). Navigation (menu/item
+  create/update/delete, and one entry per reorder call, not one per
+  item moved) and media (image/document create/update/delete,
+  `CmsMediaConfig` updates) previously logged nothing at all and now
+  do, using Wagtail's core `wagtail.create`/`wagtail.edit`/
+  `wagtail.delete` actions.
+
 ## Permissions
 
 Protected endpoints require authentication.
