@@ -236,14 +236,36 @@ def rollback_page(*, page, revision_id, user):
     Interpretation R1 (as for sections): rollback creates a new
     revision holding the old content and publishes it. Gated by
     ``publish_cms_page`` at the API layer.
+
+    The restored URL is always recalculated from the page's *current*
+    parent hierarchy, never taken from the historical revision. An
+    ancestor may have had its slug changed since the revision was
+    captured; Wagtail's own ``Page.save()`` only recomputes
+    ``url_path`` when *this* page's own slug differs from the row
+    currently in the database, so a rollback that leaves the slug
+    unchanged would otherwise skip recalculation even if the parent
+    chain has moved on, leaving a stale prefix. ``get_parent(update=
+    True)`` forces a fresh lookup (``get_parent`` caches its result on
+    the instance), and descendants are repathed explicitly whenever
+    the recalculated path differs, mirroring Wagtail's own slug-change
+    cascade (``_update_descendant_url_paths``) for the case Wagtail's
+    check does not cover. The "old" path fed to that cascade is read
+    straight from the database rather than from ``page.url_path``,
+    which may itself be a stale in-memory value on the ``page``
+    instance the caller handed in; descendants always carry the
+    database's current prefix, never the caller's possibly-stale one.
     """
     old_revision = _page_revision(page, revision_id)
     restored = old_revision.as_object()
-    prospective = _prospective_url_path(
-        page.get_parent(), restored.slug,
-    )
+    parent = page.get_parent(update=True)
+    prospective = _prospective_url_path(parent, restored.slug)
     _validate_reserved_path(prospective)
     _validate_url_available(prospective, page)
+    old_url_path = (
+        Page.objects.filter(pk=page.pk)
+        .values_list("url_path", flat=True)
+        .get()
+    )
     for field in (
         "title", "slug", "draft_title", "seo_title",
         "template_key", "seo_description", "meta_keywords",
@@ -262,7 +284,10 @@ def rollback_page(*, page, revision_id, user):
     ]
     apply_section_rows(page, sections_data)
     _full_clean(page)
+    page.set_url_path(parent)
     page.save()
+    if page.url_path != old_url_path:
+        page._update_descendant_url_paths(old_url_path, page.url_path)
     revision = page.save_revision(
         user=user, previous_revision=old_revision
     )

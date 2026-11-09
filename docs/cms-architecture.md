@@ -621,6 +621,24 @@ item 5) remains deferred.
    Regression tests: `test_draft_slug_path_is_not_served`,
    `test_published_path_resolves_after_a_draft_slug_change`,
    `test_list_reports_published_urls_after_a_draft_slug_change`.
+3. **Rollback URL recalculation (RESOLVED, 2026-11-09)** — `rollback_
+   page` no longer relies solely on Wagtail's implicit slug-changed
+   check to recompute `url_path` (`Page.save()` only recalculates it
+   when the restored slug differs from the row currently in the
+   database, so a rollback that leaves the page's own slug unchanged
+   skipped recalculation even if an ancestor had since been renamed).
+   It now always recomputes the restored page's `url_path` from a
+   freshly-fetched current parent (`page.get_parent(update=True)`,
+   since `get_parent()` caches its result on the instance) via
+   `page.set_url_path(parent)`, and explicitly repaths descendants
+   (`Page._update_descendant_url_paths`, Wagtail 7.4.4) whenever the
+   recomputed path differs from the database's current `url_path` —
+   read from the database rather than from the possibly-stale
+   in-memory `page.url_path` on the caller's instance. Reserved-path
+   and URL-conflict validation (outcome 1 above) and the restore +
+   publish semantics are unchanged. Regression tests:
+   `test_rollback_repaths_a_page_after_an_ancestor_rename`,
+   `test_rollback_repaths_descendants_with_a_stale_cached_parent`.
 
 ## 14. Implementation phases
 

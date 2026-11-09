@@ -5,6 +5,7 @@ from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from cms_api.models import CmsPage
+from cms_api.services.pages import rollback_page
 from cms_api.tests import factories
 
 
@@ -300,3 +301,75 @@ class RevisionTests(CmsPageLifecycleTestCase):
         self.assertEqual(
             CmsPage.objects.get(url_path='/alpha/').pk, owner.pk,
         )
+
+    def test_rollback_repaths_a_page_after_an_ancestor_rename(self):
+        self.authenticate()
+        acme = factories.page(self.editor, slug='acme', title='Acme')
+        about = factories.page(
+            self.editor, slug='about', title='About', parent=acme,
+        )
+        team = factories.page(
+            self.editor, slug='team', title='Team', parent=about,
+        )
+        first_about_revision = about.revisions.order_by('id').first()
+
+        acme.refresh_from_db()
+        acme.slug = 'acme-corp'
+        acme.save()
+        acme.save_revision(user=self.editor)
+
+        response = self.client.post(
+            action_url(about, 'rollback'),
+            {'revision_id': first_about_revision.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        about.refresh_from_db()
+        team.refresh_from_db()
+        self.assertEqual(about.slug, 'about')
+        self.assertEqual(about.url_path, '/acme-corp/about/')
+        self.assertEqual(team.url_path, '/acme-corp/about/team/')
+
+    def test_rollback_repaths_descendants_with_a_stale_cached_parent(self):
+        """A page instance that cached its parent before an ancestor
+        rename must still be repathed from the *current* parent.
+
+        ``get_parent()`` (treebeard) caches its result on the
+        instance, so a long-lived ``page`` object that outlives an
+        ancestor's slug change could otherwise carry a stale parent
+        into the rollback even though its own slug is unchanged.
+        ``add_child()`` aliases the cache to the exact parent instance
+        used at creation time, so the cache is explicitly dropped and
+        re-primed here, and the ancestor is renamed through a
+        separately-queried instance, to force a genuinely stale
+        reference rather than one that would self-update in step with
+        the rename."""
+        acme = factories.page(self.editor, slug='acme', title='Acme')
+        about = factories.page(
+            self.editor, slug='about', title='About', parent=acme,
+        )
+        team = factories.page(
+            self.editor, slug='team', title='Team', parent=about,
+        )
+        first_about_revision_id = about.revisions.order_by(
+            'id',
+        ).first().id
+        del about._cached_parent_obj
+        about.get_parent()
+
+        renamer = CmsPage.objects.get(pk=acme.pk)
+        renamer.slug = 'acme-corp'
+        renamer.save()
+        renamer.save_revision(user=self.editor)
+
+        rollback_page(
+            page=about, revision_id=first_about_revision_id,
+            user=self.editor,
+        )
+
+        db_about = CmsPage.objects.get(pk=about.pk)
+        db_team = CmsPage.objects.get(pk=team.pk)
+        self.assertEqual(db_about.slug, 'about')
+        self.assertEqual(db_about.url_path, '/acme-corp/about/')
+        self.assertEqual(db_team.url_path, '/acme-corp/about/team/')
