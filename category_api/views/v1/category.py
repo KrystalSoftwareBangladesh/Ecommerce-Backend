@@ -40,6 +40,8 @@ from category_api.services import (
     get_category_price_range, delete_category, upload_featured_category_icon,
     mark_category_as_featured, remove_category_from_featured,
     reorder_featured_categories, remove_featured_category_icon,
+    get_cached_category_navigation, set_cached_category_navigation,
+    invalidate_category_navigation_cache,
 )
 from category_api.filters import CategoryFilter
 
@@ -154,9 +156,18 @@ class CategoryViewSet(
 
         return CategorySerializer
 
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        invalidate_category_navigation_cache()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        invalidate_category_navigation_cache()
+
     def destroy(self, request, *args, **kwargs):
         category = self.get_object()
         delete_category(category=category)
+        invalidate_category_navigation_cache()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _get_category_ids_from_params(self, queryset):
@@ -319,6 +330,13 @@ class CategoryViewSet(
         url_path="roots",
     )
     def roots(self, request):
+        cached_data = get_cached_category_navigation(
+            action="roots",
+            query_params=request.query_params,
+        )
+        if cached_data is not None:
+            return Response(cached_data)
+
         children_exists = Category.objects.filter(
             parent_id=OuterRef("pk"),
             deleted_at__isnull=True,
@@ -357,15 +375,22 @@ class CategoryViewSet(
                 many=True,
                 context=self.get_serializer_context(),
             )
-            return self.get_paginated_response(serializer.data)
+            response = self.get_paginated_response(serializer.data)
+        else:
+            serializer = CategoryNavigationSerializer(
+                queryset,
+                many=True,
+                context=self.get_serializer_context(),
+            )
+            response = Response(serializer.data)
 
-        serializer = CategoryNavigationSerializer(
-            queryset,
-            many=True,
-            context=self.get_serializer_context(),
+        set_cached_category_navigation(
+            action="roots",
+            query_params=request.query_params,
+            data=response.data,
         )
 
-        return Response(serializer.data)
+        return response
 
     @extend_schema(
         tags=["Categories"],
@@ -399,6 +424,13 @@ class CategoryViewSet(
         url_path="children",
     )
     def children(self, request):
+        cached_data = get_cached_category_navigation(
+            action="children",
+            query_params=request.query_params,
+        )
+        if cached_data is not None:
+            return Response(cached_data)
+
         parent_queryset = Category.objects.filter(
             deleted_at__isnull=True,
         )
@@ -439,6 +471,12 @@ class CategoryViewSet(
             queryset,
             many=True,
             context=self.get_serializer_context(),
+        )
+
+        set_cached_category_navigation(
+            action="children",
+            query_params=request.query_params,
+            data=serializer.data,
         )
 
         return Response(serializer.data)

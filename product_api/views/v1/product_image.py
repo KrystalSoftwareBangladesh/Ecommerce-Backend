@@ -19,6 +19,8 @@ from product_api.serializers import (
     ProductImageListSerializer,
     BulkProductImageUploadSerializer,
     ProductImageSummarySerializer,
+    ProductImageOptimizationSerializer,
+    BulkProductImageOptimizationSerializer,
 )
 from product_api.services import (
     replace_product_image,
@@ -30,6 +32,8 @@ from product_api.services import (
     get_product_image_summary,
     is_product_image_high_resolution,
     is_product_image_ratio_mismatch,
+    optimize_product_image,
+    bulk_optimize_product_images,
 )
 
 
@@ -336,3 +340,96 @@ class ProductImageViewSet(
         summary_data = get_product_image_summary(queryset)
         serializer = ProductImageSummarySerializer(summary_data)
         return Response(serializer.data)
+
+    @extend_schema(
+        summary="Optimize product image",
+        description=(
+            "Resize a product image so its largest dimension "
+            "does not exceed 500px while preserving its aspect ratio."
+        ),
+        request=None,
+        responses=ProductImageOptimizationSerializer(),
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='optimize',
+    )
+    def optimize(self, request, pk=None):
+        image = self.get_object()
+
+        result = optimize_product_image(
+            image_instance=image,
+            updated_by=request.user,
+        )
+
+        serializer = ProductImageOptimizationSerializer(result)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        summary="Bulk optimize product images",
+        description=(
+            "Optimize multiple product images using their IDs. "
+            "Pass comma-separated image IDs through the `ids` query parameter. "    # noqa
+            "The maximum image dimension after optimization is 500px. "
+            "Images are processed independently."
+        ),
+        request=None,
+        responses=BulkProductImageOptimizationSerializer(),
+    )
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='bulk-optimize',
+    )
+    def bulk_optimize(self, request, *args, **kwargs):
+        raw_ids = request.query_params.getlist('ids')
+
+        if not raw_ids:
+            return Response(
+                {'ids': ['At least one image ID is required.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            image_ids = [
+                int(value.strip())
+                for item in raw_ids
+                for value in item.split(',')
+                if value.strip()
+            ]
+
+            if not image_ids or any(image_id <= 0 for image_id in image_ids):
+                raise ValueError
+
+        except ValueError:
+            return Response(
+                {'ids': ['Provide valid positive image IDs.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Remove duplicate IDs while preserving order.
+        image_ids = list(dict.fromkeys(image_ids))
+
+        if len(image_ids) > 100:
+            return Response({
+                'ids': ['A maximum of 100 images can be processed per request.']    # noqa
+            },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = bulk_optimize_product_images(
+            image_ids=image_ids,
+            updated_by=request.user,
+        )
+
+        serializer = BulkProductImageOptimizationSerializer(result)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
