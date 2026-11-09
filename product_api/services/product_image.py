@@ -1,5 +1,10 @@
 # product_api/services/product_image.py
+from django.db import transaction
+from rest_framework.exceptions import ValidationError
+
 from PIL import Image
+
+from product_api.utils import optimize_image_file
 
 
 def get_product_image_summary(product_images):
@@ -58,3 +63,76 @@ def is_product_image_ratio_mismatch(product_image):
     return get_product_image_flags(
         product_image
     )['is_ratio_mismatch']
+
+
+def optimize_product_image(image_instance, updated_by=None):
+    """
+    Optimize a product image by limiting its largest dimension
+    to 500px while preserving its aspect ratio.
+    """
+    if image_instance is None:
+        raise ValidationError(
+            'A product image is required.'
+        )
+
+    if not image_instance.image:
+        raise ValidationError(
+            'Product image file is missing.'
+        )
+
+    image_field = image_instance.image
+    original_name = image_field.name
+    original_size = image_field.size
+
+    with image_field.open('rb') as original_file:
+        optimized_file, metadata = optimize_image_file(
+            original_file,
+            max_dimension=500,
+        )
+
+    if optimized_file.size >= original_size:
+        optimized_file.close()
+        return {
+            'optimized': False,
+            'message': 'Image is already optimized or cannot be reduced further.',  # noqa
+            **metadata,
+        }
+
+    storage = image_field.storage
+
+    try:
+        with transaction.atomic():
+            image_instance.image.save(
+                original_name,
+                optimized_file,
+                save=False,
+            )
+
+            image_instance.updated_by = updated_by
+
+            image_instance.save(
+                update_fields=[
+                    'image',
+                    'updated_by',
+                    'updated_at',
+                ]
+            )
+
+            new_name = image_instance.image.name
+
+            transaction.on_commit(
+                lambda: storage.delete(original_name)
+                if original_name != new_name
+                else None
+            )
+
+    except Exception:
+        optimized_file.close()
+        raise
+
+    optimized_file.close()
+
+    return {
+        'optimized': True,
+        **metadata,
+    }

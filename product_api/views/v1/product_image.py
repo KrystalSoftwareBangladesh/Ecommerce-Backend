@@ -19,6 +19,7 @@ from product_api.serializers import (
     ProductImageListSerializer,
     BulkProductImageUploadSerializer,
     ProductImageSummarySerializer,
+    ProductImageOptimizationSerializer,
 )
 from product_api.services import (
     replace_product_image,
@@ -30,6 +31,7 @@ from product_api.services import (
     get_product_image_summary,
     is_product_image_high_resolution,
     is_product_image_ratio_mismatch,
+    optimize_product_image
 )
 
 
@@ -336,3 +338,32 @@ class ProductImageViewSet(
         summary_data = get_product_image_summary(queryset)
         serializer = ProductImageSummarySerializer(summary_data)
         return Response(serializer.data)
+
+    @extend_schema(
+        summary="Optimize product image",
+        description=(
+            "Resize a product image so its largest dimension "
+            "does not exceed 500px while preserving its aspect ratio."
+        ),
+        request=None,
+        responses=ProductImageOptimizationSerializer(),
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='optimize',
+    )
+    def optimize(self, request, pk=None):
+        image = self.get_object()
+
+        result = optimize_product_image(
+            image_instance=image,
+            updated_by=request.user,
+        )
+
+        serializer = ProductImageOptimizationSerializer(result)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )

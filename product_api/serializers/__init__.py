@@ -23,6 +23,7 @@ from .product_image import (
     BulkProductImageItemSerializer,
     BulkProductImageUploadSerializer,
     ProductImageSummarySerializer,
+    ProductImageOptimizationSerializer,
 )
 
 
@@ -46,4 +47,5 @@ __all__ = [
     "BulkProductImageItemSerializer",
     "BulkProductImageUploadSerializer",
     "ProductImageSummarySerializer",
+    "ProductImageOptimizationSerializer",
 ]

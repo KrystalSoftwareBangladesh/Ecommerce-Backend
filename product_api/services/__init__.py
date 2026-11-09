@@ -15,6 +15,7 @@ from .product_image import (
     get_product_image_dimensions,
     is_product_image_high_resolution,
     is_product_image_ratio_mismatch,
+    optimize_product_image,
 )
 
 
@@ -32,4 +33,5 @@ __all__ = [
     'get_product_image_dimensions',
     'is_product_image_high_resolution',
     'is_product_image_ratio_mismatch',
+    'optimize_product_image',
 ]
