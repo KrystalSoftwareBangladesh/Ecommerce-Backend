@@ -21,7 +21,7 @@ from wagtail.actions.publish_page_revision import PublishPageRevisionAction
 from wagtail.actions.unpublish_page import UnpublishPageAction
 from wagtail.models import Page, ReferenceIndex
 
-from cms_api.models import CmsPage
+from cms_api.models import CmsNavigationItem, CmsPage
 from cms_api.pages.templates import PAGE_TEMPLATES
 from cms_api.services.cms_section import (
     _check_base_revision,
@@ -145,10 +145,34 @@ def delete_page(*, page, user, acknowledge=False):
     """Permanent, dependency-guarded page deletion (spec 5.1).
 
     The subtree and every Wagtail reference must be acknowledged;
-    otherwise a ``ValidationError`` lists each dependency. Navigation
-    menu dependencies are checked once ``CmsNavigationMenu`` exists
-    (Phase 4).
+    otherwise a ``ValidationError`` lists each dependency.
+
+    Navigation items are a *hard* dependency, never acknowledgeable:
+    ``CmsNavigationItem.page`` is a ``PROTECT`` foreign key (docs
+    §5.5), so ``page.delete()`` would otherwise raise a raw
+    ``ProtectedError`` instead of the structured dependency response
+    every other reference already gets. The item must be removed or
+    repointed first.
     """
+    nav_dependencies = [
+        {
+            "model": item._meta.label,
+            "object_id": item.pk,
+            "object": str(item),
+        }
+        for item in CmsNavigationItem.objects.filter(
+            page=page,
+        ).select_related("menu")
+    ]
+    if nav_dependencies:
+        raise ValidationError({
+            "detail": (
+                "Page is referenced by one or more navigation "
+                "items. Remove or repoint them before deleting "
+                "this page."
+            ),
+            "dependencies": nav_dependencies,
+        })
     dependencies = []
     for child in page.get_children().specific():
         dependencies.append({

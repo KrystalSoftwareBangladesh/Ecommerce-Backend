@@ -15,7 +15,13 @@ from wagtail.models import Page, ReferenceIndex
 
 from user_api.models import User
 
-from cms_api.models import CmsPage, CmsPageSection, CmsSection
+from cms_api.models import (
+    CmsNavigationItem,
+    CmsNavigationMenu,
+    CmsPage,
+    CmsPageSection,
+    CmsSection,
+)
 
 
 def user(username, **kwargs):
@@ -136,6 +142,38 @@ def page_section(page, user, **kwargs):
     )
     page.save_revision(user=user)
     return row
+
+
+def navigation_menu(name='Header', key='HEADER', user=None, **kwargs):
+    return CmsNavigationMenu.objects.create(
+        name=name,
+        key=key,
+        created_by=user,
+        updated_by=user,
+        **kwargs,
+    )
+
+
+def navigation_item(
+    menu, label='Home', link_type='EXTERNAL',
+    external_url='https://example.com', page=None,
+    parent=None, **kwargs,
+):
+    if page is not None:
+        link_type = 'PAGE'
+        external_url = ''
+    return CmsNavigationItem.objects.create(
+        menu=menu,
+        label=label,
+        link_type=link_type,
+        page=page,
+        external_url=external_url,
+        parent=parent,
+        sort_order=kwargs.pop(
+            'sort_order', menu.items.filter(parent=parent).count(),
+        ),
+        **kwargs,
+    )
 
 
 def reference_to(target, source=None):

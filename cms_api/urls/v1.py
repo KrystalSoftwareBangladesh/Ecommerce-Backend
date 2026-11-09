@@ -38,12 +38,22 @@ router.register(
     v1.CmsRedirectViewSet,
     basename='cms-redirect',
 )
+router.register(
+    r'cms/navigation',
+    v1.CmsNavigationMenuViewSet,
+    basename='cms-navigation-menu',
+)
 
 urlpatterns = [
     path(
         'cms/public/preview/<str:token>/',
         v1.CmsPreviewView.as_view(),
         name='cms-public-preview',
+    ),
+    path(
+        'cms/public/navigation/<str:key>/',
+        v1.CmsNavigationPublicView.as_view(),
+        name='cms-public-navigation',
     ),
 ]
 urlpatterns += router.urls

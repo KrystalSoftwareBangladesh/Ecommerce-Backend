@@ -786,6 +786,112 @@ Wagtail Admin and the `CACHES` duplication above (Phase 5); the
 featured-flag gap on product collections (open since Phase 0, §13.5
 item 5).
 
+## Phase 4A verification results (2026-11-09)
+
+Scope delivered: the navigation half of §14 row 4 — `CmsNavigationMenu`
+and `CmsNavigationItem` models, nested/ordered item management, the
+`delete_page` navigation-reference guard, and the public menu-tree
+read. Media management and the audit-log read API are **not** part of
+this phase (Phase 4B).
+
+1. **Models** (`cms_api/models/cms_navigation.py`) — `CmsNavigationMenu`
+   (`TimeStampedModel, UserStampedModel, SoftDeleteModel`; `name`,
+   `key` unique; `manage_cms_navigation` in `Meta.permissions`) and
+   `CmsNavigationItem` (`TimeStampedModel`; `menu`, self-FK `parent`
+   `on_delete=CASCADE`, `label`, `link_type` (`NavigationLinkType`:
+   PAGE/EXTERNAL), `page` FK → `CmsPage` `on_delete=PROTECT`,
+   `external_url` validated to `http`/`https` only via
+   `URLValidator(schemes=[...])`, `is_visible`, `open_in_new_tab`,
+   `sort_order`). A `CheckConstraint`
+   (`cms_navigationitem_exactly_one_link_target`) enforces the XOR at
+   the database level; `clean()` re-checks it and rejects an item
+   being its own parent (self-FK cycles of length >1 are a
+   service-layer check — see item 2). One migration,
+   `0003_cmsnavigationmenu_cmsnavigationitem.py`
+   (`makemigrations --check` clean afterwards).
+2. **Services** (`cms_api/services/navigation.py`) — menu CRUD
+   (`create_menu`/`update_menu`/`delete_menu`, the last calling
+   `soft_delete()` per the repo's preferred-soft-delete convention);
+   item CRUD (`add_navigation_item`/`update_navigation_item`/
+   `remove_navigation_item`) and `reorder_navigation_items` (siblings
+   under one `(menu, parent)`, same "order must list every sibling id
+   exactly once" check as `reorder_page_sections`). `_validate_parent`
+   rejects a `parent` from a different menu and walks the proposed
+   parent's ancestor chain to reject a cycle (a descendant becoming
+   an ancestor of itself) — tested explicitly
+   (`test_a_descendant_cannot_become_an_ancestor`).
+   `resolve_navigation_tree` builds the public tree: an invisible item
+   prunes its whole subtree (not just itself), and a PAGE item whose
+   target is not live or is archived is omitted — the same draft-
+   isolation rule every other public CMS endpoint already enforces.
+3. **`is_active` is the soft-delete flag, not a separate toggle.**
+   `CmsNavigationMenu` inherits `is_active` from `SoftDeleteModel`;
+   per §5.5 it is also the menu's only "enabled" field, so there is
+   deliberately no second flag. To avoid two inconsistent paths to
+   the same state, the write serializers never expose `is_active` —
+   only `DELETE` (→ `soft_delete()`) changes it. Verified: `PATCH
+   {"is_active": false}` is accepted (200) but has no effect
+   (`test_is_active_is_not_writable_directly`); there is no restore
+   endpoint, matching §6's table, which gives navigation no
+   archive/restore row the way pages and sections have.
+4. **Permission** — `manage_cms_navigation` is checked by one small
+   `CmsNavigationPermission` class for every action on
+   `CmsNavigationMenuViewSet` (menus and the nested item actions
+   alike), not the usual `ModelPermissionAccess` add/view/change/
+   delete split, matching §8's "all nav ops" row. Verified that the
+   model's own auto-generated `add_cmsnavigationmenu`/
+   `view_cmsnavigationmenu` codenames do *not* grant access on their
+   own (`test_standard_model_permissions_are_not_sufficient`) — only
+   `manage_cms_navigation` does.
+5. **API** (`cms_api/views/v1/cms_navigation.py`,
+   `cms_api/urls/v1.py`) — management:
+   `GET/POST/PATCH/DELETE /api/v1/cms/navigation/`,
+   `POST /navigation/{id}/items/`,
+   `GET/PATCH/DELETE /navigation/{id}/items/{item_id}/`,
+   `PUT /navigation/{id}/items/reorder/` (mirrors the
+   `CmsPageViewSet` sections sub-resource pattern). Public:
+   `GET /api/v1/cms/public/navigation/{key}/`, mounted under
+   `cms/public/...` per the Phase 2/3 local convention, looked up by
+   `key` (not `pk`); 404 for an unknown or inactive key. **No caching**
+   — §6 annotates this endpoint "(cached)", but the cache layer is
+   Phase 5 scope and Phase 2/3 deliberately left every other public
+   read uncached for the same reason; this phase follows that
+   precedent rather than building ahead of Phase 5.
+6. **`delete_page` navigation guard (docs §5.1, 11)** — a
+   `CmsNavigationItem` referencing the page is now listed in the
+   structured `dependencies` response instead of surfacing as a raw
+   `ProtectedError` once `page.delete()` actually runs. Because the
+   FK is `PROTECT`, this dependency is **not** acknowledgeable the
+   way child pages and `ReferenceIndex` references are:
+   `?acknowledge=true` still returns 400 while any navigation item
+   points at the page (`test_acknowledge_true_does_not_bypass_the_
+   nav_guard`); removing or repointing the item allows the delete to
+   proceed (`test_page_deletes_once_the_nav_item_is_removed`). Every
+   existing Phase 2 delete-guard test (child pages, `acknowledge`)
+   still passes unchanged.
+7. **Admin** — `CmsNavigationMenu`/`CmsNavigationItem` registered in
+   Django's plain `cms_api/admin.py` (previously empty), mirroring
+   `category_api`'s `ModelAdmin` style. Not registered as a Wagtail
+   snippet/in the Wagtail Admin — that surface is Phase 5 scope.
+8. **Tests + lint** — 39 new tests in
+   `cms_api/tests/test_api_cms_navigation.py` (163 total in `cms_api`,
+   all passing); `flake8` clean; full suite 966 tests, 30 failures +
+   5 errors + 8 skipped — identical to the Phase 3 baseline, no
+   regressions.
+9. **Docs scope note**: per this phase's instructions, only this
+   architecture document was updated with verified implementation
+   details. `docs/business-rules.md`, `docs/project-structure.md` and
+   the `AGENTS.md` decisions log still need their usual Phase 4
+   entries — deferred to whenever Phase 4 (media + audit-log, i.e.
+   4B) is complete, so navigation and media are documented together
+   in one pass rather than twice.
+
+**Spec gaps inherited from Phase 4A scope:** media management and the
+audit-log read API (Phase 4B); the cache layer, Wagtail Admin and the
+pre-existing `CACHES` duplication (already fixed separately, see the
+Phase 3 section above) remain Phase 5 concerns; the featured-flag gap
+on product collections (open since Phase 0, §13.5 item 5).
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs

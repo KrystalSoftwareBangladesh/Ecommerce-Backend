@@ -1,4 +1,8 @@
 # cms_api/views/v1/__init__.py
+from .cms_navigation import (
+    CmsNavigationMenuViewSet,
+    CmsNavigationPublicView,
+)
 from .cms_page import (
     CmsPagePublicViewSet,
     CmsPageViewSet,
@@ -9,6 +13,8 @@ from .cms_redirect import CmsRedirectViewSet
 from .cms_section import CmsSectionViewSet, SectionTypeViewSet
 
 __all__ = [
+    "CmsNavigationMenuViewSet",
+    "CmsNavigationPublicView",
     "CmsPagePublicViewSet",
     "CmsPageViewSet",
     "CmsPreviewView",
