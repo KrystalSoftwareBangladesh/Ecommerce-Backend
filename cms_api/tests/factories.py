@@ -6,16 +6,23 @@ Deliberately thin (blog_api/tests/factories.py pattern): they call
 ``Model.objects.create(...)`` directly and only exist so a test can
 say what it cares about.
 """
+import io
 import uuid
 
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 
+from PIL import Image as PILImage
+
+from wagtail.documents.models import Document
+from wagtail.images.models import Image
 from wagtail.models import Page, ReferenceIndex
 
 from user_api.models import User
 
 from cms_api.models import (
+    CmsMediaConfig,
     CmsNavigationItem,
     CmsNavigationMenu,
     CmsPage,
@@ -172,6 +179,52 @@ def navigation_item(
         sort_order=kwargs.pop(
             'sort_order', menu.items.filter(parent=parent).count(),
         ),
+        **kwargs,
+    )
+
+
+def media_config(**kwargs):
+    config = CmsMediaConfig.get_solo()
+    for field, value in kwargs.items():
+        setattr(config, field, value)
+    if kwargs:
+        config.save()
+    return config
+
+
+def image_upload(name='test.png', size=(10, 10), image_format='PNG'):
+    """An in-memory uploaded file containing a real, Pillow-decodable
+    image — not just bytes with an image-like extension."""
+    buffer = io.BytesIO()
+    PILImage.new('RGB', size, color='red').save(
+        buffer, format=image_format,
+    )
+    buffer.seek(0)
+    return SimpleUploadedFile(
+        name, buffer.read(), content_type='image/png',
+    )
+
+
+def cms_image(title='Test image', user=None, **kwargs):
+    return Image.objects.create(
+        title=title,
+        file=kwargs.pop('file', None) or image_upload(),
+        uploaded_by_user=user,
+        **kwargs,
+    )
+
+
+def document_upload(name='test.pdf', content=b'%PDF-1.4 test'):
+    return SimpleUploadedFile(
+        name, content, content_type='application/pdf',
+    )
+
+
+def cms_document(title='Test document', user=None, **kwargs):
+    return Document.objects.create(
+        title=title,
+        file=kwargs.pop('file', None) or document_upload(),
+        uploaded_by_user=user,
         **kwargs,
     )
 

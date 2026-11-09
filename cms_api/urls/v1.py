@@ -43,6 +43,16 @@ router.register(
     v1.CmsNavigationMenuViewSet,
     basename='cms-navigation-menu',
 )
+router.register(
+    r'cms/media/images',
+    v1.CmsImageViewSet,
+    basename='cms-media-image',
+)
+router.register(
+    r'cms/media/documents',
+    v1.CmsDocumentViewSet,
+    basename='cms-media-document',
+)
 
 urlpatterns = [
     path(
@@ -54,6 +64,11 @@ urlpatterns = [
         'cms/public/navigation/<str:key>/',
         v1.CmsNavigationPublicView.as_view(),
         name='cms-public-navigation',
+    ),
+    path(
+        'cms/media-config/',
+        v1.CmsMediaConfigView.as_view(),
+        name='cms-media-config',
     ),
 ]
 urlpatterns += router.urls

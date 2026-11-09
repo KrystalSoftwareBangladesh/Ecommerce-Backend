@@ -19,3 +19,24 @@ class AbsoluteImageField(serializers.ImageField):
             return request.build_absolute_uri(url)
 
         return url
+
+
+class AbsoluteFileField(serializers.FileField):
+    """Same absolute-URL behaviour as ``AbsoluteImageField``, for a
+    non-image file (e.g. ``wagtaildocs.Document.file``)."""
+
+    def to_representation(self, value):
+        url = super().to_representation(value)
+
+        if not url:
+            return None
+
+        if url.startswith(("http://", "https://")):
+            return url
+
+        request = self.context.get("request")
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url

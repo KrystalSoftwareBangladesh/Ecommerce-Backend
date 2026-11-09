@@ -1,4 +1,15 @@
 # cms_api/serializers/__init__.py
+from .cms_media import (
+    CmsDocumentCreateSerializer,
+    CmsDocumentDetailSerializer,
+    CmsDocumentListSerializer,
+    CmsDocumentUpdateSerializer,
+    CmsImageCreateSerializer,
+    CmsImageDetailSerializer,
+    CmsImageListSerializer,
+    CmsImageUpdateSerializer,
+    CmsMediaConfigSerializer,
+)
 from .cms_page import (
     CmsPageCreateSerializer,
     CmsPageDetailSerializer,
@@ -50,6 +61,15 @@ from .cms_section import (
 )
 
 __all__ = [
+    "CmsDocumentCreateSerializer",
+    "CmsDocumentDetailSerializer",
+    "CmsDocumentListSerializer",
+    "CmsDocumentUpdateSerializer",
+    "CmsImageCreateSerializer",
+    "CmsImageDetailSerializer",
+    "CmsImageListSerializer",
+    "CmsImageUpdateSerializer",
+    "CmsMediaConfigSerializer",
     "CmsNavigationItemCreateSerializer",
     "CmsNavigationItemReorderSerializer",
     "CmsNavigationItemSerializer",
