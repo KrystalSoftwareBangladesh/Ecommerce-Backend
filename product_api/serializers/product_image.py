@@ -225,3 +225,9 @@ class BulkProductImageOptimizationSerializer(serializers.Serializer):
     results = serializers.ListField(
         child=serializers.DictField()
     )
+
+
+class ProductImageResolutionRecalcSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    updated = serializers.IntegerField()
+    failed = serializers.IntegerField()

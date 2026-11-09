@@ -1,6 +1,6 @@
 # product_api/views/v1/product_image.py
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -21,6 +21,7 @@ from product_api.serializers import (
     ProductImageSummarySerializer,
     ProductImageOptimizationSerializer,
     BulkProductImageOptimizationSerializer,
+    ProductImageResolutionRecalcSerializer,
 )
 from product_api.services import (
     replace_product_image,
@@ -30,8 +31,7 @@ from product_api.services import (
     upload_product_image,
     bulk_upload_product_images,
     get_product_image_summary,
-    is_product_image_high_resolution,
-    is_product_image_ratio_mismatch,
+    recalculate_product_image_resolution,
     optimize_product_image,
     bulk_optimize_product_images,
 )
@@ -125,31 +125,23 @@ class ProductImageFilter(django_filters.FilterSet):
         if value is None:
             return queryset
 
-        matching_ids = []
-
-        for product_image in queryset.iterator(chunk_size=100):
-            if is_product_image_high_resolution(product_image):
-                matching_ids.append(product_image.id)
+        high_resolution = Q(width__gt=500) | Q(height__gt=500)
 
         if value:
-            return queryset.filter(id__in=matching_ids)
+            return queryset.filter(high_resolution)
 
-        return queryset.exclude(id__in=matching_ids)
+        return queryset.exclude(high_resolution)
 
     def filter_is_ratio_mismatch(self, queryset, name, value):
         if value is None:
             return queryset
 
-        matching_ids = []
-
-        for product_image in queryset.iterator(chunk_size=100):
-            if is_product_image_ratio_mismatch(product_image):
-                matching_ids.append(product_image.id)
+        square = Q(width=F('height'))
 
         if value:
-            return queryset.filter(id__in=matching_ids)
+            return queryset.exclude(square)
 
-        return queryset.exclude(id__in=matching_ids)
+        return queryset.filter(square)
 
 
 @extend_schema(tags=["Products"])
@@ -162,6 +154,7 @@ class ProductImageViewSet(
         "replace_image": "change_productimage",
         "set_default": "change_productimage",
         "reorder": "change_productimage",
+        "recalculate_resolution": "change_productimage",
     }
     queryset = ProductImage.objects.filter(
         is_active=True,
@@ -339,6 +332,28 @@ class ProductImageViewSet(
         queryset = self.filter_queryset(queryset)
         summary_data = get_product_image_summary(queryset)
         serializer = ProductImageSummarySerializer(summary_data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Recalculate product image resolution",
+        description=(
+            "Recompute the stored width/height of every product "
+            "image from its file. Images whose file cannot be read "
+            "are counted as failed and left unchanged."
+        ),
+        request=None,
+        responses=ProductImageResolutionRecalcSerializer(),
+    )
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='recalculate-resolution',
+        url_name='recalculate-resolution',
+    )
+    def recalculate_resolution(self, request, *args, **kwargs):
+        queryset = ProductImage.objects.all()
+        result = recalculate_product_image_resolution(queryset)
+        serializer = ProductImageResolutionRecalcSerializer(result)
         return Response(serializer.data)
 
     @extend_schema(
