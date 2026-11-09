@@ -17,19 +17,25 @@ from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
 
-from wagtail.actions.publish_revision import PublishRevisionAction
-from wagtail.actions.unpublish import UnpublishAction
+from wagtail.actions.publish_page_revision import PublishPageRevisionAction
+from wagtail.actions.unpublish_page import UnpublishPageAction
 from wagtail.models import Page, ReferenceIndex
 
 from cms_api.models import CmsPage
 from cms_api.pages.templates import PAGE_TEMPLATES
 from cms_api.services.cms_section import (
     _check_base_revision,
+    _clear_stale_expiry,
     _full_clean,
     _get_revision,
+    _validate_schedule,
 )
 from cms_api.services.composition import (
     apply_section_rows,
+)
+from cms_api.services.redirects import (
+    create_redirects_for_published_change,
+    snapshot_published_paths,
 )
 
 
@@ -62,31 +68,6 @@ def _validate_url_available(prospective, page):
                 "page." % prospective
             )
         })
-
-
-def published_slug(page):
-    """The page's published slug (live revision), else the row's."""
-    revision = page.live_revision
-    if revision is not None:
-        return revision.as_object().slug or page.slug
-    return page.slug
-
-
-def published_url_path(page):
-    """Public URL built from published state (spec 9).
-
-    Wagtail rewrites ``url_path`` on every save, so a draft slug
-    change is visible in ``url_path`` before publish. The public URL
-    chain uses each node's live-revision slug, never the draft one.
-    """
-    nodes = list(page.get_ancestors().select_related("live_revision"))
-    nodes.append(page)
-    slugs = [
-        published_slug(node) for node in nodes if not node.is_root()
-    ]
-    if not slugs:
-        return "/"
-    return "/%s/" % "/".join(slugs)
 
 
 def _page_revision(page, revision_id):
@@ -199,17 +180,66 @@ def delete_page(*, page, user, acknowledge=False):
 
 
 @transaction.atomic
-def publish_page(*, page, user, revision_id=None):
-    revision = _page_revision(page, revision_id)
-    PublishRevisionAction(
+def publish_page(
+    *, page, user, revision_id=None, go_live_at=None, expire_at=None,
+):
+    """Publish the latest (or a named) revision of the page.
+
+    ``go_live_at``/``expire_at`` schedule the page (docs §12, AD-13):
+    both are written to the page and snapshotted into a new revision,
+    which ``PublishPageRevisionAction`` either publishes immediately
+    or schedules depending on ``go_live_at``. They cannot be combined
+    with ``revision_id``. A slug-change redirect is created for the
+    page and any live descendant whose published path moves (AD-8,
+    §9); this uses the Page-specific publish action (not the generic
+    one DraftStateMixin models use) so ``page_published`` fires for
+    every path that can make a page live, including the scheduled
+    sweep in ``services/scheduling.py``, which this redirect logic
+    also runs against.
+    """
+    _validate_schedule(go_live_at, expire_at)
+    if go_live_at is not None or expire_at is not None:
+        if revision_id is not None:
+            raise ValidationError({
+                "revision_id": (
+                    "Cannot combine revision_id with go_live_at/"
+                    "expire_at."
+                ),
+            })
+        if go_live_at is not None:
+            page.go_live_at = go_live_at
+        if expire_at is not None:
+            page.expire_at = expire_at
+        _full_clean(page)
+        page.save()
+        revision = page.save_revision(
+            user=user, log_action="cms_api.update",
+        )
+    else:
+        revision = _page_revision(page, revision_id)
+        revision = _clear_stale_expiry(
+            page, revision, user, "cms_api.update",
+        )
+    old_path, descendants, old_descendant_paths = (
+        snapshot_published_paths(page)
+    )
+    PublishPageRevisionAction(
         revision, user=user,
     ).execute(skip_permission_checks=True)
+    page.refresh_from_db()
+    create_redirects_for_published_change(
+        page=page,
+        old_path=old_path,
+        descendants=descendants,
+        old_descendant_paths=old_descendant_paths,
+        user=user,
+    )
     return page
 
 
 @transaction.atomic
 def unpublish_page(*, page, user):
-    UnpublishAction(page, user=user).execute(
+    UnpublishPageAction(page, user=user).execute(
         skip_permission_checks=True
     )
     return page
@@ -266,6 +296,9 @@ def rollback_page(*, page, revision_id, user):
         .values_list("url_path", flat=True)
         .get()
     )
+    old_path, descendants, old_descendant_paths = (
+        snapshot_published_paths(page)
+    )
     for field in (
         "title", "slug", "draft_title", "seo_title",
         "template_key", "seo_description", "meta_keywords",
@@ -291,7 +324,15 @@ def rollback_page(*, page, revision_id, user):
     revision = page.save_revision(
         user=user, previous_revision=old_revision
     )
-    PublishRevisionAction(
+    PublishPageRevisionAction(
         revision, user=user, previous_revision=old_revision,
     ).execute(skip_permission_checks=True)
+    page.refresh_from_db()
+    create_redirects_for_published_change(
+        page=page,
+        old_path=old_path,
+        descendants=descendants,
+        old_descendant_paths=old_descendant_paths,
+        user=user,
+    )
     return page

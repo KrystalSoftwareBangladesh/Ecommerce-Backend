@@ -23,6 +23,8 @@ from cms_api.serializers import (
     CmsSectionCreateSerializer,
     CmsSectionDetailSerializer,
     CmsSectionListSerializer,
+    CmsSectionPreviewTokenResponseSerializer,
+    CmsSectionPreviewTokenSerializer,
     CmsSectionPublishSerializer,
     CmsSectionReferenceSerializer,
     CmsSectionRevisionSerializer,
@@ -33,11 +35,13 @@ from cms_api.serializers import (
 from cms_api.services import (
     archive_section,
     delete_section,
+    issue_preview_token,
     list_revisions,
     publish_section,
     rollback_section,
     unpublish_section,
 )
+from cms_api.services.preview import KIND_SECTION, PREVIEW_TOKEN_MAX_AGE
 
 
 @extend_schema(tags=["CMS"])
@@ -58,6 +62,7 @@ class CmsSectionViewSet(viewsets.ModelViewSet):
         "rollback": "publish_cms_section",
         "revisions": "view_cmssection",
         "references": "view_cmssection",
+        "preview_token": "change_cmssection",
     }
     queryset = CmsSection.objects.filter(is_active=True)
 
@@ -131,6 +136,8 @@ class CmsSectionViewSet(viewsets.ModelViewSet):
             revision_id=serializer.validated_data.get(
                 "revision_id"
             ),
+            go_live_at=serializer.validated_data.get("go_live_at"),
+            expire_at=serializer.validated_data.get("expire_at"),
         )
         return self._detail_response()
 
@@ -203,6 +210,36 @@ class CmsSectionViewSet(viewsets.ModelViewSet):
                 }),
             })
         return Response(items)
+
+    @extend_schema(
+        request=CmsSectionPreviewTokenSerializer,
+        responses=CmsSectionPreviewTokenResponseSerializer,
+    )
+    @action(
+        detail=True, methods=["post"], url_path="preview-token",
+    )
+    def preview_token(self, request, pk=None):
+        section = self.get_object()
+        serializer = CmsSectionPreviewTokenSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        token, revision = issue_preview_token(
+            kind=KIND_SECTION,
+            obj=section,
+            user=request.user,
+            revision_id=serializer.validated_data.get("revision_id"),
+        )
+        if token is None:
+            return Response(
+                {"detail": "Section has no revision to preview."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({
+            "token": token,
+            "revision_id": revision.id,
+            "expires_in": PREVIEW_TOKEN_MAX_AGE,
+        })
 
 
 @extend_schema(tags=["CMS"])

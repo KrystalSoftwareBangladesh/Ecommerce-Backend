@@ -49,3 +49,8 @@ def register_cms_log_actions(actions):
     actions.register_action(
         "cms_api.archive", _("Archive"), _("Archived")
     )
+    actions.register_action(
+        "cms_api.redirect.create",
+        _("Create redirect"),
+        _("Created redirect"),
+    )

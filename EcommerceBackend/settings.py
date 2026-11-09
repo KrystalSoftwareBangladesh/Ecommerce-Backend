@@ -237,6 +237,16 @@ WAGTAIL_SITE_NAME = PROJECT_NAME
 WAGTAILADMIN_BASE_URL = FRONTEND_BASE_URL_SETTINGS
 WAGTAILIMAGES_SERVE_METHOD = "direct"
 
+# Wagtail's own slug-change redirect auto-creation is disabled: it
+# fires on every Page.save() where the slug differs from the stored
+# row (wagtail.contrib.redirects.signal_handlers, connected to the
+# page_slug_changed signal), including a draft-only edit via
+# cms_api.services.pages.update_page, which would create a redirect
+# before the change is ever published. cms_api.services.redirects
+# creates the equivalent redirect at publish time instead (docs/cms-
+# architecture.md AD-8, §9).
+WAGTAILREDIRECTS_AUTO_CREATE = False
+
 # CMS cache. CMS_CACHE_URL_SETTINGS (env.py) is a Redis URL; falls
 # back to a local memory cache when absent.
 CMS_CACHE_URL_SETTINGS = getattr(env, "CMS_CACHE_URL_SETTINGS", "")
@@ -409,6 +419,10 @@ CELERY_BEAT_SCHEDULE = {
     "recover-stale-email-logs": {
         "task": "email_api.tasks.recover_stale_email_logs_task",
         "schedule": 10 * 60,
+    },
+    "cms-publish-scheduled": {
+        "task": "cms_api.tasks.run_scheduled_publishing_task",
+        "schedule": 5 * 60,
     },
 }
 

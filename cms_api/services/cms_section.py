@@ -43,6 +43,45 @@ from wagtail.models import ReferenceIndex
 from cms_api.models import CmsSection
 
 
+def _validate_schedule(go_live_at, expire_at):
+    """``expire_at`` must be in the future and after ``go_live_at``
+    (docs/cms-architecture.md 12, AD-13)."""
+    errors = {}
+    now = timezone.now()
+    if expire_at is not None and expire_at <= now:
+        errors["expire_at"] = "expire_at must be in the future."
+    if (
+        go_live_at is not None
+        and expire_at is not None
+        and expire_at <= go_live_at
+    ):
+        errors["expire_at"] = "expire_at must be after go_live_at."
+    if errors:
+        raise ValidationError(errors)
+
+
+def _clear_stale_expiry(obj, revision, user, log_action):
+    """Re-snapshot ``revision`` with ``expire_at`` cleared if it is
+    already in the past.
+
+    A revision's ``expire_at`` is frozen in its content JSON when the
+    revision is saved. Publishing a revision whose embedded
+    ``expire_at`` is already in the past would make the object live
+    with a stale expiry already due, so the very next
+    ``cms-publish-scheduled`` sweep would unpublish it again
+    immediately. Only a plain republish of an existing revision can
+    carry a stale value in; a request that sets ``go_live_at``/
+    ``expire_at`` explicitly is validated by ``_validate_schedule``
+    instead.
+    """
+    content_obj = revision.as_object()
+    if content_obj.expire_at and content_obj.expire_at <= timezone.now():
+        obj.expire_at = None
+        obj.save(update_fields=["expire_at"])
+        return obj.save_revision(user=user, log_action=log_action)
+    return revision
+
+
 class RevisionConflictError(APIException):
     """``base_revision_id`` no longer matches the latest revision."""
 
@@ -137,19 +176,51 @@ def update_section(
 
 
 @transaction.atomic
-def publish_section(*, section, user, revision_id=None):
-    """Publish the latest (or a named) revision of the section."""
-    if not section.live and not section.latest_revision_id:
-        raise ValidationError(
-            "Section has no revision to publish."
+def publish_section(
+    *, section, user, revision_id=None, go_live_at=None, expire_at=None,
+):
+    """Publish the latest (or a named) revision of the section.
+
+    ``go_live_at``/``expire_at`` schedule the section (docs
+    §12, AD-13): both are written to the section and snapshotted into
+    a new revision, which ``PublishRevisionAction`` either publishes
+    immediately or schedules depending on ``go_live_at``. They cannot
+    be combined with ``revision_id`` (scheduling always operates on
+    the current draft state, not an arbitrary past revision).
+    """
+    _validate_schedule(go_live_at, expire_at)
+    if go_live_at is not None or expire_at is not None:
+        if revision_id is not None:
+            raise ValidationError({
+                "revision_id": (
+                    "Cannot combine revision_id with go_live_at/"
+                    "expire_at."
+                ),
+            })
+        if go_live_at is not None:
+            section.go_live_at = go_live_at
+        if expire_at is not None:
+            section.expire_at = expire_at
+        _full_clean(section)
+        section.save()
+        revision = section.save_revision(
+            user=user, log_action="wagtail.edit",
         )
-    revision = (
-        _get_revision(section=section, revision_id=revision_id)
-        if revision_id is not None
-        else section.latest_revision
-    )
-    if revision is None:
-        raise ValidationError("Section has no revision to publish.")
+    else:
+        if not section.live and not section.latest_revision_id:
+            raise ValidationError(
+                "Section has no revision to publish."
+            )
+        revision = (
+            _get_revision(section=section, revision_id=revision_id)
+            if revision_id is not None
+            else section.latest_revision
+        )
+        if revision is None:
+            raise ValidationError("Section has no revision to publish.")
+        revision = _clear_stale_expiry(
+            section, revision, user, "wagtail.edit",
+        )
     PublishRevisionAction(
         revision, user=user
     ).execute(skip_permission_checks=True)

@@ -17,6 +17,8 @@ from cms_api.serializers.cms_section import SectionContentField
 from cms_api.services import (
     add_page_section,
     create_page,
+    prospective_url_path,
+    published_snapshot,
     published_url_path,
     update_page,
     update_page_section,
@@ -159,6 +161,9 @@ class CmsPageDetailSerializer(CmsPageListSerializer):
             "latest_revision_created_at",
             "latest_revision_id",
             "owner",
+            "go_live_at",
+            "expire_at",
+            "expired",
             "sections",
         ]
         read_only_fields = fields
@@ -254,6 +259,37 @@ class CmsPagePublishSerializer(serializers.Serializer):
     revision_id = serializers.IntegerField(
         required=False, allow_null=True,
     )
+    go_live_at = serializers.DateTimeField(
+        required=False, allow_null=True,
+    )
+    expire_at = serializers.DateTimeField(
+        required=False, allow_null=True,
+    )
+
+    def validate(self, attrs):
+        if attrs.get("revision_id") is not None and (
+            attrs.get("go_live_at") is not None
+            or attrs.get("expire_at") is not None
+        ):
+            raise serializers.ValidationError({
+                "revision_id": (
+                    "Cannot combine revision_id with go_live_at/"
+                    "expire_at."
+                ),
+            })
+        return attrs
+
+
+class CmsPagePreviewTokenSerializer(serializers.Serializer):
+    revision_id = serializers.IntegerField(
+        required=False, allow_null=True,
+    )
+
+
+class CmsPagePreviewTokenResponseSerializer(serializers.Serializer):
+    token = serializers.CharField(read_only=True)
+    revision_id = serializers.IntegerField(read_only=True)
+    expires_in = serializers.IntegerField(read_only=True)
 
 
 class CmsPageRollbackSerializer(serializers.Serializer):
@@ -274,23 +310,20 @@ def _published_content(section):
     return section.content
 
 
-def _snapshot(value):
-    """The published copy of a page (live revision), else the row."""
-    revision = value.live_revision
-    if revision is not None:
-        return revision.as_object()
-    return value
-
-
-def _resolved_rows(value):
-    """Resolved composition: global sections to published content.
+def _resolve_composition_rows(source):
+    """Resolved composition of an already-resolved page-like object:
+    global sections to published content.
 
     Rows whose global section is not published are omitted (draft
-    isolation), as are archived rows.
+    isolation), as are archived rows. ``source`` must already be the
+    correct content to read rows from — the public serializers pass a
+    page's published snapshot; preview passes the previewed revision's
+    object directly (never re-resolved through its own, possibly
+    stale, ``live_revision``).
     """
     content_field = PageSectionContentField()
     rows = []
-    for row in _snapshot(value).sections.all():
+    for row in source.sections.all():
         if row.archived_at is not None:
             continue
         if row.global_section_id:
@@ -302,15 +335,15 @@ def _resolved_rows(value):
             ):
                 continue
             body = _published_content(section)
-            source = "global"
+            source_kind = "global"
             global_id = section.pk
         else:
             body = row.content
-            source = "local"
+            source_kind = "local"
             global_id = None
         rows.append({
             "name": row.name,
-            "source": source,
+            "source": source_kind,
             "global_section": global_id,
             "content": (
                 content_field.to_representation(body)
@@ -318,6 +351,13 @@ def _resolved_rows(value):
             ),
         })
     return rows
+
+
+def _resolved_rows(value):
+    """Resolved composition of a *current* page: global sections to
+    published content (draft isolation; see ``_resolve_composition_
+    rows``)."""
+    return _resolve_composition_rows(published_snapshot(value))
 
 
 class CmsPagePublicListSerializer(serializers.Serializer):
@@ -333,7 +373,7 @@ class CmsPagePublicListSerializer(serializers.Serializer):
     )
 
     def to_representation(self, instance):
-        source = _snapshot(instance)
+        source = published_snapshot(instance)
         return {
             "id": instance.pk,
             "title": source.title,
@@ -367,7 +407,7 @@ class CmsPagePublicDetailSerializer(serializers.Serializer):
         return _resolved_rows(instance)
 
     def to_representation(self, instance):
-        source = _snapshot(instance)
+        source = published_snapshot(instance)
         return {
             "id": instance.pk,
             "title": source.title,
@@ -387,3 +427,38 @@ class CmsPagePublicDetailSerializer(serializers.Serializer):
             "seo_nofollow": source.seo_nofollow,
             "sections": self.get_sections(instance),
         }
+
+
+class CmsPagePreviewSerializer(serializers.Serializer):
+    """A previewed revision's content (AD-15).
+
+    ``instance`` is the object reconstructed from the previewed
+    revision (``revision.as_object()``), passed straight through —
+    never re-resolved via its own ``live_revision`` (which, if copied
+    into the revision's own historical content, would point at
+    whatever was live when that revision was *saved*, not now).
+    Nested global sections still resolve to their current published
+    content: a preview is scoped to the one previewed object (AD-15),
+    not to drafts of anything it references.
+    """
+
+    id = serializers.IntegerField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    slug = serializers.CharField(read_only=True)
+    path = serializers.SerializerMethodField()
+    template_key = serializers.CharField(read_only=True)
+    seo_title = serializers.CharField(read_only=True)
+    seo_description = serializers.CharField(read_only=True)
+    meta_keywords = serializers.CharField(read_only=True)
+    og_title = serializers.CharField(read_only=True)
+    og_description = serializers.CharField(read_only=True)
+    canonical_url = serializers.CharField(read_only=True)
+    seo_noindex = serializers.BooleanField(read_only=True)
+    seo_nofollow = serializers.BooleanField(read_only=True)
+    sections = serializers.SerializerMethodField()
+
+    def get_path(self, instance):
+        return prospective_url_path(instance)
+
+    def get_sections(self, instance):
+        return _resolve_composition_rows(instance)

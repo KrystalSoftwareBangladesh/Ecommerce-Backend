@@ -25,6 +25,8 @@ from cms_api.serializers.cms_page import (
     CmsPageCreateSerializer,
     CmsPageDetailSerializer,
     CmsPageListSerializer,
+    CmsPagePreviewTokenResponseSerializer,
+    CmsPagePreviewTokenSerializer,
     CmsPagePublishSerializer,
     CmsPagePublicDetailSerializer,
     CmsPagePublicListSerializer,
@@ -41,8 +43,10 @@ from cms_api.services import (
     delete_page,
     duplicate_page_section,
     get_page_section,
+    issue_preview_token,
     list_page_revisions,
     publish_page,
+    published_snapshot,
     published_url_path,
     remove_page_section,
     reorder_page_sections,
@@ -50,6 +54,7 @@ from cms_api.services import (
     rollback_page,
     unpublish_page,
 )
+from cms_api.services.preview import KIND_PAGE, PREVIEW_TOKEN_MAX_AGE
 
 
 def _base_revision_id(request):
@@ -81,6 +86,7 @@ class CmsPageViewSet(viewsets.ModelViewSet):
         },
         "duplicate_section": "change_cmspage",
         "reorder_sections": "change_cmspage",
+        "preview_token": "change_cmspage",
     }
     queryset = CmsPage.objects.all()
 
@@ -157,6 +163,8 @@ class CmsPageViewSet(viewsets.ModelViewSet):
             revision_id=serializer.validated_data.get(
                 "revision_id"
             ),
+            go_live_at=serializer.validated_data.get("go_live_at"),
+            expire_at=serializer.validated_data.get("expire_at"),
         )
         return self._detail_response()
 
@@ -202,6 +210,33 @@ class CmsPageViewSet(viewsets.ModelViewSet):
             user=request.user,
         )
         return self._detail_response()
+
+    @extend_schema(
+        request=CmsPagePreviewTokenSerializer,
+        responses=CmsPagePreviewTokenResponseSerializer,
+    )
+    @action(
+        detail=True, methods=["post"], url_path="preview-token",
+    )
+    def preview_token(self, request, pk=None):
+        serializer = CmsPagePreviewTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token, revision = issue_preview_token(
+            kind=KIND_PAGE,
+            obj=self.get_object(),
+            user=request.user,
+            revision_id=serializer.validated_data.get("revision_id"),
+        )
+        if token is None:
+            return Response(
+                {"detail": "Page has no revision to preview."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({
+            "token": token,
+            "revision_id": revision.id,
+            "expires_in": PREVIEW_TOKEN_MAX_AGE,
+        })
 
     @extend_schema(
         request=CmsPageSectionCreateSerializer,
@@ -343,6 +378,33 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
                 CmsPagePublicDetailSerializer(page).data
             )
         pages = self.get_queryset().order_by("url_path")
+        return Response(
+            CmsPagePublicListSerializer(pages, many=True).data
+        )
+
+
+@extend_schema(tags=["CMS Pages"])
+class CmsSitemapViewSet(viewsets.GenericViewSet):
+    """Published, non-archived, indexable page URLs (spec 6, §9).
+
+    ``seo_noindex`` is filtered from each page's *published* snapshot,
+    not the row: a draft edit (``update_page``) writes the field
+    straight to the row before any publish, so filtering on the row
+    would leak a draft's intended noindex (or its absence) ahead of
+    publish, the same draft-isolation issue Phase 2 fixed for paths.
+    """
+
+    permission_classes = [AllowAny]
+    queryset = CmsPage.objects.filter(
+        live=True, archived_at__isnull=True,
+    ).select_related("live_revision")
+
+    @extend_schema(responses=CmsPagePublicListSerializer(many=True))
+    def list(self, request):
+        pages = [
+            page for page in self.get_queryset().order_by("url_path")
+            if not published_snapshot(page).seo_noindex
+        ]
         return Response(
             CmsPagePublicListSerializer(pages, many=True).data
         )

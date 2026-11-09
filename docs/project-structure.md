@@ -129,16 +129,24 @@ Ecommerce-Backend/
 │   │        cms_page.py,cms_page_section.py}    # CmsPage + rows
 │   ├── sections/{__init__.py,blocks.py,registry.py}  # type registry
 │   ├── pages/{__init__.py,templates.py}         # page templates
-│   ├── serializers/{__init__.py,cms_section.py,cms_page.py}
+│   ├── serializers/{__init__.py,cms_section.py,cms_page.py,
+│   │        cms_redirect.py}
 │   ├── services/{__init__.py,cms_section.py,
-│   │        pages.py,composition.py}
-│   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py}}
+│   │        pages.py,composition.py,paths.py,redirects.py,
+│   │        preview.py,scheduling.py}
+│   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py,
+│   │        cms_redirect.py,cms_preview.py}}
 │   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types,
-│   │                                 # pages, public/pages
+│   │                                 # pages, public/pages, public/sitemap,
+│   │                                 # public/preview/{token}, redirects
+│   ├── tasks.py                       # run_scheduled_publishing_task (Beat)
 │   ├── tests/{__init__.py,factories.py,test_api_cms_section.py,
 │   │        test_api_cms_section_lifecycle.py,test_api_section_types.py,
 │   │        test_api_cms_page.py,test_api_cms_page_lifecycle.py,
-│   │        test_api_cms_page_public.py}
+│   │        test_api_cms_page_public.py,test_api_cms_redirects.py,
+│   │        test_api_cms_page_scheduling.py,
+│   │        test_api_cms_section_scheduling.py,test_api_cms_preview.py,
+│   │        test_api_cms_sitemap.py}
 │   ├── migrations/{0001_initial.py,
 │   │        0002_cmspage_cmspagesection.py}
 │   ├── templates/cms_api/cms_section_preview.html

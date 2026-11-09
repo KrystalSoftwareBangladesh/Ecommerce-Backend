@@ -1,4 +1,6 @@
 # cms_api/urls/v1.py
+from django.urls import path
+
 from rest_framework.routers import DefaultRouter
 
 from cms_api.views import v1
@@ -17,6 +19,11 @@ router.register(
     basename='cms-public-page',
 )
 router.register(
+    r'cms/public/sitemap',
+    v1.CmsSitemapViewSet,
+    basename='cms-sitemap',
+)
+router.register(
     r'cms/sections',
     v1.CmsSectionViewSet,
     basename='cms-section',
@@ -26,6 +33,17 @@ router.register(
     v1.SectionTypeViewSet,
     basename='cms-section-type',
 )
+router.register(
+    r'cms/redirects',
+    v1.CmsRedirectViewSet,
+    basename='cms-redirect',
+)
 
-urlpatterns = []
+urlpatterns = [
+    path(
+        'cms/public/preview/<str:token>/',
+        v1.CmsPreviewView.as_view(),
+        name='cms-public-preview',
+    ),
+]
 urlpatterns += router.urls

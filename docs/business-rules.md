@@ -541,6 +541,69 @@ type matches its immutable `section_type`. Architecture:
   content comes from the published revision, and rows referencing
   unpublished or archived global sections are omitted.
 
+## CMS (Phase 3 — scheduling, redirects, preview, sitemap)
+
+Architecture: [cms-architecture.md](cms-architecture.md), §12 (scheduling),
+§9 (redirects/sitemap), §5.7/AD-15 (preview).
+
+- **Scheduling is publish-only.** `go_live_at`/`expire_at` are accepted
+  only on `POST .../publish/` (pages and sections), never on
+  create/update — `expire_at` is read straight off the live row by the
+  sweep, so exposing it on an update endpoint would let a
+  `change_cmspage`/`change_cmssection` holder silently schedule an
+  unpublish without the `unpublish_cms_page`/`unpublish_cms_section`
+  permission. Setting either writes the field and snapshots a new
+  revision before publishing it; they cannot be combined with
+  `revision_id`. `expire_at` must be in the future and after
+  `go_live_at` when both are given.
+- **The sweep** is the `cms-publish-scheduled` Celery Beat task (every
+  5 minutes; see [deployment.md](deployment.md)), which runs Wagtail's
+  own `publish_scheduled` command: it publishes due `go_live_at`
+  revisions and unpublishes live content whose `expire_at` has passed,
+  for both `CmsPage` and `CmsSection`.
+- **A stale past `expire_at` is cleared on republish.** A revision
+  whose embedded `expire_at` has since fallen into the past (e.g. the
+  object already auto-expired once) is re-snapshotted with `expire_at`
+  cleared before it is republished, so the very next sweep does not
+  expire it again immediately.
+- **Slug-change redirects** are created only at publish time —
+  `publish_page`, `rollback_page` and the scheduled sweep all create
+  one when a page's published path changes, and the same is done for
+  every live descendant whose published path moves with it. A redirect
+  always targets the page itself, resolved at lookup time, so every
+  historical path collapses directly to the page's *current* canonical
+  URL with no transitive chains; renaming back to an earlier slug
+  drops the now-stale redirect instead of creating a loop. Wagtail's
+  own `WAGTAILREDIRECTS_AUTO_CREATE` signal handler, which would
+  otherwise create a redirect on every draft-only slug edit, is
+  disabled in settings for exactly this reason.
+  `GET /api/v1/cms/redirects/resolve/?path=` (public) resolves an old
+  path to the current one, 404 if there is none or the target page is
+  no longer live/archived. `GET /api/v1/cms/redirects/` (history) is
+  gated on `view_cmspage` — `Redirect` belongs to
+  `wagtail.contrib.redirects`, not `cms_api`, so it has no custom
+  codename of its own, and redirects only ever exist as a byproduct of
+  a CMS page's slug changing. An existing redirect is not a tracked
+  `ReferenceIndex` reference, so it never blocks a page's
+  dependency-guarded delete.
+- **Preview tokens** (pages and sections): `POST
+  .../{id}/preview-token/` (gated by `change_cmspage`/
+  `change_cmssection`) issues a signed, 30-minute token scoped to one
+  object and one specific revision, bound to the issuing user.
+  `GET /api/v1/cms/public/preview/{token}/` (public — the token itself
+  carries the binding) resolves it, re-checking the signature, the
+  revision and that the same user still holds the edit permission, and
+  returns the *previewed revision's* content — draft or not — with
+  `Cache-Control: no-store`. Nested global sections inside a
+  previewed page still resolve to their own published content; preview
+  is scoped to the one previewed object, not to drafts of anything it
+  references.
+- **Sitemap** (`GET /api/v1/cms/public/sitemap/`, public) lists live,
+  non-archived pages whose *published* `seo_noindex` is false. The
+  published value, not the row's, is used for exactly the same reason
+  public reads use the published revision for composition: a draft
+  edit writes the field straight to the row before any publish.
+
 ## Permissions
 
 Protected endpoints require authentication.

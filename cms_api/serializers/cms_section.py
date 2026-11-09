@@ -123,6 +123,9 @@ class CmsSectionDetailSerializer(serializers.ModelSerializer):
             "has_unpublished_changes",
             "first_published_at",
             "last_published_at",
+            "go_live_at",
+            "expire_at",
+            "expired",
             "archived_at",
             "latest_revision_id",
             "created_at",
@@ -198,10 +201,50 @@ class CmsSectionPublishSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
+    go_live_at = serializers.DateTimeField(
+        required=False, allow_null=True,
+    )
+    expire_at = serializers.DateTimeField(
+        required=False, allow_null=True,
+    )
+
+    def validate(self, attrs):
+        if attrs.get("revision_id") is not None and (
+            attrs.get("go_live_at") is not None
+            or attrs.get("expire_at") is not None
+        ):
+            raise serializers.ValidationError({
+                "revision_id": (
+                    "Cannot combine revision_id with go_live_at/"
+                    "expire_at."
+                ),
+            })
+        return attrs
 
 
 class CmsSectionRollbackSerializer(serializers.Serializer):
     revision_id = serializers.IntegerField()
+
+
+class CmsSectionPreviewTokenSerializer(serializers.Serializer):
+    revision_id = serializers.IntegerField(
+        required=False, allow_null=True,
+    )
+
+
+class CmsSectionPreviewTokenResponseSerializer(serializers.Serializer):
+    token = serializers.CharField(read_only=True)
+    revision_id = serializers.IntegerField(read_only=True)
+    expires_in = serializers.IntegerField(read_only=True)
+
+
+class CmsSectionPreviewSerializer(serializers.Serializer):
+    """A previewed section revision's content (AD-15)."""
+
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    section_type = serializers.CharField(read_only=True)
+    content = SectionContentField(read_only=True)
 
 
 class SectionTypeSchemaSerializer(serializers.Serializer):

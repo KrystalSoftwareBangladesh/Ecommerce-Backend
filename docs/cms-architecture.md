@@ -297,33 +297,42 @@ only. Management endpoints require authentication + the permissions in
 
 ### Public (storefront)
 
+Purely public, management-free resources are mounted under
+`cms/public/...` (implementation detail, Phase 2's own local pattern
+for `/pages/`, extended in Phase 3 to `/sitemap/` and `/preview/`).
+`/redirects/resolve/` stays under the plain `/redirects/` prefix
+instead, since it shares that base path with the authenticated
+`/redirects/` history list — one resource, per-action permissions,
+the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
+
 | Endpoint | Purpose |
 |---|---|
-| `GET /pages/?path=/about-us/` | published page + resolved composition (global sections → published version; entity refs as IDs) |
-| `GET /pages/` | published page list (lightweight, for sitemap/nav) |
-| `GET /navigation/{key}/` | menu tree (cached) |
+| `GET /public/pages/?path=/about-us/` | published page + resolved composition (global sections → published version; entity refs as IDs) |
+| `GET /public/pages/` | published page list (lightweight, for sitemap/nav) |
+| `GET /navigation/{key}/` | menu tree (cached) — Phase 4 |
 | `GET /redirects/resolve/?path=…` | old path → current canonical path (Nuxt redirect middleware) |
-| `GET /sitemap/` | published, non-noindex, non-archived URLs + lastmod |
-| `GET /preview/{token}/` | signed draft preview (AD-15) |
+| `GET /public/sitemap/` | published, non-noindex, non-archived URLs + lastmod |
+| `GET /public/preview/{token}/` | signed draft preview (AD-15) |
 
 ### Management (JWT + RBAC)
 
 | Endpoint | Purpose |
 |---|---|
 | `POST/GET/PATCH/DELETE /pages/` | CRUD; create accepts `template_key`; nested `sections` writes via `drf-writable-nested` |
-| `POST /pages/{id}/publish/` `…/unpublish/` `…/archive/` `…/restore/` | lifecycle (each behind its own custom permission) |
+| `POST /pages/{id}/publish/` `…/unpublish/` `…/archive/` `…/restore/` | lifecycle (each behind its own custom permission); `publish` optionally takes `go_live_at`/`expire_at` to schedule instead of `revision_id` |
 | `PUT /pages/{id}/sections/reorder/` | composition ordering |
 | `GET /pages/{id}/revisions/` `POST /pages/{id}/rollback/` | revision history + rollback |
 | `POST /pages/{id}/preview-token/` | issue preview token |
 | `POST/GET/PATCH/DELETE /sections/` | global sections CRUD |
-| `POST /sections/{id}/publish/` `…/unpublish/` `…/archive/` | section lifecycle |
+| `POST /sections/{id}/publish/` `…/unpublish/` `…/archive/` | section lifecycle; `publish` optionally takes `go_live_at`/`expire_at` |
 | `GET /sections/{id}/references/` | pages referencing this section |
 | `GET /sections/{id}/revisions/` `POST /sections/{id}/rollback/` | section revisions |
+| `POST /sections/{id}/preview-token/` | issue preview token (Phase 3, extended to sections per §16 item 9) |
 | `GET /section-types/` | code registry schema (read-only) |
-| `GET/POST/PATCH/DELETE /navigation/` (+ items) | menu management |
-| `GET/POST/PATCH/DELETE /media/` | Wagtail images/documents: upload, metadata, alt text, delete-with-reference-check |
-| `GET /redirects/` | redirect list/history |
-| `GET /audit-logs/` | CMS activity (actor, action, object, timestamp) |
+| `GET/POST/PATCH/DELETE /navigation/` (+ items) | menu management — Phase 4 |
+| `GET/POST/PATCH/DELETE /media/` | Wagtail images/documents: upload, metadata, alt text, delete-with-reference-check — Phase 4 |
+| `GET /redirects/` | redirect list/history, gated on `view_cmspage` per §16 item 8 |
+| `GET /audit-logs/` | CMS activity (actor, action, object, timestamp) — Phase 4 |
 
 Errors: standard DRF `ValidationError` (400) for rule violations,
 404 for unpublished content on public endpoints (no draft leakage),
@@ -640,6 +649,137 @@ item 5) remains deferred.
    `test_rollback_repaths_a_page_after_an_ancestor_rename`,
    `test_rollback_repaths_descendants_with_a_stale_cached_parent`.
 
+## Phase 3 verification results (2026-11-09)
+
+Scope delivered: §14 row 3 — scheduled publish/unpublish (Beat),
+redirects service, preview tokens, sitemap endpoint.
+
+1. **Scheduling** — `go_live_at`/`expire_at` are accepted only on
+   `POST .../publish/` for pages and sections, never on create/update
+   (an editor with only `change_cmspage`/`change_cmssection` must not
+   be able to schedule an unpublish, which only
+   `unpublish_cms_page`/`unpublish_cms_section` should allow; the
+   sweep reads `expire_at` straight off the live row). Setting either
+   writes the field and snapshots a new revision before publishing it
+   through `PublishRevisionAction`/`PublishPageRevisionAction`, which
+   already schedules rather than publishes when `go_live_at` is in
+   the future (Wagtail-native; no new mechanism). They cannot be
+   combined with `revision_id`. A revision whose embedded `expire_at`
+   has since fallen into the past (e.g. after one auto-expiry) is
+   re-snapshotted with it cleared before a plain republish, or the
+   next sweep would expire the object again immediately.
+2. **The sweep** is a new Beat task, `cms-publish-scheduled`
+   (`cms_api.tasks.run_scheduled_publishing_task`, every 5 minutes),
+   wrapping Wagtail's own `publish_scheduled` management command
+   (confirmed entry point, Phase 0 §13.2) — no sweep logic is
+   reimplemented. The wrapper only adds the one thing that command has
+   no hook for: it snapshots the published path of every `CmsPage`
+   with a due revision before the command runs, then diffs after, to
+   create the same slug-change redirect an explicit API publish would.
+3. **Finding: the page-publish path never fired Wagtail's `Page`
+   signals (fixed).** `publish_page`/`unpublish_page` called the
+   generic `PublishRevisionAction`/`UnpublishAction` directly instead
+   of `Page`'s own `publish()`/`unpublish()` (which use
+   `PublishPageRevisionAction`/`UnpublishPageAction`). The generic
+   actions only send the generic `published`/`unpublished` signals,
+   not `page_published`/`page_unpublished` — the scheduled sweep (via
+   Wagtail's own `obj.unpublish()`/`revision.publish()`) already sent
+   both. Redirect creation needs to run identically regardless of
+   which path made a page live, so the services now use the
+   Page-specific actions (`skip_permission_checks=True` unchanged).
+   This also means Phase 5's planned cache invalidation, which the
+   design already assumes reacts to `page_published`/
+   `page_unpublished` (§10), will see them fire from every path once
+   it is built — previously it would have silently missed API-driven
+   publishes.
+4. **Redirects** — `services/redirects.py`. A redirect's target is
+   always the page itself (`redirect_page`, `site=None`), resolved at
+   lookup time through `published_url_path` — not Wagtail's
+   `Redirect.link`/`page.url`, which resolve through `Site.root_page`
+   and return `None` for every `CmsPage` in this project (verified:
+   the default site's `root_page` is Wagtail's seeded placeholder
+   page, a sibling of the CMS tree root, not an ancestor of it; this
+   is a pre-existing Wagtail-admin-only gap, reported, not fixed,
+   since nothing in the headless API path depends on it). Resolving
+   through the page itself rather than another redirect's `old_path`
+   gives direct collapse for free: every historical path a page has
+   held resolves straight to its current canonical URL. A rename back
+   to an earlier slug (A→B→A) deletes the now-stale redirect at the
+   reclaimed path rather than looping. A parent rename creates one
+   redirect per live descendant too.
+   **Finding (fixed): Wagtail auto-creates redirects on every slug
+   change, including a draft-only edit.**
+   `wagtail.contrib.redirects`' own `page_slug_changed` handler
+   (`WAGTAILREDIRECTS_AUTO_CREATE`, default `True`) fires on every
+   `Page.save()` with a changed slug, committed via
+   `transaction.on_commit` — including a draft edit through
+   `update_page`, before any publish. Left on, this directly violates
+   AD-8 (redirects are a publish-time concern) and would leak draft
+   paths through the public resolve endpoint. Set to `False` in
+   settings; `services/redirects.py` creates the equivalent redirect
+   at publish time instead. Verified with
+   `TestCase.captureOnCommitCallbacks` (the signal is otherwise
+   invisible inside a rolled-back test transaction).
+   `GET /redirects/resolve/?path=` is public (AllowAny); `GET
+   /redirects/` (history) is gated on `view_cmspage` (§8 has no
+   dedicated row for it — approved in review, §16 item 8 below).
+   `Redirect` is not registered with `ReferenceIndex`, so an existing
+   redirect does not block a page's dependency-guarded delete
+   (verified; unchanged from Phase 2).
+5. **Preview tokens** — `services/preview.py`, `django.core.signing.
+   dumps`/`loads` (JSON-backed, no pickle), `compress=False` (a
+   compressed token's leading `.` would not survive DRF's default
+   `[^/.]+` URL lookup pattern). 30-minute TTL, scoped to one object
+   and one revision, bound to the issuing user; verification re-checks
+   the signature, the revision and that the same user still holds
+   `change_cmspage`/`change_cmssection`. `GET /public/preview/{token}/`
+   sends `Cache-Control: no-store`. Added for sections as well as
+   pages (approved in review, §16 item 9 below) — `CmsSection` already
+   had `PreviewableMixin` and a preview template from Phase 1.
+   **Finding, addressed in the serializer design:**
+   `DraftStateMixin.with_content_json` (called by `revision.
+   as_object()`) preserves the *current* `live`/`has_unpublished_
+   changes`/`first_published_at` but not `live_revision` — a
+   previewed revision's own `live_revision_id` is whatever was live
+   when *that revision was saved*, not necessarily today's. The
+   existing public serializers resolve composition through `published_
+   snapshot()`/`_snapshot()`, which reads `.live_revision`; reusing
+   them unmodified on a previewed object would have silently
+   re-resolved through that stale pointer instead of showing the
+   previewed content. `_resolved_rows` is now built on a new
+   `_resolve_composition_rows(source)` that takes an already-resolved
+   source directly; the public serializers call it via `published_
+   snapshot(value)` as before, and the new `CmsPagePreviewSerializer`
+   calls it on the previewed object directly, with no `live_revision`
+   indirection.
+6. **Sitemap** — `GET /public/sitemap/` filters `seo_noindex` from
+   each page's *published* snapshot (`published_snapshot`, hoisted out
+   of the serializer module into `services/paths.py` so both the
+   serializers and the sitemap view share one implementation), not the
+   row — the same draft-isolation fix Phase 2 made for paths, since
+   `update_page` writes `seo_noindex` straight to the row before any
+   publish.
+7. **Tests + lint** — 42 new Phase 3 API tests (124 total in
+   `cms_api`, all passing); `flake8` clean; full suite 926 tests,
+   30 failures + 5 errors + 8 skipped, identical counts to the Phase 2
+   baseline — no regressions. No migrations (`makemigrations --check`
+   clean): `go_live_at`/`expire_at` are inherited `DraftStateMixin`
+   fields, and `Redirect` is Wagtail's own model.
+8. **Pre-existing issue, reported, not fixed:** `EcommerceBackend/
+   settings.py` assigns `CACHES` twice — the CMS-specific block
+   (±line 243, intended per AD-12) is unconditionally overwritten by
+   the general Redis `CACHES` block (±line 389) a little further down
+   the file. `CMS_CACHE_URL_SETTINGS` is therefore currently inert;
+   both caches happen to be the same Redis instance today, but the
+   dedicated setting does nothing. Left alone, as it is Phase 5's
+   (cache layer) concern and out of Phase 3 scope.
+
+**Spec gaps inherited from Phase 3 scope:** navigation, media
+management and the audit-log read API (Phase 4); the cache layer,
+Wagtail Admin and the `CACHES` duplication above (Phase 5); the
+featured-flag gap on product collections (open since Phase 0, §13.5
+item 5).
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs
@@ -688,6 +828,19 @@ The design questions raised in review are resolved as follows:
 7. **Preview** — 30-minute, scoped, read-only tokens tied to authorized
    users and specific content revisions; drafts are never exposed
    through public endpoints nor cached (AD-15, §5.7, §10, §11).
+
+Phase 3 implementation-time decisions (approved in review, 2026-11-09):
+
+8. **Redirect history permission** — §8's permission matrix has no row
+   for `GET /redirects/`; it is gated on `view_cmspage` rather than
+   introducing a new `cms_api` codename or using the Wagtail-native
+   `wagtailredirects.view_redirect` (which would break the convention
+   that every CMS permission is a `cms_api` codename).
+9. **Preview tokens cover sections too** — §6 lists the preview-token
+   endpoint for pages only, but §5.7/AD-15 describe the mechanism
+   generically (`kind`: page/section) and `CmsSection` already carries
+   `PreviewableMixin` and a preview template from Phase 1, so `POST
+   /sections/{id}/preview-token/` is added alongside the page one.
 
 ## 17. Out of scope (per spec §15)
 
