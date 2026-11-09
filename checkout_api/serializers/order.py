@@ -8,6 +8,17 @@ staff-only fields.
 """
 from rest_framework import serializers
 
+from drf_spectacular.utils import extend_schema_field
+
+from sale_api.serializers import SaleStatusOptionSerializer
+
+
+class OrderUserSerializer(serializers.Serializer):
+    """Schema shape of the customer's user on an order."""
+
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+
 
 class OrderCreateSerializer(serializers.Serializer):
     """
@@ -119,6 +130,7 @@ class OrderCustomerSerializer(
     id = serializers.IntegerField()
     user = serializers.SerializerMethodField()
 
+    @extend_schema_field(OrderUserSerializer())
     def get_user(self, obj):
         return {
             'id': obj.user_id,
@@ -154,6 +166,9 @@ class OrderDetailSerializer(serializers.Serializer):
         serializers.SerializerMethodField()
     )
 
+    @extend_schema_field(
+        OrderItemSerializer(many=True)
+    )
     def get_items(self, obj):
         sale_items = obj.items.select_related(
             'product_variant',
@@ -178,18 +193,21 @@ class OrderDetailSerializer(serializers.Serializer):
             })
         return result
 
+    @extend_schema_field(OrderShippingAddressSerializer())
     def get_shipping_address(self, obj):
         snapshot = (
             obj.shipping_address_snapshot or {}
         )
         return snapshot
 
+    @extend_schema_field(OrderShippingMethodSerializer())
     def get_shipping_method(self, obj):
         snapshot = obj.shipping_method_snapshot or {}
         if not snapshot:
             return None
         return snapshot
 
+    @extend_schema_field(OrderPricingSerializer())
     def get_pricing(self, obj):
         return {
             'subtotal': obj.subtotal_amount,
@@ -201,6 +219,9 @@ class OrderDetailSerializer(serializers.Serializer):
             'grand_total': obj.total_amount,
         }
 
+    @extend_schema_field(
+        SaleStatusOptionSerializer(many=True)
+    )
     def get_allowed_next_statuses(self, obj):
         from sale_api.models import (
             get_next_sale_statuses,
@@ -240,6 +261,7 @@ class OrderListSerializer(serializers.Serializer):
     item_count = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_item_count(self, obj):
         return obj.items.count()
 
