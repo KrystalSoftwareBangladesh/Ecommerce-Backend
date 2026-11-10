@@ -9,6 +9,7 @@ from .models import (
     # InventoryMovement
 )
 from .services.product import set_product_image_default
+from .services.product_image import set_product_image_resolution
 
 
 class DescriptionFilter(admin.SimpleListFilter):
@@ -101,6 +102,8 @@ class ProductImageAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+        if 'image' in form.changed_data:
+            set_product_image_resolution(obj)
         if obj.is_default:
             set_product_image_default(obj, updated_by=request.user)
 
