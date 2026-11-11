@@ -1116,6 +1116,86 @@ the `AGENTS.md` decisions log still need their Phase 4C entries —
 the final cross-document Phase 4 synchronisation is a separate,
 explicitly deferred step.
 
+## Phase 5B verification results (2026-11-12)
+
+Scope delivered: the Wagtail Admin (`/cms-admin/`) now enforces the
+same business rules as the DRF CMS API — reserved paths,
+navigation-referenced deletes, slug-change redirects, audit parity
+and dependency-guarded section deletion. Phase 5A (admin RBAC) is
+documented in `docs/reports/cms-phase5a-verification.md`.
+
+1. **Reserved paths (`CMS_RESERVED_PATHS`) cannot be published via
+   the admin.** Two layers, because not every path to live passes
+   through a form: `CmsPageForm.clean_slug` (`cms_api/forms.py`,
+   installed as `CmsPage.base_form_class` in `wagtail_hooks.py`,
+   mirroring Wagtail's own `Page.base_form_class` assignment) rejects
+   a slug change whose prospective path is reserved, exactly like
+   `services/pages.py` (checked only when the slug changes, never on
+   an untouched save); and a `before_publish_page` hook re-checks
+   `page.url_path` at publish time, covering bulk publish, workflow
+   approval and pages moved under a reserved parent. The hook vetoes
+   with an error message + redirect (Wagtail's own hook contract:
+   return an `HttpResponse` to veto).
+2. **Navigation-referenced pages cannot be deleted from the admin,
+   and never surface a raw `ProtectedError`.** `CmsNavigationItem.
+   page` is a `PROTECT` FK, so deleting a *parent* whose *descendant*
+   was referenced raised a raw `ProtectedError` (a 500) in the DRF
+   path too — a pre-existing hole, now fixed: the shared
+   `nav_item_dependencies(page)` helper covers the whole subtree and
+   `delete_page` returns the structured `dependencies` response for
+   it (message updated to "Page or one of its descendant pages…"). A
+   `before_delete_page` hook mirrors the guard for the admin (it runs
+   on both the confirmation page and the POST). Like the DRF guard,
+   this dependency is never acknowledgeable.
+3. **Slug-change redirects on admin publishes match the DRF
+   services exactly once.** Wagtail Admin, bulk publish and workflow
+   approval never call `create_redirects_for_published_change`
+   explicitly, so redirects for those are created from signals: a
+   `pre_save` receiver snapshots the published paths at the moment a
+   publish flips `live_revision` (the database row is still
+   pre-publish there — the same snapshot `services/pages.py` takes
+   explicitly) and a `page_published` receiver turns that snapshot
+   into redirects via the same `create_slug_redirect` helper (so
+   rename-back drops the stale redirect on this path too). The DRF
+   services and the scheduled sweep keep creating their redirects
+   explicitly *with the acting user* and wrap the Wagtail publish in
+   the nestable thread-local `suppress_signal_redirects()`, so
+   exactly one redirect row and one `cms_api.redirect.create` log
+   entry exist per moved path however the page goes live. Receivers
+   connect in `apps.py:ready()` with `dispatch_uid`s. Wagtail's own
+   `WAGTAILREDIRECTS_AUTO_CREATE` stays disabled (Phase 3).
+4. **Section delete via the admin goes through `delete_section`.**
+   `CmsSectionDeleteView` (installed as `delete_view_class` on the
+   Phase 5A `CmsSectionSnippetViewSet`) replaces Wagtail's stock
+   hard delete with the same service the DRF API uses: ReferenceIndex
+   dependency guard (a referenced section's delete is refused with an
+   error message instead of a 500), `soft_delete()`, and a
+   `wagtail.delete` log entry attributed to the acting user — closing
+   the audit gap where admin deletes logged with the LogContext user
+   or not at all.
+5. **Tests.** `cms_api/tests/test_wagtail_admin_business_rules.py`
+   (11 tests): reserved-path form rejection + publish-hook veto +
+   normal publish unaffected; admin slug-change publish creates
+   exactly one redirect + one log entry, rename-back drops the stale
+   redirect, and a DRF publish with a slug change yields exactly one
+   of each (the suppression proof); nav-referenced page/subtree
+   delete refused via admin and the DRF structured error (not
+   `ProtectedError`); admin section delete soft-deletes with a
+   user-attributed log, referenced section delete refused.
+
+**Residual gaps (deliberate, out of Phase 5B scope):**
+- An admin *revert to a previous revision* logs `wagtail.edit`/
+  `wagtail.publish`, not `cms_api.rollback` — no Wagtail hook exposes
+  the revision context needed to tell a revert from an ordinary
+  publish. DRF rollbacks log `cms_api.rollback` as before.
+- Redirects created through the signal path log the acting user via
+  Wagtail's LogContext fallback (correct during a normal admin
+  request) rather than an explicit `user=`; only the DRF/sweep paths
+  pass the acting user explicitly.
+- A page moved under a reserved parent is still blocked at publish
+  time (the `before_publish_page` hook), but the move itself is
+  accepted; the move action never passes through a page form.
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs

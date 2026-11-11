@@ -35,10 +35,25 @@ assignment) exactly like the DRF API already does.
 """
 from types import SimpleNamespace
 
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
+
+from rest_framework.exceptions import (
+    ValidationError as DrfValidationError,
+)
+
+from wagtail.admin import messages
 from wagtail.permission_policies import ModelPermissionPolicy
 from wagtail.permission_policies.pages import PagePermissionPolicy
-from wagtail.snippets.views.snippets import SnippetViewSet
-from wagtail.snippets.views.snippets import UnpublishView as _BaseUnpublishView
+from wagtail.snippets.views.snippets import (
+    DeleteView as _BaseDeleteView,
+    SnippetViewSet,
+    UnpublishView as _BaseUnpublishView,
+)
+
+from cms_api.forms import format_validation_error
+from cms_api.services.cms_section import delete_section
 
 PAGE_APP_LABEL = "cms_api"
 
@@ -419,6 +434,39 @@ class CmsSectionUnpublishView(_BaseUnpublishView):
         return user.has_perm(f"{SECTION_APP_LABEL}.unpublish_cms_section")
 
 
+class CmsSectionDeleteView(_BaseDeleteView):
+    """Section deletion through the admin goes through the same
+    service the DRF API uses: ``delete_section`` (ReferenceIndex
+    dependency guard + soft delete + ``wagtail.delete`` log entry
+    with the acting user). Wagtail's stock delete would hard-delete
+    the row, skip the guard and log with the LogContext user only.
+
+    ``form_valid`` mirrors the base (``wagtail/admin/views/generic/
+    models.py``) but turns the service's ``ValidationError`` into an
+    error message on the confirmation page instead of a 500."""
+
+    def delete_action(self):
+        delete_section(section=self.object, user=self.request.user)
+
+    def form_valid(self, form):
+        if self.usage and self.usage.is_protected:
+            raise PermissionDenied
+        try:
+            self.delete_action()
+        except DrfValidationError as exc:
+            messages.error(
+                self.request,
+                format_validation_error(exc),
+            )
+            return redirect(self.request.path)
+        success_url = self.get_success_url()
+        messages.success(self.request, self.get_success_message())
+        hook_response = self.run_after_hook()
+        if hook_response is not None:
+            return hook_response
+        return HttpResponseRedirect(success_url)
+
+
 class CmsSectionSnippetViewSet(SnippetViewSet):
     """Registered in place of the default ``SnippetViewSet`` for
     ``CmsSection`` (``cms_api/wagtail_hooks.py``:
@@ -426,6 +474,7 @@ class CmsSectionSnippetViewSet(SnippetViewSet):
     — Wagtail's own documented per-model customization point)."""
 
     unpublish_view_class = CmsSectionUnpublishView
+    delete_view_class = CmsSectionDeleteView
 
     @property
     def permission_policy(self):

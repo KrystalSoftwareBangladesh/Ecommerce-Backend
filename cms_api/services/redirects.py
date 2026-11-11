@@ -16,10 +16,30 @@ never from a draft-only slug edit. Wagtail's own
 fire on every ``Page.save()`` where the slug differs from the stored
 row (including a draft edit via ``update_page``), is disabled in
 settings for exactly this reason.
+
+Wagtail Admin publishes (the edit/create publish button, bulk
+publish, workflow approval) never call the helpers below explicitly,
+so redirects for those are created from signals instead: a ``pre_save``
+receiver snapshots the published paths at the moment a publish flips
+``live_revision`` (the database row is still pre-publish there, the
+same snapshot ``services/pages.py`` takes explicitly before its
+actions) and a ``page_published`` receiver turns that snapshot into
+redirects. The DRF services and the scheduled sweep keep creating
+their redirects explicitly, with the acting user, and suppress the
+signal path (``suppress_signal_redirects``) so exactly one set of
+redirects — and one ``cms_api.redirect.create`` log entry per moved
+path — exists however a page goes live (Phase 5B).
 """
+import threading
+from contextlib import contextmanager
+
+from django.db.models.signals import pre_save
+
 from wagtail.contrib.redirects.models import Redirect
 from wagtail.log_actions import log
+from wagtail.signals import page_published
 
+from cms_api.models import CmsPage
 from cms_api.services.paths import published_url_path
 
 
@@ -121,3 +141,83 @@ def resolve_redirect_path(path):
             return None
         return published_url_path(target)
     return redirect.redirect_link or None
+
+
+# --- signal-based coverage (Phase 5B) -------------------------------
+#
+# Wagtail Admin publishes never call the helpers above explicitly, so
+# redirects for those are created from signals: the ``pre_save``
+# receiver below snapshots the published paths at the moment a publish
+# flips ``live_revision`` (the database row is still pre-publish
+# there), and the ``page_published`` receiver turns that snapshot into
+# redirects. The DRF services and the scheduled sweep keep creating
+# their redirects explicitly, with the acting user, and suppress this
+# signal path so exactly one set of redirects — and one
+# ``cms_api.redirect.create`` log entry per moved path — exists
+# however a page goes live.
+
+_thread_state = threading.local()
+
+
+def _pending_captures():
+    pending = getattr(_thread_state, "pending_captures", None)
+    if pending is None:
+        pending = {}
+        _thread_state.pending_captures = pending
+    return pending
+
+
+@contextmanager
+def suppress_signal_redirects():
+    """Nestable. Silences only the ``page_published`` receiver, so a
+    caller that creates its own redirects explicitly (with the acting
+    user) never gets a second, duplicate set from the signal path."""
+    was_suppressed = getattr(_thread_state, "suppressed", False)
+    _thread_state.suppressed = True
+    try:
+        yield
+    finally:
+        _thread_state.suppressed = was_suppressed
+
+
+def capture_published_path_change(sender, instance, **kwargs):
+    """``pre_save`` on ``CmsPage``: when this save is a publish (it
+    flips ``live_revision_id``), snapshot the *old* published paths
+    from the pre-save database row."""
+    if kwargs.get("raw") or instance.pk is None or not instance.live:
+        return
+    if not instance.live_revision_id:
+        return
+    row = sender._default_manager.filter(pk=instance.pk).first()
+    if row is None or row.live_revision_id == instance.live_revision_id:
+        return
+    _pending_captures()[instance.pk] = snapshot_published_paths(row)
+
+
+def create_redirects_on_page_published(sender, instance, **kwargs):
+    """``page_published`` on ``CmsPage``: turn the captured snapshot
+    into redirects, unless the caller opted out of the signal path."""
+    pending = _pending_captures().pop(instance.pk, None)
+    if pending is None:
+        return
+    if getattr(_thread_state, "suppressed", False):
+        return
+    old_path, descendants, old_descendant_paths = pending
+    create_redirects_for_published_change(
+        page=instance,
+        old_path=old_path,
+        descendants=descendants,
+        old_descendant_paths=old_descendant_paths,
+    )
+
+
+def connect_redirect_receivers():
+    pre_save.connect(
+        capture_published_path_change,
+        sender=CmsPage,
+        dispatch_uid="cms_api.capture_published_path_change",
+    )
+    page_published.connect(
+        create_redirects_on_page_published,
+        dispatch_uid="cms_api.create_redirects_on_page_published",
+    )

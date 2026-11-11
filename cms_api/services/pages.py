@@ -37,6 +37,7 @@ from cms_api.services.composition import (
 from cms_api.services.redirects import (
     create_redirects_for_published_change,
     snapshot_published_paths,
+    suppress_signal_redirects,
 )
 
 
@@ -141,6 +142,27 @@ def update_page(
     return page
 
 
+def nav_item_dependencies(page):
+    """Navigation items pointing at ``page`` or any page in its
+    subtree — a hard dependency of deleting it (the ``PROTECT``
+    foreign key would otherwise raise on the subtree delete).
+
+    Reused by the ``before_delete_page`` admin hook so Wagtail Admin
+    deletions hit the same guard as ``delete_page`` (Phase 5B).
+    """
+    subtree = [page] + list(page.get_descendants())
+    return [
+        {
+            "model": item._meta.label,
+            "object_id": item.pk,
+            "object": str(item),
+        }
+        for item in CmsNavigationItem.objects.filter(
+            page__in=subtree,
+        ).select_related("menu")
+    ]
+
+
 @transaction.atomic
 def delete_page(*, page, user, acknowledge=False):
     """Permanent, dependency-guarded page deletion (spec 5.1).
@@ -153,24 +175,17 @@ def delete_page(*, page, user, acknowledge=False):
     §5.5), so ``page.delete()`` would otherwise raise a raw
     ``ProtectedError`` instead of the structured dependency response
     every other reference already gets. The item must be removed or
-    repointed first.
+    repointed first. The check covers the whole subtree — deleting a
+    parent deletes its descendants too, and a nav item on any of them
+    would raise the same ``ProtectedError``.
     """
-    nav_dependencies = [
-        {
-            "model": item._meta.label,
-            "object_id": item.pk,
-            "object": str(item),
-        }
-        for item in CmsNavigationItem.objects.filter(
-            page=page,
-        ).select_related("menu")
-    ]
+    nav_dependencies = nav_item_dependencies(page)
     if nav_dependencies:
         raise ValidationError({
             "detail": (
-                "Page is referenced by one or more navigation "
-                "items. Remove or repoint them before deleting "
-                "this page."
+                "Page or one of its descendant pages is referenced "
+                "by one or more navigation items. Remove or "
+                "repoint them before deleting this page."
             ),
             "dependencies": nav_dependencies,
         })
@@ -253,9 +268,10 @@ def publish_page(
     old_path, descendants, old_descendant_paths = (
         snapshot_published_paths(page)
     )
-    PublishPageRevisionAction(
-        revision, user=user,
-    ).execute(skip_permission_checks=True)
+    with suppress_signal_redirects():
+        PublishPageRevisionAction(
+            revision, user=user,
+        ).execute(skip_permission_checks=True)
     page.refresh_from_db()
     create_redirects_for_published_change(
         page=page,
@@ -356,10 +372,11 @@ def rollback_page(*, page, revision_id, user):
     revision = page.save_revision(
         user=user, previous_revision=old_revision
     )
-    PublishPageRevisionAction(
-        revision, user=user, previous_revision=old_revision,
-        log_action="cms_api.rollback",
-    ).execute(skip_permission_checks=True)
+    with suppress_signal_redirects():
+        PublishPageRevisionAction(
+            revision, user=user, previous_revision=old_revision,
+            log_action="cms_api.rollback",
+        ).execute(skip_permission_checks=True)
     page.refresh_from_db()
     create_redirects_for_published_change(
         page=page,

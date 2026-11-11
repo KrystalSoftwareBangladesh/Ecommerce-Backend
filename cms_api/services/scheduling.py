@@ -24,6 +24,7 @@ from cms_api.models import CmsPage
 from cms_api.services.redirects import (
     create_redirects_for_published_change,
     snapshot_published_paths,
+    suppress_signal_redirects,
 )
 
 
@@ -45,7 +46,11 @@ def run_scheduled_publishing():
         if page is not None:
             snapshots[int(object_id)] = snapshot_published_paths(page)
 
-    call_command("publish_scheduled")
+    # The explicit diff loop below creates the redirects (with the
+    # same snapshot semantics), so the signal path is suppressed to
+    # avoid a duplicate set per moved path.
+    with suppress_signal_redirects():
+        call_command("publish_scheduled")
 
     redirects_created = 0
     for object_id, (

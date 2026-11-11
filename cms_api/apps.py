@@ -21,6 +21,13 @@ class CmsApiConfig(AppConfig):
 
         self._install_wagtail_admin_rbac()
 
+        # Slug-change redirects for publishes that never go through
+        # the DRF services (Wagtail Admin, bulk publish, workflow
+        # approval) — docs/cms-architecture.md AD-8.
+        from cms_api.services.redirects import connect_redirect_receivers
+
+        connect_redirect_receivers()
+
     def _install_wagtail_admin_rbac(self):
         """Point Wagtail Admin's page permissions at the existing CMS
         RBAC (docs/cms-architecture.md AD-11, Phase 5A).
