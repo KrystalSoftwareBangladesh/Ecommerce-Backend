@@ -51,7 +51,7 @@ Origin   ──┘ self-FK parent
 Product *──* Category
 Product   ──> Origin            (FK, nullable)
 Product 1──* ProductVariant     (sku; a product with none gets a default `P-<id>` variant at its first storefront sale)
-Product 1──* ProductImage
+Product 1──* ProductImage       (stores width/height resolution, set at write time)
 Product 1──* ProductPriceHistory
 
 Brand                            (standalone — no FK to Product; see note)

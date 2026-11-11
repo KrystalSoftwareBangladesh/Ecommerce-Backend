@@ -32,6 +32,8 @@ class ProductImage(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         default=False,
         db_index=True
     )
+    width = models.PositiveIntegerField(default=0)
+    height = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['display_order', 'created_at']

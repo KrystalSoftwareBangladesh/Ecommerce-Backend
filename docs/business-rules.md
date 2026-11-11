@@ -20,6 +20,27 @@ Product images are managed independently from product records and support a reus
 - Soft deletion is used for image removal.
 - Replacement updates the stored file while preserving metadata and image identity.
 
+### Image resolution
+
+Pixel dimensions (`width` × `height`) are stored on each `ProductImage` so
+resolution-based reads never open the stored file.
+
+- Dimensions are computed from the file whenever the file is written —
+  upload, replacement, bulk upload, and optimization — and persisted to the
+  model. The EXIF orientation is applied so the stored size matches the
+  displayed size.
+- An image is **high resolution** when its width or height exceeds 500 px.
+- An image is **square** when `width` equals `height`; **ratio mismatch**
+  when it is not square.
+- The summary counts and the `is_high_resolution` / `is_ratio_mismatch`
+  filters are computed from these stored columns (single ORM query), not by
+  reading each file.
+- Dimensions are not backfilled by migration. `POST
+  /api/v1/product-images/recalculate-resolution/` (requires
+  `change_productimage`) recomputes width/height for **every** image from
+  its file — run it once after deploy. Images whose file cannot be read are
+  counted as `failed` and left unchanged.
+
 ### Brand
 
 Brand represents a product manufacturer or brand name.

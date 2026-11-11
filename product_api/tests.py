@@ -695,6 +695,82 @@ class ProductImageBusinessRuleTests(TestCase):
         self.assertTrue(second.is_default)
 
 
+class ProductImageResolutionFilterTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='resolution_tester@example.com',
+            username='resolution_tester',
+            password='secret123',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.product = Product.objects.create(
+            name='Resolution Product',
+            current_selling_price='10.00',
+            slug='resolution-product',
+        )
+
+    def _create_test_image(self, filename, width, height):
+        buffer = BytesIO()
+        image = PilImage.new('RGB', (width, height), color=(255, 0, 0))
+        image.save(buffer, format='PNG')
+        buffer.seek(0)
+        return SimpleUploadedFile(
+            filename,
+            buffer.getvalue(),
+            content_type='image/png',
+        )
+
+    def test_is_high_resolution_and_is_ratio_mismatch_filter_results(self):
+        upload_product_image(
+            self.product, self._create_test_image('large.png', 1000, 800),
+        )
+        upload_product_image(
+            self.product, self._create_test_image('small_square.png', 100, 100),  # noqa
+        )
+
+        high_res_response = self.client.get(
+            '/api/v1/product-images/?is_high_resolution=true'
+        )
+        self.assertEqual(high_res_response.data['count'], 1)
+        self.assertEqual(
+            high_res_response.data['results'][0]['width'], 1000,
+        )
+
+        ratio_mismatch_response = self.client.get(
+            '/api/v1/product-images/?is_ratio_mismatch=true'
+        )
+        self.assertEqual(ratio_mismatch_response.data['count'], 1)
+        self.assertEqual(
+            ratio_mismatch_response.data['results'][0]['width'], 1000,
+        )
+
+    def test_admin_save_sets_resolution_on_image_upload(self):
+        from django.contrib import admin as admin_site
+
+        from product_api.admin import ProductImageAdmin
+
+        image_instance = ProductImage(
+            product=self.product,
+            image=self._create_test_image('admin_upload.png', 900, 600),
+            alt_text='Admin uploaded',
+        )
+
+        class _FakeForm:
+            changed_data = ['image', 'product', 'alt_text']
+
+        class _FakeRequest:
+            user = self.user
+
+        model_admin = ProductImageAdmin(ProductImage, admin_site.site)
+        model_admin.save_model(
+            _FakeRequest(), image_instance, _FakeForm(), change=False,
+        )
+
+        self.assertEqual(image_instance.width, 900)
+        self.assertEqual(image_instance.height, 600)
+
+
 class ProductImageValidationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
