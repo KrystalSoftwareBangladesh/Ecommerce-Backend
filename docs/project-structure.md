@@ -137,7 +137,8 @@ Ecommerce-Backend/
 │   ├── services/{__init__.py,cms_section.py,
 │   │        pages.py,composition.py,paths.py,redirects.py,
 │   │        preview.py,scheduling.py,navigation.py,media.py,
-│   │        audit_log.py}
+│   │        audit_log.py,cache.py}                 # public-response
+│   │                                                 # caching (5C)
 │   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py,
 │   │        cms_redirect.py,cms_preview.py,cms_navigation.py,
 │   │        cms_media.py,cms_audit_log.py}}
@@ -155,7 +156,9 @@ Ecommerce-Backend/
 │   │        test_api_cms_page_scheduling.py,
 │   │        test_api_cms_section_scheduling.py,test_api_cms_preview.py,
 │   │        test_api_cms_sitemap.py,test_api_cms_navigation.py,
-│   │        test_api_cms_media.py,test_api_cms_audit_log.py}
+│   │        test_api_cms_media.py,test_api_cms_audit_log.py,
+│   │        test_wagtail_admin_business_rules.py,
+│   │        test_wagtail_admin_rbac.py,test_api_cms_cache.py}
 │   ├── migrations/{0001_initial.py,
 │   │        0002_cmspage_cmspagesection.py,
 │   │        0003_cmsnavigationmenu_cmsnavigationitem.py,

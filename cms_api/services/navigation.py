@@ -15,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 from wagtail.log_actions import log
 
 from cms_api.models import CmsNavigationItem, CmsNavigationMenu
+from cms_api.services.cache import queue_navigation_invalidation
 from cms_api.services.paths import published_url_path
 
 
@@ -68,12 +69,19 @@ def create_menu(*, validated_data, user):
 
 @transaction.atomic
 def update_menu(*, menu, validated_data, user):
+    # The public tree is cached by key (services/cache.py); capture
+    # it before a rename so the old key's stale cache entry is
+    # dropped too, not just whatever key the menu ends up with.
+    old_key = menu.key
     for field, value in validated_data.items():
         setattr(menu, field, value)
     menu.updated_by = user
     _full_clean(menu)
     menu.save()
     log(menu, "wagtail.edit", user=user)
+    queue_navigation_invalidation(old_key)
+    if menu.key != old_key:
+        queue_navigation_invalidation(menu.key)
     return menu
 
 
@@ -85,6 +93,7 @@ def delete_menu(*, menu, user):
     menu.save(update_fields=["updated_by"])
     menu.soft_delete()
     log(menu, "wagtail.delete", user=user)
+    queue_navigation_invalidation(menu.key)
     return menu
 
 
@@ -112,6 +121,7 @@ def add_navigation_item(*, menu, validated_data, user):
     _full_clean(item)
     item.save()
     log(item, "wagtail.create", user=user)
+    queue_navigation_invalidation(menu.key)
     return item
 
 
@@ -126,6 +136,7 @@ def update_navigation_item(*, menu, item, validated_data, user):
     _full_clean(item)
     item.save()
     log(item, "wagtail.edit", user=user)
+    queue_navigation_invalidation(menu.key)
     return item
 
 
@@ -135,6 +146,7 @@ def remove_navigation_item(*, menu, item, user):
     # row is actually removed, and log_action() requires a pk.
     log(item, "wagtail.delete", user=user)
     item.delete()
+    queue_navigation_invalidation(menu.key)
 
 
 @transaction.atomic
@@ -156,6 +168,7 @@ def reorder_navigation_items(*, menu, parent_id, order, user):
         menu, "cms_api.navigation.reorder", user=user,
         data={"parent_id": parent_id, "order": order},
     )
+    queue_navigation_invalidation(menu.key)
 
 
 def _page_is_publicly_visible(page):

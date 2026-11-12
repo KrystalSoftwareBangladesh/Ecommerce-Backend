@@ -41,6 +41,7 @@ from wagtail.log_actions import log
 from wagtail.models import ReferenceIndex
 
 from cms_api.models import CmsSection
+from cms_api.services.cache import queue_section_change_invalidation
 
 
 def _validate_schedule(go_live_at, expire_at):
@@ -187,6 +188,10 @@ def publish_section(
     immediately or schedules depending on ``go_live_at``. They cannot
     be combined with ``revision_id`` (scheduling always operates on
     the current draft state, not an arbitrary past revision).
+
+    ``PublishRevisionAction`` fires Wagtail's generic ``published``
+    signal, which drives referencing-page cache invalidation
+    (``services/cache.py``); no explicit call is needed here.
     """
     _validate_schedule(go_live_at, expire_at)
     if go_live_at is not None or expire_at is not None:
@@ -242,13 +247,19 @@ def unpublish_section(*, section, user):
 
 @transaction.atomic
 def archive_section(*, section, user):
-    """Archive the section (excluded from the default listing)."""
+    """Archive the section (excluded from the default listing).
+
+    Archiving has no Wagtail publish/unpublish signal of its own (it
+    only flips our own ``archived_at``), so the referencing-page fan-
+    out invalidation (``services/cache.py``) is explicit here.
+    """
     if section.archived_at is not None:
         raise ValidationError("Section is already archived.")
     section.archived_at = timezone.now()
     section.updated_by = user
     section.save(update_fields=["archived_at", "updated_by"])
     log(section, "cms_api.archive", user=user)
+    queue_section_change_invalidation(section)
     return section
 
 
@@ -268,6 +279,8 @@ def delete_section(*, section, user):
             "Cannot delete: the section is referenced by other "
             "content."
         )
+    # No cache invalidation call: the guard above just proved nothing
+    # references this section, so no page's public output changes.
     section.soft_delete()
     log(section, "wagtail.delete", user=user)
     return section

@@ -744,6 +744,36 @@ Architecture: [cms-architecture.md](cms-architecture.md).
   do, using Wagtail's core `wagtail.create`/`wagtail.edit`/
   `wagtail.delete` actions.
 
+## CMS (Phase 5C — caching)
+
+Public CMS reads are cached on the `"cms"` Redis alias with event-
+driven invalidation, not a fixed TTL alone. Architecture, including
+the exact signals and the known fan-out limitation:
+[cms-architecture.md](cms-architecture.md#phase-5c-verification-results-2026-11-12).
+
+- **Cached endpoints:** `GET /api/v1/cms/public/pages/` (list and
+  `?path=` detail), `GET /api/v1/cms/public/sitemap/`,
+  `GET /api/v1/cms/public/navigation/{key}/`, and
+  `GET /api/v1/cms/section-types/` (one entry shared by every
+  authenticated user — its content is derived entirely from code, not
+  the database or the caller's identity).
+- **Never cached:** `GET /api/v1/cms/public/preview/{token}/` (still
+  sends `Cache-Control: no-store`, unchanged), an unknown/inactive
+  navigation key, and an unresolved `?path=` lookup — a cache only
+  ever holds a successful response.
+- **Zero consistency window after a committed write**, with one
+  documented exception: a global section's referencing pages are
+  found through Wagtail's `ReferenceIndex`, which reflects a page's
+  *current* (possibly draft) composition rather than its *published*
+  revision. A page whose live revision still embeds a section that an
+  unpublished draft edit has since dropped would not be invalidated
+  when that section next changes, until the safety-net TTL
+  (`CMS_PUBLIC_CACHE_TTL`, 5 minutes) expires it anyway.
+- **Every page publish, unpublish, archive, restore, delete and
+  Wagtail Admin tree move invalidates every active navigation menu**,
+  not only menus that reference that page — a menu embeds any PAGE
+  item's resolved live state and published path.
+
 ## Permissions
 
 Protected endpoints require authentication.

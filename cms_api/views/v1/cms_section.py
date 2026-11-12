@@ -41,6 +41,7 @@ from cms_api.services import (
     rollback_section,
     unpublish_section,
 )
+from cms_api.services import cache as cms_cache
 from cms_api.services.preview import KIND_SECTION, PREVIEW_TOKEN_MAX_AGE
 
 
@@ -244,7 +245,13 @@ class CmsSectionViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=["CMS"])
 class SectionTypeViewSet(viewsets.ViewSet):
-    """Registered CMS section types and their schemas."""
+    """Registered CMS section types and their schemas.
+
+    The schema is derived entirely from code
+    (``cms_api.sections.registry``), the same for every caller, so one
+    cached response is shared across all authenticated users — it is
+    read only after DRF's own permission check has already run.
+    """
 
     permission_classes = [IsAuthenticated]
 
@@ -252,4 +259,9 @@ class SectionTypeViewSet(viewsets.ViewSet):
         responses=SectionTypeSchemaSerializer(many=True)
     )
     def list(self, request):
-        return Response(section_type_schemas())
+        cached = cms_cache.get_section_types()
+        if cached is not None:
+            return Response(cached)
+        data = section_type_schemas()
+        cms_cache.set_section_types(data)
+        return Response(data)

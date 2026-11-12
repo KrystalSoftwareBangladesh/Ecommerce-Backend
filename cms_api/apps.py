@@ -28,6 +28,15 @@ class CmsApiConfig(AppConfig):
 
         connect_redirect_receivers()
 
+        # Public-response cache invalidation (AD-12, Phase 5C) — one
+        # receiver per Wagtail signal covers every publish/unpublish/
+        # move pathway (DRF, Wagtail Admin, the scheduled sweep).
+        from cms_api.services.cache import (
+            connect_cache_invalidation_receivers,
+        )
+
+        connect_cache_invalidation_receivers()
+
     def _install_wagtail_admin_rbac(self):
         """Point Wagtail Admin's page permissions at the existing CMS
         RBAC (docs/cms-architecture.md AD-11, Phase 5A).

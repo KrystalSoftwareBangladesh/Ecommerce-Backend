@@ -386,11 +386,14 @@ CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
 
 # Cache. "default" backs general app caching (category navigation,
 # etc.) via the existing Redis infrastructure. "cms" is a separate
-# alias reserved for Wagtail CMS caching (AD-12, Phase 5 — no CMS
-# code reads from it yet): a distinct CMS_CACHE_URL_SETTINGS Redis
+# alias for Wagtail CMS public-response caching (AD-12, Phase 5C,
+# cms_api/services/cache.py): a distinct CMS_CACHE_URL_SETTINGS Redis
 # URL when one is configured, a local memory cache otherwise, so the
 # CMS cache can be isolated from (or share, if left unset) the app
-# cache without standing up a second Redis instance.
+# cache without standing up a second Redis instance. LocMemCache is
+# per-process, so every app process (and the Celery worker running
+# the scheduled-publish sweep) must share one Redis URL here for
+# invalidation to actually reach every reader (docs/deployment.md).
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -415,6 +418,12 @@ CACHES = {
 }
 # Endpoint-specific cache lifetimes, in seconds.
 CATEGORY_NAVIGATION_CACHE_TTL = 60 * 60 * 24  # 24 hours
+
+# Safety-net TTL for CMS public responses (AD-12, docs/cms-
+# architecture.md §10): invalidation is event-driven and immediate on
+# every write that affects public output, so this only bounds the
+# staleness window for an invalidation event the code has no hook for.
+CMS_PUBLIC_CACHE_TTL = 60 * 5  # 5 minutes
 
 # Celery
 CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS

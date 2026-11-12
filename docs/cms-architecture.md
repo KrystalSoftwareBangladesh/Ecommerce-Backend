@@ -428,21 +428,50 @@ permission system for CMS content.
 
 ## 10. Caching
 
-- New `CACHES` setting (AD-12): Redis per deployment
-  (`CMS_CACHE_URL_SETTINGS`), LocMem in dev/tests (test settings keep
-  the cache off or LocMem to avoid cross-test state).
-- Cached payloads: public page payloads (key by page id + revision id),
-  navigation trees, sitemap, section-type schema.
-- Invalidation, on `transaction.on_commit` of the publishing service
-  and via Wagtail signals (`page_published`, `page_unpublished`,
-  `snippet_published`): drop the object's keys, the referencing pages'
-  keys (`ReferenceIndex` reverse lookups) for global sections, the
-  navigation keys on nav changes, sitemap keys on any publish.
-- Cache safety net TTLs (e.g. 5 min) exist only for missed events; the
-  defined consistency window after a successful publish is **zero**.
+Implemented Phase 5C (2026-11-12) — see [Phase 5C verification
+results](#phase-5c-verification-results-2026-11-12) for the full
+report. Summary, correcting two details this section originally got
+wrong (noted inline):
+
+- `CACHES` (AD-12): the `"cms"` alias, Redis when
+  `CMS_CACHE_URL_SETTINGS` is set, `LocMemCache` otherwise. Test
+  settings use `DummyCache` for `"cms"` (every get/set is a no-op, so
+  caching never leaks across tests); cache-behaviour tests opt into
+  `LocMemCache` with `override_settings`.
+- Cached payloads: the public page list, the public page detail *by
+  page id* (not "page id + revision id" as originally written here —
+  see the Phase 5C report for why), the sitemap, navigation trees,
+  and the section-type schema.
+- Invalidation is registry-based (`cms_api/services/cache.py`, the
+  same pattern as `category_api/services/cache.py`, not
+  `delete_pattern()`), driven by `transaction.on_commit` from two
+  sources:
+  - Wagtail's generic `published`/`unpublished` signals (filtered to
+    `sender=CmsSection`) and the Page-specific `page_published`/
+    `page_unpublished`/`post_page_move` signals (filtered to
+    `sender=CmsPage`). There is no `snippet_published` signal in the
+    installed Wagtail version — the original text above naming one
+    was wrong; the generic `published`/`unpublished` pair is what
+    `CmsSection` (and every other `DraftStateMixin` model) actually
+    sends.
+  - Explicit calls inside `services/pages.py` (archive/restore/
+    delete), `services/cms_section.py` (archive) and
+    `services/navigation.py` (every menu/item write) — none of these
+    fire any Wagtail signal.
+  - A global section's referencing pages are found via
+    `ReferenceIndex.get_grouped_references_to`, filtered to
+    `isinstance(source, Page)` (the index groups by the referencing
+    object, which is an instance of the *base* `Page` model from
+    multi-table inheritance — not the `CmsPage` class, which is what
+    this section originally implied).
+- Cache safety net TTL (`CMS_PUBLIC_CACHE_TTL`, 5 min) exists only for
+  missed events; the defined consistency window after a successful,
+  committed publish is **zero** (confirmed by tests that assert fresh
+  content immediately after invalidation, no TTL wait).
 - **Drafts and previews are never cached** (approved): preview responses
   send `Cache-Control: no-store`, and no draft payload is ever written
-  to the cache.
+  to the cache. A 404 (unknown page path, inactive navigation key) is
+  also never cached.
 
 ## 11. Audit & security
 
@@ -1196,6 +1225,143 @@ documented in `docs/reports/cms-phase5a-verification.md`.
   time (the `before_publish_page` hook), but the move itself is
   accepted; the move action never passes through a page form.
 
+## Phase 5C verification results (2026-11-12)
+
+Scope delivered: the cache layer (§10, AD-12) — Redis-backed public
+response caching with dependency-aware, event-driven invalidation.
+Follows the read-only Phase 5C audit (same date), which found no CMS
+caching code existed yet despite the `"cms"` alias already being
+configured.
+
+1. **Cache service** (`cms_api/services/cache.py`) — a registry-key
+   pattern copied from `category_api/services/cache.py`: a group
+   (`page:<id>`, `navigation:<key>`, `pages-list`, `sitemap`) tracks
+   the literal cache keys tagged under it, so invalidation never
+   depends on `delete_pattern()` (unavailable on `LocMemCache`/
+   `DummyCache`, and explicitly excluded by this phase's brief). The
+   cache object is resolved fresh on every call (never bound at
+   module import), so `override_settings(CACHES=...)` in tests takes
+   effect immediately.
+2. **Cache key design deliberately has no path-keyed entries.** The
+   audit flagged that a page's rendered `path` depends on its
+   ancestors' published slugs (`services/paths.py:
+   published_url_path`), so a cache keyed on `(page_id, revision_id)`
+   alone — as this section originally specified — would leave a
+   descendant's cached detail stale after a parent rename, without
+   the write path ever knowing the descendant needs invalidating.
+   Instead, `?path=` resolution reads the cached page **list** (itself
+   keyed with no parameters) to find the matching `id`, then reads/
+   writes a per-id detail cache. A path lookup miss (unknown path,
+   archived page) is never cached, so a later cache-key scheme needs
+   no stale-404 handling either.
+3. **Test settings default `"cms"` to `DummyCache`**
+   (`EcommerceBackend/test_settings.py`), not `LocMemCache`: every
+   get() misses and every set() is a no-op, so the ~1,060 pre-existing
+   tests run the real caching code path with zero behavioural
+   difference and no risk of one test's cached response leaking into
+   another's. `cms_api/tests/test_api_cms_cache.py` opts into
+   `LocMemCache` via `override_settings` and clears it in `setUp`
+   (`LocMemCache` with no explicit `LOCATION` shares one process-wide
+   store). `transaction.on_commit` never fires inside `TestCase` (the
+   whole test runs in one transaction that is rolled back, never
+   committed), so every write under test is wrapped in
+   `self.captureOnCommitCallbacks(...)`.
+4. **Signals, verified against the installed Wagtail 7.4.4 source,
+   not assumed.** `PublishRevisionAction`/`UnpublishAction` (sections)
+   send only the generic `wagtail.signals.published`/`unpublished`;
+   `PublishPageRevisionAction`/`UnpublishPageAction` (pages) send
+   *both* the generic pair **and** `page_published`/`page_unpublished`
+   — so the cache's generic-signal receiver is connected with
+   `sender=CmsSection` only, and pages are covered separately via the
+   page-specific signals, with no double invalidation. `post_page_move`
+   covers a Wagtail Admin tree move/reorder, which can change a page's
+   (and its descendants') published path with no publish/unpublish at
+   all (§5B residual gap: "the move itself is accepted"). One receiver
+   per signal, filtered by `sender`, covers every pathway that fires
+   it — DRF, Wagtail Admin, the Phase 3 scheduled sweep (`publish_
+   scheduled`, confirmed to resolve the specific object/class before
+   sending even though it queries the base `Page` table), and rollback
+   (reuses the same publish action). No pathway-specific invalidation
+   call was needed in `services/pages.py` or `services/scheduling.py`.
+5. **Explicit, signal-free invalidation** where no Wagtail signal
+   exists: page archive/restore/permanent delete (`services/
+   pages.py`), section archive (`services/cms_section.py` — soft
+   delete needs none, since its own `ReferenceIndex` guard already
+   proved nothing references the section), and every navigation menu/
+   item create/update/delete/reorder (`services/navigation.py` — plain
+   Django models, no Wagtail revisions at all). `update_menu` captures
+   the menu's `key` before a rename and invalidates both the old and
+   new key.
+6. **Global section fan-out: a real bug found and fixed by the new
+   tests, not by inspection.** `ReferenceIndex.get_grouped_references_
+   to(section)` groups by the *referencing object itself*
+   (`ReferenceGroups.__iter__` loads it via `content_type.
+   get_object_for_this_type(...)`), which is an instance of the
+   *base* Wagtail `Page` model (multi-table inheritance) — never a
+   `CmsPage` instance or the `CmsPage` class. An initial
+   implementation filtering `source is CmsPage` silently matched
+   nothing; `cms_api/tests/test_api_cms_cache.py`'s
+   `test_global_section_publish_invalidates_every_referencing_page`
+   caught this (fresh content never appeared after invalidation) and
+   the fix is `isinstance(source, Page)` (`CmsPage` is the only
+   concrete page model, AD-3, so every match is a `CmsPage` row). The
+   page list, sitemap and navigation never embed section content, so
+   a section change invalidates only the referencing pages' own
+   detail cache.
+7. **A known, bounded fan-out gap, not closed in this phase.**
+   `ReferenceIndex` is rebuilt from a page's *current* (possibly
+   draft) composition rows on every `save()`, not from its published
+   revision's frozen content. A page whose *live* revision still
+   embeds section S, but whose unpublished draft has since dropped S,
+   would be missed by the fan-out when S next changes — closing this
+   would mean scanning live revision content directly, a heavier
+   mechanism this phase's brief did not call for. The safety-net TTL
+   bounds the resulting staleness window to `CMS_PUBLIC_CACHE_TTL`
+   (5 minutes); this is the one case where this phase's "zero stale"
+   claim does not hold.
+8. **Page move, delete and the pre-existing `pre_delete_page_unpublish`
+   hook.** Wagtail unpublishes any live page before deleting it
+   (`wagtail/signal_handlers.py`, unconditional on every page delete,
+   admin or DRF), which already invalidates through the
+   `page_unpublished` receiver; `delete_page` additionally captures
+   the page and its live descendants' ids *before* calling
+   `page.delete()` (after which `get_descendants()` can no longer be
+   queried) and invalidates them explicitly, as defense in depth
+   rather than relying solely on that side effect.
+9. **Section-type schema caching is a single shared entry, not
+   per-user.** Verified by reading `cms_api/sections/registry.py`:
+   `section_type_schemas()` takes no arguments and derives its output
+   entirely from the code-defined `SECTION_TYPES` registry, with no
+   per-user or per-permission branching. The endpoint stays
+   `IsAuthenticated`; the cache read happens only after that check.
+   Nothing invalidates this cache (it has no group) — it expires only
+   via its TTL, which bounds how long a post-deploy registry change
+   can take to appear.
+10. **Tests + lint.** 24 new tests in `cms_api/tests/
+    test_api_cms_cache.py` (demonstrating, for the flagship cases,
+    stale-then-fresh without a TTL wait via `captureOnCommitCallbacks
+    (execute=False)` followed by manually running the captured
+    callbacks); full `cms_api` suite 285 tests, all passing (up from
+    261); `flake8` clean; full project suite 1,090 tests, 30 failures
+    + 5 errors + 8 skipped — identical counts to the Phase 4B/4C/5B
+    baseline, no regressions; `makemigrations --check` clean (no
+    model changes this phase).
+
+**Spec corrections made while implementing (not followed as written,
+with reasons — see §10 above for the fixed text):**
+- §10 named a `snippet_published` signal that does not exist in the
+  installed Wagtail version.
+- §10 specified caching page payloads by "page id + revision id,"
+  which cannot be invalidated correctly for a descendant whose own
+  revision never changed when an ancestor's slug does.
+
+**Spec gaps inherited from Phase 5C scope:** the known
+`ReferenceIndex` draft/published fan-out gap (item 7 above) and the
+redirect-resolution endpoint, which stays uncached per this phase's
+brief ("do not introduce caching for redirect resolution unless the
+existing architecture demonstrates a specific need" — it does not:
+§10 never listed it among the payloads to cache).
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs
@@ -1208,7 +1374,7 @@ updates.
 | 2 | `CmsPage` + `CmsPageSection`: CRUD from templates, composition writes/reorder, revisions/rollback, publish/unpublish/archive, reserved-path validation |
 | 3 | Lifecycle: scheduled publish/unpublish (Beat), redirects service, preview tokens, sitemap endpoint |
 | 4 | Navigation + media management + audit-log API — delivered as three sub-phases, all complete: **4A** navigation (`CmsNavigationMenu`/`CmsNavigationItem`), **4B** media (`CmsMediaConfig`, images/documents), **4C** audit-log read API |
-| 5 | Cache layer + invalidation, Wagtail Admin at `/cms-admin/`, full test pass, docs |
+| 5 | Cache layer + invalidation (complete, **5C**), Wagtail Admin at `/cms-admin/` (complete, **5A**/**5B**), full test pass, docs |
 
 ## 15. Testing approach
 

@@ -124,5 +124,16 @@ pages. CMS pages themselves are headless: the API serves them and the
 Wagtail admin lives at `/cms-admin/`.
 
 The CMS cache uses `CMS_CACHE_URL_SETTINGS` (Redis URL) and falls back to
-a local memory cache when it is absent. If set, it must point at the same
-Redis server as `CELERY_BROKER_URL_SETTINGS`.
+a local memory cache when it is absent. **`CMS_CACHE_URL_SETTINGS` must
+be set to a shared Redis URL in any deployment that runs more than one
+process against the same database** — multiple gunicorn workers/pods,
+or the Celery worker that runs `cms-publish-scheduled` alongside the
+web processes. The fallback local memory cache is per-process: a
+publish handled by the Celery worker (or by one gunicorn worker) would
+invalidate only that process's own cache, leaving every other process
+serving stale public CMS content until the safety-net TTL
+(`CMS_PUBLIC_CACHE_TTL`, 5 minutes) expires it. It does not need to be
+the same Redis *server* as `CELERY_BROKER_URL_SETTINGS`/
+`REDIS_CACHE_URL_SETTINGS`, only reachable from every process that
+serves or writes CMS content; using a different database index on the
+same server (as those two settings already do) is sufficient.

@@ -47,13 +47,13 @@ from cms_api.services import (
     list_page_revisions,
     publish_page,
     published_snapshot,
-    published_url_path,
     remove_page_section,
     reorder_page_sections,
     restore_page,
     rollback_page,
     unpublish_page,
 )
+from cms_api.services import cache as cms_cache
 from cms_api.services.preview import KIND_PAGE, PREVIEW_TOKEN_MAX_AGE
 
 
@@ -352,6 +352,18 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
         "sections__global_section",
     )
 
+    def _cached_list(self):
+        """The public page list, cached whole (docs/cms-architecture.
+        md §10): also used to resolve ``?path=`` without recomputing
+        every page's published path on a cache hit."""
+        cached = cms_cache.get_pages_list()
+        if cached is not None:
+            return cached
+        pages = self.get_queryset().order_by("url_path")
+        data = CmsPagePublicListSerializer(pages, many=True).data
+        cms_cache.set_pages_list(data)
+        return data
+
     @extend_schema(
         parameters=[],
         responses={
@@ -361,26 +373,32 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
     )
     def list(self, request):
         path = request.query_params.get("path")
-        if path is not None:
-            page = next(
-                (
-                    row for row in self.get_queryset()
-                    if published_url_path(row) == path
-                ),
-                None,
-            )
-            if page is None:
-                return Response(
-                    {"detail": "Not found."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            return Response(
-                CmsPagePublicDetailSerializer(page).data
-            )
-        pages = self.get_queryset().order_by("url_path")
-        return Response(
-            CmsPagePublicListSerializer(pages, many=True).data
+        if path is None:
+            return Response(self._cached_list())
+        row = next(
+            (row for row in self._cached_list() if row["path"] == path),
+            None,
         )
+        if row is None:
+            return Response(
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        page_id = row["id"]
+        cached_detail = cms_cache.get_page_detail(page_id)
+        if cached_detail is not None:
+            return Response(cached_detail)
+        page = self.get_queryset().filter(pk=page_id).first()
+        if page is None:
+            # The list cache is stale relative to this one page
+            # (e.g. archived since); not a 500 — just a miss.
+            return Response(
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        detail = CmsPagePublicDetailSerializer(page).data
+        cms_cache.set_page_detail(page_id, detail)
+        return Response(detail)
 
 
 @extend_schema(tags=["CMS Pages"])
@@ -401,10 +419,13 @@ class CmsSitemapViewSet(viewsets.GenericViewSet):
 
     @extend_schema(responses=CmsPagePublicListSerializer(many=True))
     def list(self, request):
+        cached = cms_cache.get_sitemap()
+        if cached is not None:
+            return Response(cached)
         pages = [
             page for page in self.get_queryset().order_by("url_path")
             if not published_snapshot(page).seo_noindex
         ]
-        return Response(
-            CmsPagePublicListSerializer(pages, many=True).data
-        )
+        data = CmsPagePublicListSerializer(pages, many=True).data
+        cms_cache.set_sitemap(data)
+        return Response(data)

@@ -32,6 +32,7 @@ from cms_api.services import (
     reorder_navigation_items,
     resolve_navigation_tree,
 )
+from cms_api.services import cache as cms_cache
 
 
 class CmsNavigationPermission(permissions.BasePermission):
@@ -184,15 +185,20 @@ class CmsNavigationPublicView(APIView):
         },
     )
     def get(self, request, key):
+        cached = cms_cache.get_navigation(key)
+        if cached is not None:
+            return Response(cached)
         menu = CmsNavigationMenu.objects.filter(
             key=key, is_active=True,
         ).first()
         if menu is None:
+            # An unknown/inactive key is never cached, so a later
+            # activation is visible immediately, not after a TTL.
             return Response(
                 {"detail": "Not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         tree = resolve_navigation_tree(menu)
-        return Response(
-            CmsNavigationPublicNodeSerializer(tree, many=True).data
-        )
+        data = CmsNavigationPublicNodeSerializer(tree, many=True).data
+        cms_cache.set_navigation(key, data)
+        return Response(data)

@@ -24,6 +24,7 @@ from wagtail.models import Page, ReferenceIndex
 
 from cms_api.models import CmsNavigationItem, CmsPage
 from cms_api.pages.templates import PAGE_TEMPLATES
+from cms_api.services.cache import queue_page_ids_invalidation
 from cms_api.services.cms_section import (
     _check_base_revision,
     _clear_stale_expiry,
@@ -220,7 +221,18 @@ def delete_page(*, page, user, acknowledge=False):
     # DeletePageAction's own check against Wagtail's auto-generated
     # delete permission, not our cms_api.delete_cmspage codename
     # (already enforced in DRF).
+    # Captured before delete(): once the subtree is gone,
+    # get_descendants() can no longer be queried. page_unpublished
+    # (fired by Wagtail's own pre_delete_page_unpublish hook, which
+    # runs before every page delete regardless of caller) already
+    # invalidates the top page via the signal receiver in
+    # cms_api/services/cache.py; this covers the rest of the subtree
+    # explicitly rather than relying on that as the only path.
+    affected_ids = [page.pk] + [
+        descendant.pk for descendant in page.get_descendants().live()
+    ]
     page.delete(user=user, skip_permission_checks=True)
+    queue_page_ids_invalidation(affected_ids)
     return dependencies
 
 
@@ -240,7 +252,9 @@ def publish_page(
     one DraftStateMixin models use) so ``page_published`` fires for
     every path that can make a page live, including the scheduled
     sweep in ``services/scheduling.py``, which this redirect logic
-    also runs against.
+    also runs against. The same signal is what drives cache
+    invalidation (``services/cache.py``) — no explicit call is needed
+    here.
     """
     _validate_schedule(go_live_at, expire_at)
     if go_live_at is not None or expire_at is not None:
@@ -285,6 +299,8 @@ def publish_page(
 
 @transaction.atomic
 def unpublish_page(*, page, user):
+    # page_unpublished drives cache invalidation (services/cache.py);
+    # no explicit call is needed here.
     UnpublishPageAction(page, user=user).execute(
         skip_permission_checks=True
     )
@@ -296,6 +312,11 @@ def archive_page(*, page, user):
     page.archived_at = timezone.now()
     page.save()
     log(page, "cms_api.archive", user=user)
+    # Archive/restore have no Wagtail publish/unpublish signal of
+    # their own (they only flip our own archived_at), so invalidation
+    # is explicit here. The page's own path is unaffected, so
+    # descendants need no invalidation of their own.
+    queue_page_ids_invalidation([page.pk])
     return page
 
 
@@ -304,6 +325,7 @@ def restore_page(*, page, user):
     page.archived_at = None
     page.save()
     log(page, "cms_api.restore", user=user)
+    queue_page_ids_invalidation([page.pk])
     return page
 
 
