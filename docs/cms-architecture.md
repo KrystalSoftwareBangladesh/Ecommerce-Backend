@@ -442,9 +442,11 @@ wrong (noted inline):
   page id* (not "page id + revision id" as originally written here —
   see the Phase 5C report for why), the sitemap, navigation trees,
   and the section-type schema.
-- Invalidation is registry-based (`cms_api/services/cache.py`, the
-  same pattern as `category_api/services/cache.py`, not
-  `delete_pattern()`), driven by `transaction.on_commit` from two
+- Invalidation deletes each payload's literal cache key directly
+  (`cms_api/services/cache.py` — no key registry, no
+  `delete_pattern()`; single-key GET/SET/DEL are atomic on Redis and
+  on `LocMemCache`, so concurrent workers cannot clobber each
+  other's cache state), driven by `transaction.on_commit` from two
   sources:
   - Wagtail's generic `published`/`unpublished` signals (filtered to
     `sender=CmsSection`) and the Page-specific `page_published`/
@@ -458,16 +460,19 @@ wrong (noted inline):
     delete), `services/cms_section.py` (archive) and
     `services/navigation.py` (every menu/item write) — none of these
     fire any Wagtail signal.
-  - A global section's referencing pages are found via
-    `ReferenceIndex.get_grouped_references_to`, filtered to
-    `isinstance(source, Page)` (the index groups by the referencing
-    object, which is an instance of the *base* `Page` model from
-    multi-table inheritance — not the `CmsPage` class, which is what
-    this section originally implied).
+  - A global section change drops **every** cached page detail
+    (published output embeds the section's published content, and
+    `ReferenceIndex` tracks the *draft* composition — see the
+    [Phase 5C cache consistency
+    fixes](#phase-5c-cache-consistency-fixes-2026-11-12)).
 - Cache safety net TTL (`CMS_PUBLIC_CACHE_TTL`, 5 min) exists only for
   missed events; the defined consistency window after a successful,
   committed publish is **zero** (confirmed by tests that assert fresh
-  content immediately after invalidation, no TTL wait).
+  content immediately after invalidation, no TTL wait). The one
+  residual race is the cache-aside one inherent to read-through
+  caching: a reader that loaded pre-change content just before the
+  commit can write it just after the on-commit invalidation ran;
+  bounded by the same TTL.
 - **Drafts and previews are never cached** (approved): preview responses
   send `Cache-Control: no-store`, and no draft payload is ever written
   to the cache. A 404 (unknown page path, inactive navigation key) is
@@ -1318,7 +1323,9 @@ configured.
    mechanism this phase's brief did not call for. The safety-net TTL
    bounds the resulting staleness window to `CMS_PUBLIC_CACHE_TTL`
    (5 minutes); this is the one case where this phase's "zero stale"
-   claim does not hold.
+   claim does not hold. *(Closed same-day by the [Phase 5C cache
+   consistency fixes](#phase-5c-cache-consistency-fixes-2026-11-12):
+   section changes now drop every cached page detail.)*
 8. **Page move, delete and the pre-existing `pre_delete_page_unpublish`
    hook.** Wagtail unpublishes any live page before deleting it
    (`wagtail/signal_handlers.py`, unconditional on every page delete,
@@ -1355,12 +1362,56 @@ with reasons — see §10 above for the fixed text):**
   which cannot be invalidated correctly for a descendant whose own
   revision never changed when an ancestor's slug does.
 
-**Spec gaps inherited from Phase 5C scope:** the known
-`ReferenceIndex` draft/published fan-out gap (item 7 above) and the
-redirect-resolution endpoint, which stays uncached per this phase's
-brief ("do not introduce caching for redirect resolution unless the
-existing architecture demonstrates a specific need" — it does not:
-§10 never listed it among the payloads to cache).
+**Spec gaps inherited from Phase 5C scope:** the
+`ReferenceIndex` draft/published fan-out gap (item 7 above — closed
+same-day, see below) and the redirect-resolution endpoint, which
+stays uncached per this phase's brief ("do not introduce caching for
+redirect resolution unless the existing architecture demonstrates a
+specific need" — it does not: §10 never listed it among the payloads
+to cache).
+
+## Phase 5C cache consistency fixes (2026-11-12)
+
+Two follow-up fixes to the cache layer above, found after the Phase
+5C review:
+
+1. **Published-vs-draft section dependencies (item 7's gap).** The
+   section-change fan-out resolved referencing pages through
+   `ReferenceIndex`, which tracks a page's *current* (possibly
+   draft) composition — while the public payload is built from the
+   page's *published* revision. A published page embedding section S
+   whose unpublished draft had dropped S was missed by the index and
+   kept serving stale content after S changed. Fix: a global section
+   change (publish/unpublish signal or explicit archive call) now
+   drops **every** cached page detail
+   (`invalidate_all_page_details`), the simplest reliable option —
+   enumerating dependencies from published revision content was the
+   alternative and is deliberately not attempted. The cost is
+   one-sided and bounded (one query + one `delete_many`; unrelated
+   page payloads recompute on the next read); the benefit is that no
+   published page referencing S can ever be missed. The page list,
+   sitemap and navigation still stay out of section fan-out — they
+   never embed section content.
+2. **Concurrent registry updates.** The pre-fix registry (copied
+   from `category_api/services/cache.py`) recorded cached keys with
+   a non-atomic read-modify-write per group. Concurrent workers
+   could lose registrations, and a write landing between an
+   invalidation's member deletes and its registry delete orphaned
+   the payload key — invisible to every later invalidation. Since
+   every group here is exactly one deterministic key, the registry
+   was removed entirely: each payload is read/written/deleted under
+   its literal key alone, and single-key GET/SET/DEL are atomic on
+   Redis and `LocMemCache`. Cross-process invalidation holds on
+   Redis (shared keyspace); `LocMemCache` is per-process and never
+   shared a cache across processes (a backend property, not a module
+   one); the residual cache-aside write race is TTL-bounded as
+   described in §10. The concurrency tests in `cms_api/tests/
+   test_api_cms_cache.py` use real threads and a deliberately
+   slow-delete cache proxy (in-process threads alone can never
+   reproduce a cross-worker interleaving — the GIL plus
+   `LocMemCache`'s lock serialize operations), asserting that
+   concurrent writes all land and that a write racing invalidation
+   can never strand a key past a later invalidation.
 
 ## 14. Implementation phases
 

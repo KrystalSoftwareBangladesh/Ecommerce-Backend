@@ -2,24 +2,44 @@
 """Public-response caching for the CMS (docs/cms-architecture.md
 §10, AD-12, Phase 5C).
 
-Pattern: a registry key per *group* holds the set of literal cache
-keys currently tagged under it (mirrors ``category_api/services/
-cache.py``); invalidating a group deletes every key in it plus the
-registry entry. This works identically on the "cms" alias whether it
-is Redis (deployments) or ``LocMemCache``/``DummyCache`` (dev/tests):
-neither of the latter two implements ``delete_pattern()``, so pattern
-deletes are never used.
+Every cached payload lives under exactly one literal key and is
+read, written and deleted under that key alone — no key registry and
+no ``delete_pattern()`` (unavailable on ``LocMemCache``/
+``DummyCache``, and explicitly excluded by this phase's brief):
 
-Groups:
-- ``page:<id>`` — one page's public detail payload.
-- ``pages-list`` — the public page list (``GET /public/pages/`` with
-  no ``path``).
-- ``sitemap`` — the sitemap response.
-- ``navigation:<key>`` — one navigation menu's public tree.
-``section-types`` has no group: its content is derived entirely from
-code (``cms_api.sections.registry``), so nothing ever invalidates it;
-it expires only via its own TTL (e.g. after a deploy changes the
-registry).
+- ``cms:pages:detail:<id>`` — one page's public detail payload.
+- ``cms:pages:list`` — the public page list (``GET /public/pages/``
+  with no ``path``).
+- ``cms:sitemap`` — the sitemap response.
+- ``cms:navigation:<key>`` — one navigation menu's public tree.
+- ``cms:section-types`` — the section-type schema; never invalidated
+  (derived entirely from code, ``cms_api.sections.registry``), so it
+  expires only via its own TTL (e.g. after a deploy changes the
+  registry).
+
+Why there is no registry (Phase 5C first mirrored the
+``category_api`` registry pattern): every invalidation group here is
+exactly one deterministic key, so the registry's read-modify-write
+was pure overhead *and* a real race — two workers could interleave
+get/add/set on one registry entry and drop a registration, and a
+write landing between an invalidation's member deletes and its
+registry delete orphaned the payload key, invisible to every later
+invalidation. Single-key GET/SET/DEL are atomic on Redis and on
+``LocMemCache`` (a lock per operation), so literal-key operations
+let no worker clobber another's state, and invalidation cannot
+strand a key.
+
+Honest limits of that design:
+- Cross-process invalidation holds wherever the ``"cms"`` cache is
+  shared across processes — Redis in production (one keyspace; any
+  worker's DEL hits the same keys). ``LocMemCache`` is per-process
+  (Django's backend keeps a named store per process): it never
+  shared a cache across processes, so there is nothing to
+  invalidate across them — a backend property, not a module one.
+- The cache-aside race remains: a reader that loaded pre-change
+  content just before a commit can write it just after the
+  on-commit invalidation ran. That window is bounded by
+  ``CMS_PUBLIC_CACHE_TTL`` (the 5-minute safety net), not zero.
 
 Invalidation sources, verified against the installed Wagtail 7.4.4
 (not assumed — see the Phase 5C audit report):
@@ -58,27 +78,25 @@ relevant service, wrapped in the caller's existing
 - Every navigation menu/item write (``services/navigation.py`` —
   plain Django models, no Wagtail revisions or signals at all).
 
-Known limitation (see the Phase 5C final report): a global section's
-referencing pages are found via ``ReferenceIndex``, which indexes a
-page's *current* (possibly draft) composition rows, not its published
-revision's content. A page whose live revision still embeds a section
-that the page's own unpublished draft has since dropped would be
-missed by this fan-out. The safety-net TTL bounds that one gap; it is
-not a case the ``ReferenceIndex`` approach the spec calls for can
-close without indexing revision content, which is out of this
-phase's scope.
+Global section fan-out: a section change drops *every* cached page
+detail (``invalidate_all_page_details``), not only the pages found
+via ``ReferenceIndex``. The index tracks a page's *current*
+(possibly draft) composition rows, while the public payload is built
+from the page's *published* revision — so a page whose unpublished
+draft dropped section S is invisible to the index while its
+published output still embeds S's published content. Enumerating
+dependencies from published revision content was the alternative;
+dropping every page detail is the simpler reliable option. The cost
+is bounded and one-sided: a section change recomputes page payloads
+on the next read (one query + one ``delete_many``), never a stale
+miss.
 """
 from django.conf import settings
 from django.core.cache import caches
 from django.db import transaction
 
-from wagtail.models import Page, ReferenceIndex
-
 CACHE_ALIAS = "cms"
 PREFIX = "cms"
-
-PAGES_LIST_GROUP = "pages-list"
-SITEMAP_GROUP = "sitemap"
 
 
 def _cache():
@@ -92,7 +110,7 @@ def _ttl():
     return settings.CMS_PUBLIC_CACHE_TTL
 
 
-# --- keys and groups -------------------------------------------------
+# --- keys ---------------------------------------------------------------
 
 def pages_list_key():
     return f"{PREFIX}:pages:list"
@@ -114,56 +132,30 @@ def section_types_key():
     return f"{PREFIX}:section-types"
 
 
-def page_group(page_id):
-    return f"page:{page_id}"
-
-
-def navigation_group(menu_key):
-    return f"navigation:{menu_key}"
-
-
-# --- low-level registry-based get/set/invalidate ----------------------
-
-def _registry_key(group):
-    return f"{PREFIX}:registry:{group}"
-
+# --- low-level get/set/delete -------------------------------------------
 
 def get(key):
     return _cache().get(key)
 
 
-def set_with_groups(key, value, *, groups):
-    """Cache ``value`` under ``key`` and register ``key`` against
-    every group in ``groups``, so ``invalidate_groups`` can find and
-    drop it later without relying on backend pattern matching."""
-    ttl = _ttl()
-    cache = _cache()
-    cache.set(key, value, ttl)
-    for group in groups:
-        registry_key = _registry_key(group)
-        members = cache.get(registry_key) or set()
-        members.add(key)
-        cache.set(registry_key, members, ttl)
+def _set(key, value):
+    _cache().set(key, value, _ttl())
 
 
-def invalidate_groups(*groups):
-    cache = _cache()
-    for group in groups:
-        registry_key = _registry_key(group)
-        members = cache.get(registry_key) or set()
-        if members:
-            cache.delete_many(list(members))
-        cache.delete(registry_key)
+def _delete(*keys):
+    keys = [key for key in keys if key]
+    if keys:
+        _cache().delete_many(keys)
 
 
-# --- read/write helpers used by the public views ----------------------
+# --- read/write helpers used by the public views ------------------------
 
 def get_pages_list():
     return get(pages_list_key())
 
 
 def set_pages_list(data):
-    set_with_groups(pages_list_key(), data, groups=[PAGES_LIST_GROUP])
+    _set(pages_list_key(), data)
 
 
 def get_sitemap():
@@ -171,7 +163,7 @@ def get_sitemap():
 
 
 def set_sitemap(data):
-    set_with_groups(sitemap_key(), data, groups=[SITEMAP_GROUP])
+    _set(sitemap_key(), data)
 
 
 def get_page_detail(page_id):
@@ -179,9 +171,7 @@ def get_page_detail(page_id):
 
 
 def set_page_detail(page_id, data):
-    set_with_groups(
-        page_detail_key(page_id), data, groups=[page_group(page_id)],
-    )
+    _set(page_detail_key(page_id), data)
 
 
 def get_navigation(menu_key):
@@ -189,10 +179,7 @@ def get_navigation(menu_key):
 
 
 def set_navigation(menu_key, data):
-    set_with_groups(
-        navigation_key(menu_key), data,
-        groups=[navigation_group(menu_key)],
-    )
+    _set(navigation_key(menu_key), data)
 
 
 def get_section_types():
@@ -200,26 +187,37 @@ def get_section_types():
 
 
 def set_section_types(data):
-    # No group: code-derived, nothing ever invalidates it.
-    _cache().set(section_types_key(), data, _ttl())
+    # Never invalidated: code-derived (see module docstring).
+    _set(section_types_key(), data)
 
 
 # --- invalidation -------------------------------------------------------
 
 def invalidate_page_detail(*page_ids):
-    invalidate_groups(*(page_group(pid) for pid in page_ids))
+    _delete(*(page_detail_key(pid) for pid in page_ids))
+
+
+def invalidate_all_page_details():
+    """Drop every cached page detail — the fan-out used for any
+    global section change (see module docstring). Page ids come from
+    the database (the same pattern ``invalidate_all_navigation``
+    uses) because a registry of cached keys is exactly the shared
+    mutable state this module must not keep."""
+    from cms_api.models import CmsPage
+
+    invalidate_page_detail(*CmsPage.objects.values_list("pk", flat=True))
 
 
 def invalidate_pages_list():
-    invalidate_groups(PAGES_LIST_GROUP)
+    _delete(pages_list_key())
 
 
 def invalidate_sitemap():
-    invalidate_groups(SITEMAP_GROUP)
+    _delete(sitemap_key())
 
 
 def invalidate_navigation(menu_key):
-    invalidate_groups(navigation_group(menu_key))
+    _delete(navigation_key(menu_key))
 
 
 def invalidate_all_navigation():
@@ -228,8 +226,7 @@ def invalidate_all_navigation():
     keys = CmsNavigationMenu.objects.filter(
         is_active=True,
     ).values_list("key", flat=True)
-    if keys:
-        invalidate_groups(*(navigation_group(key) for key in keys))
+    _delete(*(navigation_key(key) for key in keys))
 
 
 def queue_page_ids_invalidation(page_ids):
@@ -273,36 +270,20 @@ def queue_navigation_invalidation(menu_key):
 
 
 def queue_section_change_invalidation(section):
-    """Queue invalidation for every ``CmsPage`` whose composition
-    references ``section`` (``ReferenceIndex`` reverse lookup — the
-    same mechanism ``delete_section``'s dependency guard already
-    uses). The page list, sitemap and navigation never embed section
-    content, so they are deliberately left alone here.
+    """Queue invalidation for every cached page detail.
 
-    ``ReferenceIndex.get_grouped_references_to`` groups by the actual
-    *source object* (confirmed by reading ``ReferenceGroups.__iter__``
-    — it loads the instance via
-    ``content_type.get_object_for_this_type(pk=...)``), and that
-    object is an instance of the *base* Wagtail ``Page`` model (multi-
-    table inheritance), never the concrete ``CmsPage`` one — confirmed
-    empirically, not assumed. ``CmsPage`` is the only concrete page
-    model in this project (AD-3), so every ``Page`` instance found
-    here is a ``CmsPage`` row.
+    A global section's published content is embedded in each
+    published page that references it, and the public payload comes
+    from the page's *published* revision — but the only cheap reverse
+    lookup (``ReferenceIndex``) tracks each page's *current*
+    (possibly draft) composition. A page whose unpublished draft
+    dropped ``section`` is therefore invisible to the index while its
+    published output still embeds it, so the fan-out never narrows on
+    ``section``: every page detail is dropped instead. The page list,
+    sitemap and navigation never embed section content, so they are
+    deliberately left alone here.
     """
-    referencing_page_ids = sorted({
-        source.pk
-        for source, _references in (
-            ReferenceIndex.get_grouped_references_to(section)
-        )
-        if isinstance(source, Page)
-    })
-    if not referencing_page_ids:
-        return
-
-    def _invalidate():
-        invalidate_page_detail(*referencing_page_ids)
-
-    transaction.on_commit(_invalidate, robust=True)
+    transaction.on_commit(invalidate_all_page_details, robust=True)
 
 
 # --- signal wiring -------------------------------------------------------

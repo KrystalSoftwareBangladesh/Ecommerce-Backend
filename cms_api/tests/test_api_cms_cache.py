@@ -13,7 +13,15 @@ process-wide store.
 test runs inside one transaction that is rolled back, never
 committed), so every write that queues invalidation is wrapped in
 ``self.captureOnCommitCallbacks(...)``.
+
+Concurrency tests use real threads (never sequential calls alone):
+the failure modes being guarded against are interleavings, and the
+module's safety claim is per-key atomicity on the cache backend.
 """
+import threading
+import time
+from unittest import mock
+
 from django.conf import settings
 from django.db import transaction
 from django.test import override_settings
@@ -31,6 +39,7 @@ from cms_api.services import (
     publish_page,
     publish_section,
     remove_navigation_item,
+    remove_page_section,
     reorder_navigation_items,
     restore_page,
     rollback_page,
@@ -313,6 +322,59 @@ class SectionInvalidationTests(CmsCacheTestCase):
         self.assertFalse(orphan.is_active)
 
 
+class PublishedSectionFanOutTests(CmsCacheTestCase):
+    """A published page embeds a global section through its
+    *published* revision, so an unpublished draft dropping the
+    section must not hide the page from section-change invalidation.
+
+    ``ReferenceIndex`` (the pre-fix fan-out) tracks each page's
+    current, possibly draft, composition — exactly the case below.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.section = factories.section(name='Promo', user=self.owner)
+        with self.captureOnCommitCallbacks(execute=True):
+            publish_section(section=self.section, user=self.owner)
+        self.page = self.published_page(slug='draft-drops-section')
+        self.row = factories.page_section(
+            self.page, self.owner, global_section=self.section.pk,
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            publish_page(page=self.page, user=self.owner)
+
+    def _heading(self, response):
+        row = response.data['sections'][0]
+        return row['content'][0]['value']['heading']
+
+    def test_draft_dropping_section_still_invalidates_on_publish(self):
+        # 2. An unpublished draft that removes the section; the live
+        # revision — and so the public payload — keeps it.
+        remove_page_section(
+            page=self.page, section=self.row, user=self.owner,
+        )
+
+        # 3. Cache the published public response.
+        self.assertEqual(
+            self._heading(self.get_page(self.page.url_path)),
+            'Welcome',
+        )
+
+        # 4. Update and publish the section.
+        self.section.content = factories.hero_content(heading='New promo')
+        self.section.save()
+        self.section.save_revision(user=self.owner)
+        with self.captureOnCommitCallbacks(execute=True):
+            publish_section(section=self.section, user=self.owner)
+
+        # 5. The very next public request serves the updated
+        # published content, no TTL wait.
+        self.assertEqual(
+            self._heading(self.get_page(self.page.url_path)),
+            'New promo',
+        )
+
+
 class NavigationInvalidationTests(CmsCacheTestCase):
     def setUp(self):
         super().setUp()
@@ -487,3 +549,116 @@ class RolledBackTransactionTests(CmsCacheTestCase):
         self.assertEqual(
             self.get_page(page.url_path).data['title'], 'Stable title',
         )
+
+
+class SlowCache:
+    """Cache proxy that pauses briefly after every delete — the way
+    a loaded remote cache does, where an invalidation takes real
+    time.
+
+    Without this, in-process threads cannot reproduce a cross-worker
+    interleaving at all: the GIL plus ``LocMemCache``'s single
+    per-store lock serialize cache operations so tightly that the
+    gaps between one call's backend operations never open. Widening
+    those gaps is exactly what makes a multi-step write or
+    invalidation (the pre-fix read-modify-write registry) race — and
+    what lets these tests catch one.
+    """
+
+    def __init__(self, inner, delay):
+        self._inner = inner
+        self._delay = delay
+
+    def __getattr__(self, name):
+        attr = getattr(self._inner, name)
+        if name not in ('delete', 'delete_many'):
+            return attr
+
+        def slow(*args, **kwargs):
+            result = attr(*args, **kwargs)
+            time.sleep(self._delay)
+            return result
+
+        return slow
+
+
+class ConcurrentCacheUpdateTests(CmsCacheTestCase):
+    """Registry-free caching must stay consistent when several
+    workers cache and invalidate at once (docs/cms-architecture.md
+    §10). Real threads, not sequential calls: the failure mode being
+    guarded against is an interleaving.
+
+    Both tests run on ``LocMemCache``, whose per-operation locking
+    makes single-key writes/deletes atomic the same way Redis does —
+    the module's only concurrency assumption is that per-key
+    atomicity, so the same guarantee holds cross-process on a shared
+    Redis. ``LocMemCache`` itself is per-process and shares nothing
+    across processes; multi-process behaviour cannot be exercised
+    here and is not claimed.
+    """
+
+    def test_concurrent_sets_all_land_and_invalidate_cleanly(self):
+        page_ids = list(range(32))
+        start = threading.Barrier(len(page_ids), timeout=30)
+
+        def cache_detail(page_id):
+            start.wait()
+            cms_cache.set_page_detail(page_id, {'id': page_id})
+
+        threads = [
+            threading.Thread(target=cache_detail, args=(page_id,))
+            for page_id in page_ids
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        for page_id in page_ids:
+            self.assertIsNotNone(cms_cache.get_page_detail(page_id))
+
+        cms_cache.invalidate_page_detail(*page_ids)
+
+        for page_id in page_ids:
+            self.assertIsNone(cms_cache.get_page_detail(page_id))
+
+    def test_write_racing_invalidation_is_never_stranded(self):
+        """A write interleaved with its own invalidation may land
+        after it (the cache-aside race), but must never become
+        invisible to a later invalidation — the pre-fix registry's
+        failure mode, where a payload key could be orphaned by a
+        concurrent registry update and survive every future group
+        invalidation. Deletes are deliberately slow here (see
+        ``SlowCache``) so writes really do interleave with the
+        invalidation's backend operations.
+        """
+        page_ids = list(range(8))
+        iterations = 200
+        slow = SlowCache(cms_cache._cache(), delay=0.002)
+        start = threading.Barrier(len(page_ids) + 1, timeout=30)
+
+        def writer(page_id):
+            start.wait()
+            for _ in range(iterations):
+                cms_cache.set_page_detail(page_id, {'id': page_id})
+
+        def invalidator():
+            start.wait()
+            for _ in range(iterations):
+                cms_cache.invalidate_page_detail(*page_ids)
+
+        with mock.patch.object(cms_cache, '_cache', return_value=slow):
+            threads = [
+                threading.Thread(target=writer, args=(page_id,))
+                for page_id in page_ids
+            ]
+            threads.append(threading.Thread(target=invalidator))
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            cms_cache.invalidate_page_detail(*page_ids)
+
+            for page_id in page_ids:
+                self.assertIsNone(cms_cache.get_page_detail(page_id))
