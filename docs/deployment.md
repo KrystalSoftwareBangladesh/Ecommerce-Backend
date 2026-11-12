@@ -23,16 +23,25 @@ work. Workers can be scaled freely.
 |---|---|---|---|
 | `expire-pending-orders` | `checkout_api.tasks.expire_pending_orders_task` | 5 min | Cancels PENDING storefront orders whose stock reservation expired, releases their stock and emails the customer. Then releases any other expired reservations. |
 | `recover-stale-email-logs` | `email_api.tasks.recover_stale_email_logs_task` | 10 min | Re-dispatches emails stuck in PENDING for 15+ minutes (order emails only; at most 3 times) and marks emails stuck in PROCESSING as FAILED. |
+| `cms-publish-scheduled` | `cms_api.tasks.run_scheduled_publishing_task` | 5 min | Runs Wagtail's `publish_scheduled` sweep: publishes `CmsPage`/`CmsSection` revisions whose `go_live_at` is due and unpublishes live pages/sections whose `expire_at` has passed. Creates the same slug-change redirect an explicit API publish would for any `CmsPage` this moves (docs/cms-architecture.md §9, §12). |
 
-Both are safe to run concurrently and to rerun. The same work can be run by
-hand:
+All three are safe to run concurrently and to rerun. The order/email work can
+be run by hand:
 
 ```bash
 python manage.py expire_pending_orders
 ```
 
+The CMS sweep has no standalone management command of its own; it is
+Wagtail's own `publish_scheduled` command, wrapped by
+`cms_api.services.scheduling.run_scheduled_publishing` to add the redirect
+step, and can be run directly with `python manage.py publish_scheduled` for
+the sweep alone (without the redirect step) if needed.
+
 If Beat is not running, expired storefront orders stay PENDING (they still
-cannot be confirmed) and lost order emails are never retried.
+cannot be confirmed), lost order emails are never retried, and CMS content
+scheduled via `go_live_at`/`expire_at` never actually goes live or expires —
+this joins the existing "no new systemd unit" caveat below.
 
 ## Environment and settings
 
@@ -98,3 +107,33 @@ WantedBy=multi-user.target
 - Adding `sudo systemctl restart <worker> <beat>` to the workflows is a
   deliberate follow-up once the unit names exist on every server: the
   workflow scripts run with `set -e`, so a missing unit fails the deploy.
+
+## Wagtail CMS site setup (issue #463)
+
+`python manage.py migrate` installs the Wagtail CMS apps and creates a
+default `wagtail.sites.Site` pointing at `localhost`. After the first
+migrate that includes the CMS, run once per deployment:
+
+```bash
+python manage.py setup_cms_site
+```
+
+It points the default site at the hostname in `FRONTEND_BASE_URL_SETTINGS`
+(override with `--hostname`). The command is idempotent and does not touch
+pages. CMS pages themselves are headless: the API serves them and the
+Wagtail admin lives at `/cms-admin/`.
+
+The CMS cache uses `CMS_CACHE_URL_SETTINGS` (Redis URL) and falls back to
+a local memory cache when it is absent. **`CMS_CACHE_URL_SETTINGS` must
+be set to a shared Redis URL in any deployment that runs more than one
+process against the same database** — multiple gunicorn workers/pods,
+or the Celery worker that runs `cms-publish-scheduled` alongside the
+web processes. The fallback local memory cache is per-process: a
+publish handled by the Celery worker (or by one gunicorn worker) would
+invalidate only that process's own cache, leaving every other process
+serving stale public CMS content until the safety-net TTL
+(`CMS_PUBLIC_CACHE_TTL`, 5 minutes) expires it. It does not need to be
+the same Redis *server* as `CELERY_BROKER_URL_SETTINGS`/
+`REDIS_CACHE_URL_SETTINGS`, only reachable from every process that
+serves or writes CMS content; using a different database index on the
+same server (as those two settings already do) is sufficient.

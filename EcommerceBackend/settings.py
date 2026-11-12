@@ -64,6 +64,19 @@ THIRD_PARTY_APPS = [
     'django_filters',
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    # Wagtail CMS (issue#463)
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail',
+    'modelcluster',
+    'taggit',
 ]
 LOCAL_APPS = [
     'user_api',
@@ -88,6 +101,7 @@ LOCAL_APPS = [
     'email_api',
     'shipping_api',
     'checkout_api',
+    'cms_api',
 ]
 INSTALLED_APPS = BUILD_IN_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -181,6 +195,10 @@ REST_FRAMEWORK = {
 AUTHENTICATION_BACKENDS = [
     'user_api.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
+    # Grants wagtailadmin.access_admin to staff/superusers only (issue
+    # #463, Phase 5A) — see cms_api/backends.py. Never authenticates a
+    # login and never grants any other permission.
+    'cms_api.backends.WagtailAdminAccessBackend',
 ]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
@@ -216,6 +234,105 @@ USE_TZ = True
 
 # Frontend
 FRONTEND_BASE_URL = FRONTEND_BASE_URL_SETTINGS
+
+# Wagtail CMS (issue#463). Pages are headless — read through the CMS
+# API only, never rendered by Django.
+WAGTAIL_SITE_NAME = PROJECT_NAME
+WAGTAILADMIN_BASE_URL = FRONTEND_BASE_URL_SETTINGS
+WAGTAILIMAGES_SERVE_METHOD = "direct"
+
+# Wagtail's own slug-change redirect auto-creation is disabled: it
+# fires on every Page.save() where the slug differs from the stored
+# row (wagtail.contrib.redirects.signal_handlers, connected to the
+# page_slug_changed signal), including a draft-only edit via
+# cms_api.services.pages.update_page, which would create a redirect
+# before the change is ever published. cms_api.services.redirects
+# creates the equivalent redirect at publish time instead (docs/cms-
+# architecture.md AD-8, §9).
+WAGTAILREDIRECTS_AUTO_CREATE = False
+
+# CMS cache (AD-12, Phase 5 — not wired up to any code yet).
+# CMS_CACHE_URL_SETTINGS (env.py) is a Redis URL; falls back to a
+# local memory cache when absent. Consolidated into the single
+# CACHES setting below as the "cms" alias.
+CMS_CACHE_URL_SETTINGS = getattr(env, "CMS_CACHE_URL_SETTINGS", "")
+
+# Wagtail background tasks (django-tasks) run inline so reference
+# tracking behind dependency-guarded deletes stays consistent
+# without a separate task worker.
+TASKS = {
+    "default": {
+        "BACKEND": (
+            "django_tasks.backends.immediate.ImmediateBackend"
+        ),
+    }
+}
+
+# Path prefixes no CmsPage slug path may ever use (docs/cms-
+# architecture.md section 9).
+CMS_RESERVED_PATHS = [
+    # API, Django and Wagtail mounts
+    '/api/',
+    '/admin/',
+    '/cms-admin/',
+    '/docs/',
+    '/redoc/',
+    '/schema/',
+    '/media/',
+    '/static/',
+    '/accounts/',
+    # Storefront routes (bikkhato, BestComputerHub, ZayrahLife
+    # frontends; audited 2026-11-06)
+    '/about/',
+    '/about-us/',
+    '/blog/',
+    '/brand/',
+    '/careers/',
+    '/cart/',
+    '/categories/',
+    '/category/',
+    '/checkout/',
+    '/contact/',
+    '/corporate-gifts/',
+    '/delivery-policy/',
+    '/digital-commerce-guidelines/',
+    '/disclaimer/',
+    '/districts/',
+    '/emi-information/',
+    '/fair-price/',
+    '/faq/',
+    '/forgot-password/',
+    '/invoice/',
+    '/legal/',
+    '/login/',
+    '/my-account/',
+    '/new-arrivals/',
+    '/not-found/',
+    '/offers/',
+    '/order-track/',
+    '/orders/',
+    '/privacy/',
+    '/privacy-policy/',
+    '/product/',
+    '/product-category/',
+    '/products/',
+    '/profile/',
+    '/refund/',
+    '/register/',
+    '/reset-password/',
+    '/return-refund-after-sales-policy/',
+    '/seller-dashboard/',
+    '/seller-register/',
+    '/shop/',
+    '/shop-now/',
+    '/signup/',
+    '/stories/',
+    '/support/',
+    '/sustainability/',
+    '/terms/',
+    '/verify-email/',
+    '/warranty-policy/',
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -267,7 +384,16 @@ CORS_ALLOW_METHODS = [
 ]
 CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_SETTINGS
 
-# Cache
+# Cache. "default" backs general app caching (category navigation,
+# etc.) via the existing Redis infrastructure. "cms" is a separate
+# alias for Wagtail CMS public-response caching (AD-12, Phase 5C,
+# cms_api/services/cache.py): a distinct CMS_CACHE_URL_SETTINGS Redis
+# URL when one is configured, a local memory cache otherwise, so the
+# CMS cache can be isolated from (or share, if left unset) the app
+# cache without standing up a second Redis instance. LocMemCache is
+# per-process, so every app process (and the Celery worker running
+# the scheduled-publish sweep) must share one Redis URL here for
+# invalidation to actually reach every reader (docs/deployment.md).
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -275,10 +401,29 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
-    }
+    },
+    "cms": (
+        {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": CMS_CACHE_URL_SETTINGS,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+        if CMS_CACHE_URL_SETTINGS.startswith("redis")
+        else {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    ),
 }
 # Endpoint-specific cache lifetimes, in seconds.
 CATEGORY_NAVIGATION_CACHE_TTL = 60 * 60 * 24  # 24 hours
+
+# Safety-net TTL for CMS public responses (AD-12, docs/cms-
+# architecture.md §10): invalidation is event-driven and immediate on
+# every write that affects public output, so this only bounds the
+# staleness window for an invalidation event the code has no hook for.
+CMS_PUBLIC_CACHE_TTL = 60 * 5  # 5 minutes
 
 # Celery
 CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS
@@ -291,6 +436,10 @@ CELERY_BEAT_SCHEDULE = {
     "recover-stale-email-logs": {
         "task": "email_api.tasks.recover_stale_email_logs_task",
         "schedule": 10 * 60,
+    },
+    "cms-publish-scheduled": {
+        "task": "cms_api.tasks.run_scheduled_publishing_task",
+        "schedule": 5 * 60,
     },
 }
 

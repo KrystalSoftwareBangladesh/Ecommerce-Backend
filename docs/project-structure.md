@@ -33,6 +33,7 @@ Ecommerce-Backend/
 │   ├── business-rules.md
 │   ├── category-import-api.md
 │   ├── checkout-api.md                # storefront checkout/order API contract
+│   ├── cms-architecture.md            # CMS technical architecture & data model
 │   ├── content-security-scanner-plan.md
 │   ├── conventions.md
 │   ├── deployment.md                  # Celery worker + Beat requirements
@@ -58,7 +59,7 @@ Ecommerce-Backend/
 │       ├── models.py
 │       ├── pagination.py
 │       ├── permission.py
-│       └── serializers/fields.py    # AbsoluteImageField
+│       └── serializers/fields.py    # AbsoluteImageField, AbsoluteFileField
 │
 ├── blog_api/
 │   ├── models/{choices.py,blog_post.py,blog_tag.py}
@@ -122,6 +123,51 @@ Ecommerce-Backend/
 │   ├── views/v1/{checkout.py,order.py}
 │   ├── urls/{__init__.py,v1.py}
 │   └── tests.py
+│
+├── cms_api/                           # Wagtail CMS (issue#463)
+│   ├── models/{__init__.py,cms_section.py,      # CmsSection snippet
+│   │        cms_page.py,cms_page_section.py,    # CmsPage + rows
+│   │        cms_navigation.py,                  # CmsNavigationMenu/Item
+│   │        cms_media.py}                       # CmsMediaConfig singleton
+│   ├── sections/{__init__.py,blocks.py,registry.py}  # type registry
+│   ├── pages/{__init__.py,templates.py}         # page templates
+│   ├── serializers/{__init__.py,cms_section.py,cms_page.py,
+│   │        cms_redirect.py,cms_navigation.py,cms_media.py,
+│   │        cms_audit_log.py}
+│   ├── services/{__init__.py,cms_section.py,
+│   │        pages.py,composition.py,paths.py,redirects.py,
+│   │        preview.py,scheduling.py,navigation.py,media.py,
+│   │        audit_log.py,cache.py}                 # public-response
+│   │                                                 # caching (5C)
+│   ├── views/{__init__.py,v1/{__init__.py,cms_section.py,cms_page.py,
+│   │        cms_redirect.py,cms_preview.py,cms_navigation.py,
+│   │        cms_media.py,cms_audit_log.py}}
+│   ├── urls/{__init__.py,v1.py}       # /api/v1/cms/sections, section-types,
+│   │                                 # pages, public/pages, public/sitemap,
+│   │                                 # public/preview/{token}, redirects,
+│   │                                 # navigation, public/navigation/{key},
+│   │                                 # media/images, media/documents,
+│   │                                 # media-config, audit-logs
+│   ├── tasks.py                       # run_scheduled_publishing_task (Beat)
+│   ├── tests/{__init__.py,factories.py,test_api_cms_section.py,
+│   │        test_api_cms_section_lifecycle.py,test_api_section_types.py,
+│   │        test_api_cms_page.py,test_api_cms_page_lifecycle.py,
+│   │        test_api_cms_page_public.py,test_api_cms_redirects.py,
+│   │        test_api_cms_page_scheduling.py,
+│   │        test_api_cms_section_scheduling.py,test_api_cms_preview.py,
+│   │        test_api_cms_sitemap.py,test_api_cms_navigation.py,
+│   │        test_api_cms_media.py,test_api_cms_audit_log.py,
+│   │        test_wagtail_admin_business_rules.py,
+│   │        test_wagtail_admin_rbac.py,test_api_cms_cache.py}
+│   ├── migrations/{0001_initial.py,
+│   │        0002_cmspage_cmspagesection.py,
+│   │        0003_cmsnavigationmenu_cmsnavigationitem.py,
+│   │        0004_cmsmediaconfig.py}
+│   ├── templates/cms_api/cms_section_preview.html
+│   ├── management/commands/setup_cms_site.py
+│   ├── wagtail_hooks.py               # snippet + log-action registration
+│   ├── apps.py
+│   └── admin.py                       # CmsNavigationMenu/Item, CmsMediaConfig
 │
 ├── category_api/
 │   ├── models/category.py

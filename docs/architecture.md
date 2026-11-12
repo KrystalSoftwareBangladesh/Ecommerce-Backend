@@ -23,6 +23,7 @@ relationships are in [domain-model.md](domain-model.md).
 | Images | `Pillow` |
 | Database | PostgreSQL (`psycopg2-binary`) |
 | Server | gunicorn |
+| CMS | Wagtail 7.4 LTS (headless — see [cms-architecture.md](cms-architecture.md)) |
 
 `PyMySQL` is required only by the WooCommerce export scripts in `scripts/`,
 which run outside Django.
@@ -36,6 +37,10 @@ apps registered in `LOCAL_APPS` are:
 `supplier_api`, `product_api`, `inventory_api`, `purchase_api`, `sale_api`,
 `origin_api`, `review_api`, `meta_api`, `wishlist_api`, `cart_api`,
 `content_security_api`, `request_log_api`, `blog_api`.
+
+The CMS lives in `cms_api` (Wagtail 7.4 LTS, issue #463); CMS pages are
+headless — the API serves them and the Wagtail admin is mounted at
+`/cms-admin/`. See [cms-architecture.md](cms-architecture.md).
 
 Responsibilities are listed in [domain-model.md](domain-model.md).
 

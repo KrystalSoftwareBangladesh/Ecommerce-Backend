@@ -21,6 +21,7 @@ from banner_api import urls as banner_ulrs
 from shipping_api import urls as shipping_urls
 from checkout_api import urls as checkout_urls
 from email_api import urls as email_urls
+from cms_api import urls as cms_urls
 
 
 urlpatterns = []
@@ -47,3 +48,4 @@ urlpatterns += banner_ulrs.urlpatterns
 urlpatterns += shipping_urls.urlpatterns
 urlpatterns += checkout_urls.urlpatterns
 urlpatterns += email_urls.urlpatterns
+urlpatterns += cms_urls.urlpatterns

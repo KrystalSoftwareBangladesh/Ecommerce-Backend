@@ -50,6 +50,15 @@ class ModelPermissionAccess(permissions.DjangoModelPermissions):
         if action in custom_permissions:
             permission = custom_permissions[action]
 
+            # A dict value maps HTTP method -> permission codename
+            # (a route serving several methods may need per-method
+            # permissions). A missing method falls through to the
+            # standard perms_map.
+            if isinstance(permission, dict):
+                permission = permission.get(request.method)
+                if permission is None:
+                    return super().has_permission(request, view)
+
             app_label = view.get_queryset().model._meta.app_label
 
             return request.user.has_perm(

@@ -499,6 +499,284 @@ each always present as a list of `{slug, lastmod}`:
 "Not soft-deleted" means `deleted_at` is null. Timestamps are ISO 8601 in
 UTC. The storefront builds the URLs from the slugs.
 
+## CMS (Phase 1 — global sections)
+
+`cms_api.CmsSection` is a Wagtail snippet holding one content block whose
+type matches its immutable `section_type`. Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **Create never implies publish.** A new section is a draft
+  (`live=False`); `status` is not writable through CRUD. Publishing is
+  `POST /api/v1/cms/sections/{id}/publish/` behind
+  `publish_cms_section`.
+- **`section_type` is immutable** after creation. `content` must hold
+  exactly one block of that type; unknown types and multi-block content
+  are rejected with 400.
+- **Optimistic locking.** A write carrying `base_revision_id` that is not
+  the section's latest revision is rejected with 409
+  (`revision_conflict`).
+- **Unpublish** (`unpublish_cms_section`) hides the section without
+  deleting it; unpublishing a draft is a 400.
+- **Archive** (`archive_cms_section`) sets `archived_at` and excludes the
+  section from the default listing (`?archived=true` lists archived
+  ones). There is no unarchive in Phase 1. Archiving twice is a 400.
+- **Delete is soft** (`delete_cmssection`) and dependency-guarded: while
+  any other object references the section (Wagtail `ReferenceIndex`),
+  deletion is refused with 400. The references are listed at
+  `.../{id}/references/`.
+- **Rollback** restores an older revision's content as a *new* revision
+  and publishes it (audit trail stays intact). It is gated by
+  `publish_cms_section`, matching its publish effect.
+- **Section-type schemas** are read from
+  `GET /api/v1/cms/section-types/` (authenticated, no model permission);
+  the type registry is code-owned, not admin-defined.
+
+## CMS (Phase 2 — pages)
+
+`cms_api.CmsPage` is a Wagtail page composed of ordered
+`CmsPageSection` rows. Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **Create never implies publish.** A new page is a draft
+  (`live=False`). Publishing is `POST /api/v1/cms/pages/{id}/publish/`
+  behind `publish_cms_page`; unpublish and archive/restore have their
+  own permissions. Rollback restores an old revision and publishes it
+  as a new one, gated by `publish_cms_page`.
+- **Templates seed, never constrain.** `template_key` is code-owned
+  (`cms_api/pages/templates.py`) and only seeds the initial
+  composition; sending both `template_key` and `sections` is a 400.
+- **Reserved paths.** A slug that would land on a `CMS_RESERVED_PATHS`
+  storefront route is rejected with 400 on create and update.
+- **Composition XOR.** Each row is either a link to a global
+  `CmsSection` or exactly one local content block — never both, never
+  neither. Removing a row never deletes the referenced section, and
+  every composition write snapshots a page revision.
+- **Optimistic locking.** A write carrying `base_revision_id` that is
+  not the page's latest revision is rejected with 409
+  (`revision_conflict`).
+- **Dependency-guarded delete** (`delete_cmspage`): a page with child
+  pages is refused with 400 listing them; deleting the subtree requires
+  `?acknowledge=true`.
+- **Public reads are draft-isolated.**
+  `GET /api/v1/cms/public/pages/?path=` serves published pages only:
+  content comes from the published revision, and rows referencing
+  unpublished or archived global sections are omitted.
+
+## CMS (Phase 3 — scheduling, redirects, preview, sitemap)
+
+Architecture: [cms-architecture.md](cms-architecture.md), §12 (scheduling),
+§9 (redirects/sitemap), §5.7/AD-15 (preview).
+
+- **Scheduling is publish-only.** `go_live_at`/`expire_at` are accepted
+  only on `POST .../publish/` (pages and sections), never on
+  create/update — `expire_at` is read straight off the live row by the
+  sweep, so exposing it on an update endpoint would let a
+  `change_cmspage`/`change_cmssection` holder silently schedule an
+  unpublish without the `unpublish_cms_page`/`unpublish_cms_section`
+  permission. Setting either writes the field and snapshots a new
+  revision before publishing it; they cannot be combined with
+  `revision_id`. `expire_at` must be in the future and after
+  `go_live_at` when both are given.
+- **The sweep** is the `cms-publish-scheduled` Celery Beat task (every
+  5 minutes; see [deployment.md](deployment.md)), which runs Wagtail's
+  own `publish_scheduled` command: it publishes due `go_live_at`
+  revisions and unpublishes live content whose `expire_at` has passed,
+  for both `CmsPage` and `CmsSection`.
+- **A stale past `expire_at` is cleared on republish.** A revision
+  whose embedded `expire_at` has since fallen into the past (e.g. the
+  object already auto-expired once) is re-snapshotted with `expire_at`
+  cleared before it is republished, so the very next sweep does not
+  expire it again immediately.
+- **Slug-change redirects** are created only at publish time —
+  `publish_page`, `rollback_page` and the scheduled sweep all create
+  one when a page's published path changes, and the same is done for
+  every live descendant whose published path moves with it. A redirect
+  always targets the page itself, resolved at lookup time, so every
+  historical path collapses directly to the page's *current* canonical
+  URL with no transitive chains; renaming back to an earlier slug
+  drops the now-stale redirect instead of creating a loop. Wagtail's
+  own `WAGTAILREDIRECTS_AUTO_CREATE` signal handler, which would
+  otherwise create a redirect on every draft-only slug edit, is
+  disabled in settings for exactly this reason.
+  `GET /api/v1/cms/redirects/resolve/?path=` (public) resolves an old
+  path to the current one, 404 if there is none or the target page is
+  no longer live/archived. `GET /api/v1/cms/redirects/` (history) is
+  gated on `view_cmspage` — `Redirect` belongs to
+  `wagtail.contrib.redirects`, not `cms_api`, so it has no custom
+  codename of its own, and redirects only ever exist as a byproduct of
+  a CMS page's slug changing. An existing redirect is not a tracked
+  `ReferenceIndex` reference, so it never blocks a page's
+  dependency-guarded delete.
+- **Preview tokens** (pages and sections): `POST
+  .../{id}/preview-token/` (gated by `change_cmspage`/
+  `change_cmssection`) issues a signed, 30-minute token scoped to one
+  object and one specific revision, bound to the issuing user.
+  `GET /api/v1/cms/public/preview/{token}/` (public — the token itself
+  carries the binding) resolves it, re-checking the signature, the
+  revision and that the same user still holds the edit permission, and
+  returns the *previewed revision's* content — draft or not — with
+  `Cache-Control: no-store`. Nested global sections inside a
+  previewed page still resolve to their own published content; preview
+  is scoped to the one previewed object, not to drafts of anything it
+  references.
+- **Sitemap** (`GET /api/v1/cms/public/sitemap/`, public) lists live,
+  non-archived pages whose *published* `seo_noindex` is false. The
+  published value, not the row's, is used for exactly the same reason
+  public reads use the published revision for composition: a draft
+  edit writes the field straight to the row before any publish.
+
+## CMS (Phase 4A — navigation)
+
+`cms_api.CmsNavigationMenu`/`CmsNavigationItem` are plain Django
+models (no Wagtail revisions). Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **One permission for everything.** `manage_cms_navigation` gates
+  every menu and item operation — create, read, update, delete,
+  reorder — not the usual add/view/change/delete split. The model's
+  own auto-generated codenames (`add_cmsnavigationmenu`, etc.) grant
+  nothing on their own.
+- **`is_active` is the soft-delete flag, not a separate toggle.**
+  `DELETE /api/v1/cms/navigation/{id}/` soft-deletes a menu
+  (`is_active=False`), which also removes it from every read —
+  management or public. The write serializers never expose
+  `is_active` directly (a `PATCH` setting it is accepted but has no
+  effect), so there is exactly one path that deactivates a menu.
+  There is no restore action.
+- **Items are an ordered, nestable tree per menu.** `label`,
+  `link_type` (`PAGE`/`EXTERNAL`), and exactly one of `page`/
+  `external_url` matching it (database `CheckConstraint`, re-checked
+  in `clean()` and the write serializers). `parent` must belong to
+  the same menu and cannot create a cycle (a descendant cannot become
+  an ancestor of itself). `external_url` only accepts `http`/`https`.
+  Switching `link_type` on an update requires explicitly providing the
+  new target *and* clearing the old one in the same request — a
+  partial update never silently clears a field it no longer needs.
+  Deleting a parent item cascades to its children.
+- **Public reads are draft-isolated and prune by subtree.**
+  `GET /api/v1/cms/public/navigation/{key}/` 404s for an unknown or
+  inactive menu key. An invisible item (`is_visible=False`) prunes
+  its *entire* subtree (not just itself), and a `PAGE` item whose
+  target is not live or is archived is omitted — the same rule every
+  other public CMS endpoint enforces. Not cached (Phase 5).
+- **`delete_page` is guarded against navigation references.** A
+  `CmsPage` referenced by a `CmsNavigationItem` can never be deleted
+  (the FK is `PROTECT`): unlike child pages and `ReferenceIndex`
+  references, this dependency is **not** acknowledgeable —
+  `?acknowledge=true` still returns 400 while any navigation item
+  points at the page. The item must be removed or repointed first.
+
+## CMS (Phase 4B — media)
+
+`cms_api.CmsMediaConfig` is a singleton controlling upload limits for
+Wagtail's own `Image`/`Document` models (no custom model). Architecture:
+[cms-architecture.md](cms-architecture.md).
+
+- **Exactly one `CmsMediaConfig` row can ever exist.** `save()` always
+  writes to a fixed primary key, and a database `CheckConstraint`
+  rejects any other row even if something bypasses `save()`.
+  `get_solo()` is the only way code should read it — it creates the
+  row with its defaults on first access.
+- **One permission for everything.** `manage_cms_media` gates the
+  config endpoint and both media resources alike.
+- **Wagtail's own upload limits do not apply here.** They live only in
+  Wagtail's admin *form fields*, never in `Image`/`Document.
+  full_clean()` or a DRF serializer. Every limit is read from
+  `CmsMediaConfig.get_solo()` instead, never from `WAGTAILIMAGES_*`/
+  `WAGTAILDOCS_*` settings (none of which this project sets).
+- **Upload validation never trusts the browser.** Images: size →
+  allowed-extension check → a real Pillow decode (not just the
+  filename) → the decoded format must match the claimed extension →
+  pixel-count limit. Documents: size → allowed-extension check (no
+  decode attempted). The `content_type` the browser sends is never
+  the basis for a decision.
+- **`alt_text` is `Image.description`, renamed, not a new field.**
+  `title` is Wagtail's native field on both `Image` and `Document`,
+  defaulting to the uploaded filename when omitted. `Document` has no
+  description/alt-text equivalent.
+- **Media is two resources.** `GET/POST/PATCH/DELETE
+  /api/v1/cms/media/images/` and `.../media/documents/` — not one
+  combined endpoint. There is no public read for either; media
+  management is authenticated-only.
+- **Delete is reference-guarded, never acknowledgeable.** A referenced
+  image or document (via Wagtail's `ReferenceIndex`, the same
+  mechanism `delete_section` uses) cannot be deleted; there is no
+  `acknowledge` override, unlike the page delete guard.
+
+## CMS (Phase 4C — audit log)
+
+`GET /api/v1/cms/audit-logs/` is read-only, backed entirely by
+Wagtail's own `PageLogEntry`/`ModelLogEntry` tables — no new storage.
+Architecture: [cms-architecture.md](cms-architecture.md).
+
+- **Gated on `view_cmspage`.** Same reuse already in place for
+  `GET /api/v1/cms/redirects/`: audit history is a cross-cutting read,
+  not a write on any one model, so it does not get its own codename.
+- **Restricted to CMS-owned content types.** Only `CmsPage`,
+  `CmsSection`, `CmsNavigationMenu`, `CmsNavigationItem`, `Image`,
+  `Document` and `CmsMediaConfig` are included. `Product`, `Category`
+  and `Brand` are registered as Wagtail snippets for chooser-block
+  support and would log to the same `ModelLogEntry` table if ever
+  edited through Wagtail Admin; that activity is explicitly excluded
+  rather than left to leak in.
+- **Two incompatible sources, merged in application code.** Page
+  activity lives in `PageLogEntry`; everything else in `ModelLogEntry`.
+  They cannot be combined in a single query (`PageLogEntry.object_id`
+  is a Python property, not a database column), so each is filtered
+  independently — by the date window and any `action`/`content_type`
+  filter — before being merged and sorted by timestamp.
+- **Query bounds are mandatory, not optional.** Defaults to the most
+  recent 90 days; an explicit range wider than 365 days is silently
+  clamped rather than rejected, so the "never load the full history"
+  property holds regardless of what a caller asks for. `start_date`
+  after `end_date` is a 400.
+- **Every CMS write now produces exactly one correctly-attributed log
+  entry.** This phase also closed three pre-existing gaps found by its
+  own audit: page `archive`/`restore` previously logged nothing (now
+  `cms_api.archive`/`cms_api.restore`); page deletion attributed the
+  actor as "system" instead of the real user (`page.delete()` was
+  missing `user=user`); page and section rollback were logged as a
+  plain publish, indistinguishable from an ordinary one (now
+  `cms_api.rollback`, a distinct action). Navigation (menu/item
+  create/update/delete, and one entry per reorder call, not one per
+  item moved) and media (image/document create/update/delete,
+  `CmsMediaConfig` updates) previously logged nothing at all and now
+  do, using Wagtail's core `wagtail.create`/`wagtail.edit`/
+  `wagtail.delete` actions.
+
+## CMS (Phase 5C — caching)
+
+Public CMS reads are cached on the `"cms"` Redis alias with event-
+driven invalidation, not a fixed TTL alone. Architecture, including
+the exact signals and the generation-keyed cache keys:
+[cms-architecture.md](cms-architecture.md#phase-5c-cache-consistency-hardening-2026-11-12).
+
+- **Cached endpoints:** `GET /api/v1/cms/public/pages/` (list and
+  `?path=` detail), `GET /api/v1/cms/public/sitemap/`,
+  `GET /api/v1/cms/public/navigation/{key}/`, and
+  `GET /api/v1/cms/section-types/` (one entry shared by every
+  authenticated user — its content is derived entirely from code, not
+  the database or the caller's identity).
+- **Never cached:** `GET /api/v1/cms/public/preview/{token}/` (still
+  sends `Cache-Control: no-store`, unchanged), an unknown/inactive
+  navigation key, and an unresolved `?path=` lookup — a cache only
+  ever holds a successful response.
+- **Zero consistency window after a committed write.** Every cached
+  payload lives under a generation-keyed key: a write advances the
+  generation after its database commit, so pre-publish cache entries
+  — including one an in-flight request started writing before the
+  commit — are unreachable to every subsequent request. A global
+  section change advances the generation of every cached page
+  detail; the earlier `ReferenceIndex` fan-out is gone (the index
+  reflects a page's *current*, possibly draft, composition rather
+  than its *published* revision and could miss a page). The
+  safety-net TTL (`CMS_PUBLIC_CACHE_TTL`, 5 minutes) now bounds only
+  invalidation events the code has no hook for.
+- **Every page publish, unpublish, archive, restore, delete and
+  Wagtail Admin tree move invalidates every active navigation menu**,
+  not only menus that reference that page — a menu embeds any PAGE
+  item's resolved live state and published path.
+
 ## Permissions
 
 Protected endpoints require authentication.
