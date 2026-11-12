@@ -185,7 +185,7 @@ class CmsNavigationPublicView(APIView):
         },
     )
     def get(self, request, key):
-        cached = cms_cache.get_navigation(key)
+        generation, cached = cms_cache.get_navigation(key)
         if cached is not None:
             return Response(cached)
         menu = CmsNavigationMenu.objects.filter(
@@ -200,5 +200,5 @@ class CmsNavigationPublicView(APIView):
             )
         tree = resolve_navigation_tree(menu)
         data = CmsNavigationPublicNodeSerializer(tree, many=True).data
-        cms_cache.set_navigation(key, data)
+        cms_cache.set_navigation(generation, key, data)
         return Response(data)

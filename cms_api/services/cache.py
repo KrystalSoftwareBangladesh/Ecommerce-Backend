@@ -1,45 +1,79 @@
 # cms_api/services/cache.py
 """Public-response caching for the CMS (docs/cms-architecture.md
-§10, AD-12, Phase 5C).
+§10, AD-12, Phase 5C and its cache-consistency hardening).
 
-Every cached payload lives under exactly one literal key and is
-read, written and deleted under that key alone — no key registry and
-no ``delete_pattern()`` (unavailable on ``LocMemCache``/
-``DummyCache``, and explicitly excluded by this phase's brief):
+Every cached payload lives under a *generation-keyed* key
+``cms:<base>:<generation>``, where the generation is an integer
+counter kept under ``cms:gen:<base>``:
 
-- ``cms:pages:detail:<id>`` — one page's public detail payload.
-- ``cms:pages:list`` — the public page list (``GET /public/pages/``
+- ``pages:detail:<id>`` — one page's public detail payload.
+- ``pages:list`` — the public page list (``GET /public/pages/``
   with no ``path``).
-- ``cms:sitemap`` — the sitemap response.
-- ``cms:navigation:<key>`` — one navigation menu's public tree.
-- ``cms:section-types`` — the section-type schema; never invalidated
+- ``sitemap`` — the sitemap response.
+- ``navigation:<key>`` — one navigation menu's public tree.
+- ``section-types`` — the section-type schema; never invalidated
   (derived entirely from code, ``cms_api.sections.registry``), so it
   expires only via its own TTL (e.g. after a deploy changes the
   registry).
 
-Why there is no registry (Phase 5C first mirrored the
-``category_api`` registry pattern): every invalidation group here is
-exactly one deterministic key, so the registry's read-modify-write
-was pure overhead *and* a real race — two workers could interleave
-get/add/set on one registry entry and drop a registration, and a
-write landing between an invalidation's member deletes and its
-registry delete orphaned the payload key, invisible to every later
-invalidation. Single-key GET/SET/DEL are atomic on Redis and on
-``LocMemCache`` (a lock per operation), so literal-key operations
-let no worker clobber another's state, and invalidation cannot
-strand a key.
+Why generations (Phase 5C's literal-key GET/SET/DEL left the
+cache-aside race open): a request that read pre-publish content just
+before a publishing transaction committed could write it just after
+the on-commit invalidation deleted the key — leaving stale content
+reachable until the safety-net TTL. Under this scheme that write
+lands under the *pre-publish* generation and can never be read
+again:
+
+1. A reader captures its family's generation *before* it reads the
+   database (``get_*`` returns ``(generation, value)``).
+2. It writes only under that captured generation (``set_*`` takes
+   the generation back), never under whatever generation is current
+   at write time.
+3. Invalidation advances the generation (``incr``) from a
+   ``transaction.on_commit`` callback — only after a successful
+   commit — so every key written under an earlier generation becomes
+   unreachable at once, without enumerating payload keys.
+
+A write that lands after an invalidation therefore cannot repopulate
+the active namespace: it still carries the old generation while
+subsequent readers use the new one. A reader that captures the
+generation after the increment is a post-commit reader (the increment
+runs on commit) and rebuilds from fresh database content.
+
+Why there is no registry: every payload key is deterministic (base +
+generation), so there is nothing to register and nothing for
+concurrent workers to clobber — the failure mode of the registry
+pattern Phase 5C first copied from ``category_api/services/cache.py``
+(a read-modify-write per group that could drop a registration and
+strand a payload key past every later invalidation).
+
+Atomicity — the module's only concurrency assumptions: ``add`` is
+set-if-absent and ``incr`` is a single counter step, on Redis
+(``SETNX`` and a Lua ``EXISTS``+``INCRBY``, django-redis) and on
+``LocMemCache`` (a lock around the whole operation). Generation keys
+are created with ``timeout=None`` (never expire) and only advanced
+with ``incr``, so TTL expiry cannot reset a counter. Seeding is
+``time.time_ns()``, not 0: a generation key dropped by an evicting
+backend (``LocMemCache`` culls past ``MAX_ENTRIES`` at random; a
+Redis under memory pressure can evict any key) and re-created must
+never resurrect an older era's payload keys, and a fresh seed is
+always above every value the previous era reached. Residual: two
+re-seeds inside one wall-clock tick, or a clock step backwards across
+a drop, could in principle revive an old key;
+``CMS_PUBLIC_CACHE_TTL`` bounds any such window.
 
 Honest limits of that design:
 - Cross-process invalidation holds wherever the ``"cms"`` cache is
   shared across processes — Redis in production (one keyspace; any
-  worker's DEL hits the same keys). ``LocMemCache`` is per-process
-  (Django's backend keeps a named store per process): it never
-  shared a cache across processes, so there is nothing to
+  worker's increment hits the same counter). ``LocMemCache`` is
+  per-process (Django's backend keeps a named store per process): it
+  never shared a cache across processes, so there is nothing to
   invalidate across them — a backend property, not a module one.
-- The cache-aside race remains: a reader that loaded pre-change
-  content just before a commit can write it just after the
-  on-commit invalidation ran. That window is bounded by
-  ``CMS_PUBLIC_CACHE_TTL`` (the 5-minute safety net), not zero.
+- Generation keys never expire: one tiny persistent counter per
+  payload family (per page id, per menu key) — bounded by the number
+  of CMS pages and menus ever read.
+- ``invalidate_all_page_details`` costs one increment per page id
+  (the ids already come from the database).
 
 Invalidation sources, verified against the installed Wagtail 7.4.4
 (not assumed — see the Phase 5C audit report):
@@ -78,19 +112,25 @@ relevant service, wrapped in the caller's existing
 - Every navigation menu/item write (``services/navigation.py`` —
   plain Django models, no Wagtail revisions or signals at all).
 
-Global section fan-out: a section change drops *every* cached page
-detail (``invalidate_all_page_details``), not only the pages found
-via ``ReferenceIndex``. The index tracks a page's *current*
-(possibly draft) composition rows, while the public payload is built
-from the page's *published* revision — so a page whose unpublished
-draft dropped section S is invisible to the index while its
-published output still embeds S's published content. Enumerating
-dependencies from published revision content was the alternative;
-dropping every page detail is the simpler reliable option. The cost
-is bounded and one-sided: a section change recomputes page payloads
-on the next read (one query + one ``delete_many``), never a stale
-miss.
+Global section fan-out: a section change advances the generation of
+*every* cached page detail (``invalidate_all_page_details``), not
+only the pages found via ``ReferenceIndex``. The index tracks a
+page's *current* (possibly draft) composition rows, while the public
+payload is built from the page's *published* revision — so a page
+whose unpublished draft dropped section S is invisible to the index
+while its published output still embeds S's published content.
+Enumerating dependencies from published revision content was the
+alternative; advancing every page's generation is the simpler
+reliable option. The cost is bounded and one-sided: a section change
+recomputes page payloads on the next read (one query + one increment
+per page), never a stale miss. The page list, sitemap and navigation
+never embed section content (verified against
+``CmsPagePublicListSerializer``/``CmsPagePublicDetailSerializer``
+and ``resolve_navigation_tree``: only the detail payload resolves
+sections), so they are deliberately left out of that fan-out.
 """
+import time
+
 from django.conf import settings
 from django.core.cache import caches
 from django.db import transaction
@@ -112,112 +152,165 @@ def _ttl():
 
 # --- keys ---------------------------------------------------------------
 
-def pages_list_key():
-    return f"{PREFIX}:pages:list"
+def _generation_key(base):
+    return f"{PREFIX}:gen:{base}"
 
 
-def sitemap_key():
-    return f"{PREFIX}:sitemap"
+def _payload_key(base, generation):
+    return f"{PREFIX}:{base}:{generation}"
 
 
-def page_detail_key(page_id):
-    return f"{PREFIX}:pages:detail:{page_id}"
+def _pages_list_base():
+    return "pages:list"
 
 
-def navigation_key(menu_key):
-    return f"{PREFIX}:navigation:{menu_key}"
+def _sitemap_base():
+    return "sitemap"
 
 
-def section_types_key():
-    return f"{PREFIX}:section-types"
+def _page_detail_base(page_id):
+    return f"pages:detail:{page_id}"
 
 
-# --- low-level get/set/delete -------------------------------------------
-
-def get(key):
-    return _cache().get(key)
+def _navigation_base(menu_key):
+    return f"navigation:{menu_key}"
 
 
-def _set(key, value):
-    _cache().set(key, value, _ttl())
+def _section_types_base():
+    return "section-types"
 
 
-def _delete(*keys):
-    keys = [key for key in keys if key]
-    if keys:
-        _cache().delete_many(keys)
+# --- generations --------------------------------------------------------
+
+def _seed():
+    # New-era generation values start at the wall clock in
+    # nanoseconds, never at 0: a generation key dropped by an
+    # evicting backend must not resurrect payload keys of an older
+    # era, and any fresh seed is above every value a previous era
+    # reached (see module docstring).
+    return time.time_ns()
+
+
+def _current_generation(base):
+    cache = _cache()
+    gen_key = _generation_key(base)
+    generation = cache.get(gen_key)
+    if generation is None:
+        cache.add(gen_key, _seed(), timeout=None)
+        generation = cache.get(gen_key)
+        if generation is None:
+            # DummyCache stores nothing — its set/add are no-ops
+            # too, so this value is never observed again.
+            generation = _seed()
+    return generation
+
+
+def _bump(base):
+    """Advance ``base``'s generation, making every payload written
+    under an earlier generation unreachable. Called only from
+    ``transaction.on_commit`` callbacks (or by tests): generations
+    move after successful database commits, never before."""
+    cache = _cache()
+    gen_key = _generation_key(base)
+    try:
+        cache.incr(gen_key)
+    except ValueError:
+        # Key absent: DummyCache stores nothing (every incr reports
+        # a missing key and there is no cached payload to orphan),
+        # or a backend dropped it. A fresh seed still keeps every
+        # older payload key unreachable; add() is set-if-absent, so
+        # it can never lower a concurrent bump's value.
+        cache.add(gen_key, _seed(), timeout=None)
 
 
 # --- read/write helpers used by the public views ------------------------
+#
+# Contract: ``get_*`` captures the current generation *before* the
+# caller reads the database and returns ``(generation, value)``;
+# ``set_*`` must be handed that same generation so the payload is
+# written under the key the read was made under — never under the
+# generation current at write time (that would reopen the cache-aside
+# race; see module docstring).
+
+def _read(base):
+    generation = _current_generation(base)
+    return generation, _cache().get(_payload_key(base, generation))
+
+
+def _write(base, generation, value):
+    _cache().set(_payload_key(base, generation), value, _ttl())
+
 
 def get_pages_list():
-    return get(pages_list_key())
+    return _read(_pages_list_base())
 
 
-def set_pages_list(data):
-    _set(pages_list_key(), data)
+def set_pages_list(generation, data):
+    _write(_pages_list_base(), generation, data)
 
 
 def get_sitemap():
-    return get(sitemap_key())
+    return _read(_sitemap_base())
 
 
-def set_sitemap(data):
-    _set(sitemap_key(), data)
+def set_sitemap(generation, data):
+    _write(_sitemap_base(), generation, data)
 
 
 def get_page_detail(page_id):
-    return get(page_detail_key(page_id))
+    return _read(_page_detail_base(page_id))
 
 
-def set_page_detail(page_id, data):
-    _set(page_detail_key(page_id), data)
+def set_page_detail(generation, page_id, data):
+    _write(_page_detail_base(page_id), generation, data)
 
 
 def get_navigation(menu_key):
-    return get(navigation_key(menu_key))
+    return _read(_navigation_base(menu_key))
 
 
-def set_navigation(menu_key, data):
-    _set(navigation_key(menu_key), data)
+def set_navigation(generation, menu_key, data):
+    _write(_navigation_base(menu_key), generation, data)
 
 
 def get_section_types():
-    return get(section_types_key())
+    return _read(_section_types_base())
 
 
-def set_section_types(data):
-    # Never invalidated: code-derived (see module docstring).
-    _set(section_types_key(), data)
+def set_section_types(generation, data):
+    # Generation is never advanced: code-derived (module docstring).
+    _write(_section_types_base(), generation, data)
 
 
 # --- invalidation -------------------------------------------------------
 
 def invalidate_page_detail(*page_ids):
-    _delete(*(page_detail_key(pid) for pid in page_ids))
+    for page_id in page_ids:
+        _bump(_page_detail_base(page_id))
 
 
 def invalidate_all_page_details():
-    """Drop every cached page detail — the fan-out used for any
-    global section change (see module docstring). Page ids come from
-    the database (the same pattern ``invalidate_all_navigation``
-    uses) because a registry of cached keys is exactly the shared
-    mutable state this module must not keep."""
+    """Advance the generation of every cached page detail — the
+    fan-out used for any global section change (module docstring).
+    Page ids come from the database (the same pattern
+    ``invalidate_all_navigation`` uses) because a registry of cached
+    keys is exactly the shared mutable state this module must not
+    keep."""
     from cms_api.models import CmsPage
 
     invalidate_page_detail(*CmsPage.objects.values_list("pk", flat=True))
 
 
 def invalidate_pages_list():
-    _delete(pages_list_key())
+    _bump(_pages_list_base())
 
 
 def invalidate_sitemap():
-    _delete(sitemap_key())
+    _bump(_sitemap_base())
 
 
 def invalidate_navigation(menu_key):
-    _delete(navigation_key(menu_key))
+    _bump(_navigation_base(menu_key))
 
 
 def invalidate_all_navigation():
@@ -226,7 +319,8 @@ def invalidate_all_navigation():
     keys = CmsNavigationMenu.objects.filter(
         is_active=True,
     ).values_list("key", flat=True)
-    _delete(*(navigation_key(key) for key in keys))
+    for key in keys:
+        invalidate_navigation(key)
 
 
 def queue_page_ids_invalidation(page_ids):
@@ -279,9 +373,9 @@ def queue_section_change_invalidation(section):
     (possibly draft) composition. A page whose unpublished draft
     dropped ``section`` is therefore invisible to the index while its
     published output still embeds it, so the fan-out never narrows on
-    ``section``: every page detail is dropped instead. The page list,
-    sitemap and navigation never embed section content, so they are
-    deliberately left alone here.
+    ``section``: every page detail's generation is advanced instead.
+    The page list, sitemap and navigation never embed section
+    content, so they are deliberately left alone here.
     """
     transaction.on_commit(invalidate_all_page_details, robust=True)
 

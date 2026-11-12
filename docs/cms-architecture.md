@@ -442,11 +442,11 @@ wrong (noted inline):
   page id* (not "page id + revision id" as originally written here —
   see the Phase 5C report for why), the sitemap, navigation trees,
   and the section-type schema.
-- Invalidation deletes each payload's literal cache key directly
+- Invalidation advances a per-payload *generation* counter
   (`cms_api/services/cache.py` — no key registry, no
-  `delete_pattern()`; single-key GET/SET/DEL are atomic on Redis and
-  on `LocMemCache`, so concurrent workers cannot clobber each
-  other's cache state), driven by `transaction.on_commit` from two
+  `delete_pattern()`; `add`/`incr` are atomic on Redis and on
+  `LocMemCache`, so concurrent workers cannot clobber each other's
+  cache state), driven by `transaction.on_commit` from two
   sources:
   - Wagtail's generic `published`/`unpublished` signals (filtered to
     `sender=CmsSection`) and the Page-specific `page_published`/
@@ -468,11 +468,14 @@ wrong (noted inline):
 - Cache safety net TTL (`CMS_PUBLIC_CACHE_TTL`, 5 min) exists only for
   missed events; the defined consistency window after a successful,
   committed publish is **zero** (confirmed by tests that assert fresh
-  content immediately after invalidation, no TTL wait). The one
-  residual race is the cache-aside one inherent to read-through
-  caching: a reader that loaded pre-change content just before the
-  commit can write it just after the on-commit invalidation ran;
-  bounded by the same TTL.
+  content immediately after invalidation, no TTL wait). The
+  cache-aside race of read-through caching — a reader that loaded
+  pre-change content just before the commit writing it just after
+  the on-commit invalidation ran — is closed by generation-keyed
+  payloads ([Phase 5C cache-consistency
+  hardening](#phase-5c-cache-consistency-hardening-2026-11-12)):
+  the stale write lands under the pre-publish generation and can
+  never be read again.
 - **Drafts and previews are never cached** (approved): preview responses
   send `Cache-Control: no-store`, and no draft payload is ever written
   to the cache. A 404 (unknown page path, inactive navigation key) is
@@ -1404,14 +1407,80 @@ Two follow-up fixes to the cache layer above, found after the Phase
    Redis and `LocMemCache`. Cross-process invalidation holds on
    Redis (shared keyspace); `LocMemCache` is per-process and never
    shared a cache across processes (a backend property, not a module
-   one); the residual cache-aside write race is TTL-bounded as
-   described in §10. The concurrency tests in `cms_api/tests/
+   one); the residual cache-aside write race was TTL-bounded as
+   described in §10 and is closed entirely by the [Phase 5C
+   cache-consistency
+   hardening](#phase-5c-cache-consistency-hardening-2026-11-12)
+   below. The concurrency tests in `cms_api/tests/
    test_api_cms_cache.py` use real threads and a deliberately
    slow-delete cache proxy (in-process threads alone can never
    reproduce a cross-worker interleaving — the GIL plus
    `LocMemCache`'s lock serialize operations), asserting that
    concurrent writes all land and that a write racing invalidation
    can never strand a key past a later invalidation.
+
+## Phase 5C cache-consistency hardening (2026-11-12)
+
+Final follow-up to the cache layer above: the cache-aside race is
+closed with generation-keyed payloads, and the global-section
+invalidation surface is verified end to end.
+
+1. **Cache-aside invalidation race (the last open gap).** With
+   literal cache keys, a request that read pre-publish content just
+   before a publishing transaction committed could write it just
+   after the on-commit invalidation deleted the key — repopulating
+   the active cache with stale content until the safety-net TTL
+   expired it. Every payload now lives under a *generation-keyed*
+   key `cms:<base>:<generation>`, with the generation kept under
+   `cms:gen:<base>`:
+   - a reader captures its family's generation *before* it reads
+     the database and writes only under that captured generation;
+   - invalidation advances the generation (`incr`) from
+     `transaction.on_commit` — so only after a successful database
+     commit — and every key written under an earlier generation
+     becomes unreachable at once;
+   - the stale write therefore lands under the pre-publish
+     generation and can never be read again, while a reader that
+     captures the generation after the increment is post-commit and
+     rebuilds from fresh content.
+
+   Atomicity: `add` (set-if-absent) and `incr` (a single counter
+   step) — `SETNX` and a Lua `EXISTS`+`INCRBY` under Redis
+   (django-redis), a per-operation lock under `LocMemCache`.
+   Generation keys never expire (`timeout=None`) so TTL expiry
+   cannot reset a counter, and seeding is `time.time_ns()` rather
+   than 0, so a generation key dropped by an evicting backend and
+   re-created can never resurrect an older era's payload keys.
+   `CMS_PUBLIC_CACHE_TTL` stays as the safety net for missed events.
+   No key registry is reintroduced: every payload key is
+   deterministic (base + generation).
+2. **Global-section invalidation surface (verified).** Only the
+   page-detail payload embeds section content (`sections` resolves a
+   global section's published content; `CmsPagePublicListSerializer`
+   and `resolve_navigation_tree` carry none). A global section
+   change advances every cached page detail's generation through the
+   same mechanism as everything else, and the page list, sitemap and
+   navigation stay out of section fan-out by design, not oversight.
+3. **Tests** (`cms_api/tests/test_api_cms_cache.py`): a
+   deterministic single-threaded race regression — a request paused
+   exactly at its cache write while the publish and its invalidation
+   complete; a subsequent request must never receive the old
+   content, for both the detail and the list payloads — plus
+   generation-advances-only-after-commit,
+   rollback-leaves-generations-untouched and concurrent-increment
+   (no lost update) tests. The earlier concurrent cache tests keep
+   passing: their writers now capture the generation the way a
+   request does.
+
+Known limits (honest): generation keys never expire (one tiny
+persistent counter per page id / menu key ever read);
+`invalidate_all_page_details` costs one increment per page id; a
+generation key dropped by an evicting backend is re-seeded from the
+wall clock, so two re-seeds inside one clock tick — or a clock step
+backwards across a drop — could in principle revive an old key,
+bounded by `CMS_PUBLIC_CACHE_TTL`. Cross-process invalidation still
+holds only where the `"cms"` cache is shared (Redis); `LocMemCache`
+remains per-process.
 
 ## 14. Implementation phases
 

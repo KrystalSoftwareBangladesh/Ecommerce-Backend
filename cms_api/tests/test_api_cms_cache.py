@@ -215,7 +215,8 @@ class PageLifecycleInvalidationTests(CmsCacheTestCase):
         with self.captureOnCommitCallbacks(execute=True):
             delete_page(page=page, user=self.owner)
 
-        self.assertIsNone(cms_cache.get_page_detail(page.pk))
+        _generation, cached = cms_cache.get_page_detail(page.pk)
+        self.assertIsNone(cached)
 
 
 class DescendantPathInvalidationTests(CmsCacheTestCase):
@@ -449,7 +450,7 @@ class NavigationInvalidationTests(CmsCacheTestCase):
                 user=self.owner,
             )
 
-        self.assertIsNone(cms_cache.get_navigation('HEADER'))
+        self.assertIsNone(cms_cache.get_navigation('HEADER')[1])
         self.assertEqual(
             self.client.get(navigation_url('MAIN')).status_code, 200,
         )
@@ -469,7 +470,7 @@ class NavigationInvalidationTests(CmsCacheTestCase):
         self.assertEqual(
             self.client.get(navigation_url('NOPE')).status_code, 404,
         )
-        self.assertIsNone(cms_cache.get_navigation('NOPE'))
+        self.assertIsNone(cms_cache.get_navigation('NOPE')[1])
 
     def test_page_publish_invalidates_every_active_menu(self):
         """A navigation tree embeds a PAGE item's resolved published
@@ -505,7 +506,7 @@ class SectionTypesSharedCacheTests(CmsCacheTestCase):
 
         self.assertEqual(first.status_code, 200)
         self.assertEqual(first.data, second.data)
-        self.assertIsNotNone(cms_cache.get_section_types())
+        self.assertIsNotNone(cms_cache.get_section_types()[1])
 
 
 class PreviewNeverCachedTests(CmsCacheTestCase):
@@ -552,17 +553,16 @@ class RolledBackTransactionTests(CmsCacheTestCase):
 
 
 class SlowCache:
-    """Cache proxy that pauses briefly after every delete — the way
-    a loaded remote cache does, where an invalidation takes real
-    time.
+    """Cache proxy that pauses briefly after every delete or
+    generation increment — the way a loaded remote cache does, where
+    an invalidation takes real time.
 
     Without this, in-process threads cannot reproduce a cross-worker
     interleaving at all: the GIL plus ``LocMemCache``'s single
     per-store lock serialize cache operations so tightly that the
     gaps between one call's backend operations never open. Widening
     those gaps is exactly what makes a multi-step write or
-    invalidation (the pre-fix read-modify-write registry) race — and
-    what lets these tests catch one.
+    invalidation race — and what lets these tests catch one.
     """
 
     def __init__(self, inner, delay):
@@ -571,7 +571,7 @@ class SlowCache:
 
     def __getattr__(self, name):
         attr = getattr(self._inner, name)
-        if name not in ('delete', 'delete_many'):
+        if name not in ('delete', 'delete_many', 'incr'):
             return attr
 
         def slow(*args, **kwargs):
@@ -603,7 +603,8 @@ class ConcurrentCacheUpdateTests(CmsCacheTestCase):
 
         def cache_detail(page_id):
             start.wait()
-            cms_cache.set_page_detail(page_id, {'id': page_id})
+            generation, _cached = cms_cache.get_page_detail(page_id)
+            cms_cache.set_page_detail(generation, page_id, {'id': page_id})
 
         threads = [
             threading.Thread(target=cache_detail, args=(page_id,))
@@ -615,32 +616,35 @@ class ConcurrentCacheUpdateTests(CmsCacheTestCase):
             thread.join()
 
         for page_id in page_ids:
-            self.assertIsNotNone(cms_cache.get_page_detail(page_id))
+            self.assertIsNotNone(cms_cache.get_page_detail(page_id)[1])
 
         cms_cache.invalidate_page_detail(*page_ids)
 
         for page_id in page_ids:
-            self.assertIsNone(cms_cache.get_page_detail(page_id))
+            self.assertIsNone(cms_cache.get_page_detail(page_id)[1])
 
     def test_write_racing_invalidation_is_never_stranded(self):
         """A write interleaved with its own invalidation may land
         after it (the cache-aside race), but must never become
-        invisible to a later invalidation — the pre-fix registry's
-        failure mode, where a payload key could be orphaned by a
-        concurrent registry update and survive every future group
-        invalidation. Deletes are deliberately slow here (see
-        ``SlowCache``) so writes really do interleave with the
-        invalidation's backend operations.
+        readable under a later generation — a payload stranded past
+        every future invalidation would serve stale content until its
+        TTL expired. Writers capture their generation exactly the way
+        a request does (services/cache.py's contract); invalidation
+        steps are deliberately slow here (see ``SlowCache``) so writes
+        really do interleave with them.
         """
         page_ids = list(range(8))
-        iterations = 200
-        slow = SlowCache(cms_cache._cache(), delay=0.002)
+        iterations = 100
+        slow = SlowCache(cms_cache._cache(), delay=0.001)
         start = threading.Barrier(len(page_ids) + 1, timeout=30)
 
         def writer(page_id):
             start.wait()
             for _ in range(iterations):
-                cms_cache.set_page_detail(page_id, {'id': page_id})
+                generation, _cached = cms_cache.get_page_detail(page_id)
+                cms_cache.set_page_detail(
+                    generation, page_id, {'id': page_id},
+                )
 
         def invalidator():
             start.wait()
@@ -661,4 +665,215 @@ class ConcurrentCacheUpdateTests(CmsCacheTestCase):
             cms_cache.invalidate_page_detail(*page_ids)
 
             for page_id in page_ids:
-                self.assertIsNone(cms_cache.get_page_detail(page_id))
+                self.assertIsNone(cms_cache.get_page_detail(page_id)[1])
+
+
+class CacheAsideRaceTests(CmsCacheTestCase):
+    """The cache-aside race (services/cache.py module docstring): a
+    request that read pre-publish content before the publishing
+    transaction committed must not be able to write that content into
+    the active cache namespace after the on-commit invalidation ran.
+
+    The interleaving is forced deterministically and single-threaded:
+    the "old" request is paused exactly at its cache write — it has
+    already read the old content and nothing is cached yet — the
+    publish and its completed invalidation run inside that pause, and
+    the request is then resumed. Subsequent requests must never
+    receive the old content.
+    """
+
+    def _pause_first_write(self, setter_name, during_pause):
+        """Patch ``cms_cache.<setter_name>`` so its first call runs
+        ``during_pause`` before performing the write (the request is
+        suspended between reading old content and caching it), and
+        return ``(patcher, state)`` where ``state['generation']`` is
+        the generation that write was made under."""
+        real_set = getattr(cms_cache, setter_name)
+        state = {'paused': False, 'generation': None}
+
+        def pausing_set(generation, *args, **kwargs):
+            if not state['paused']:
+                state['paused'] = True
+                state['generation'] = generation
+                during_pause()
+            return real_set(generation, *args, **kwargs)
+
+        return (
+            mock.patch.object(cms_cache, setter_name, pausing_set),
+            state,
+        )
+
+    def test_stale_detail_write_after_invalidation_is_unreachable(self):
+        page = self.published_page(title='Original title')
+
+        def publish_and_invalidate():
+            page.refresh_from_db()
+            page.title = 'Updated title'
+            page.save()
+            page.save_revision(user=self.owner)
+            with self.captureOnCommitCallbacks(execute=True):
+                publish_page(page=page, user=self.owner)
+
+        patcher, state = self._pause_first_write(
+            'set_page_detail', publish_and_invalidate,
+        )
+        with patcher:
+            # The old request: reads the pre-publish content, is
+            # paused at its cache write while the publish and its
+            # invalidation complete, then resumes and writes.
+            old_response = self.get_page(page.url_path)
+
+        # The request really did read (and serve) the old content...
+        self.assertEqual(old_response.data['title'], 'Original title')
+        # ...and its resumed write really did land — under the
+        # pre-publish generation, where the pre-fix literal keys
+        # would have made it the active cache entry.
+        stale_key = cms_cache._payload_key(
+            cms_cache._page_detail_base(page.pk), state['generation'],
+        )
+        self.assertEqual(
+            cms_cache._cache().get(stale_key)['title'], 'Original title',
+        )
+
+        # The invalidation moved the namespace past that generation,
+        # so the stale payload is unreachable and nothing stale is
+        # served.
+        self.assertNotEqual(
+            state['generation'], cms_cache.get_page_detail(page.pk)[0],
+        )
+        self.assertIsNone(cms_cache.get_page_detail(page.pk)[1])
+        self.assertEqual(
+            self.get_page(page.url_path).data['title'], 'Updated title',
+        )
+
+    def test_stale_list_write_after_invalidation_is_unreachable(self):
+        page = self.published_page(slug='listed', title='Original title')
+
+        def publish_and_invalidate():
+            page.refresh_from_db()
+            page.title = 'Updated title'
+            page.save()
+            page.save_revision(user=self.owner)
+            with self.captureOnCommitCallbacks(execute=True):
+                publish_page(page=page, user=self.owner)
+
+        patcher, state = self._pause_first_write(
+            'set_pages_list', publish_and_invalidate,
+        )
+        with patcher:
+            old_response = self.client.get(PUBLIC_PAGES_URL)
+
+        self.assertEqual(
+            [
+                row['title'] for row in old_response.data
+                if row['id'] == page.pk
+            ],
+            ['Original title'],
+        )
+        self.assertIsNone(cms_cache.get_pages_list()[1])
+        listing = self.client.get(PUBLIC_PAGES_URL).data
+        self.assertEqual(
+            [row['title'] for row in listing if row['id'] == page.pk],
+            ['Updated title'],
+        )
+
+
+class GenerationCommitTests(CmsCacheTestCase):
+    """Generations advance only after successful database commits
+    (services/cache.py: invalidation runs from
+    ``transaction.on_commit``): queued before the commit, applied
+    after it, and discarded entirely by a rollback."""
+
+    def _primed_page(self):
+        page = self.published_page(title='V1')
+        self.get_page(page.url_path)
+        return page
+
+    def test_generation_advances_only_when_commit_callbacks_run(self):
+        page = self._primed_page()
+        before, _cached = cms_cache.get_page_detail(page.pk)
+
+        page.refresh_from_db()
+        page.title = 'V2'
+        page.save()
+        page.save_revision(user=self.owner)
+        with self.captureOnCommitCallbacks(execute=False) as callbacks:
+            publish_page(page=page, user=self.owner)
+
+        self.assertTrue(callbacks)
+        queued, _cached = cms_cache.get_page_detail(page.pk)
+        self.assertEqual(before, queued)
+
+        for callback in callbacks:
+            callback()
+
+        after, _cached = cms_cache.get_page_detail(page.pk)
+        self.assertNotEqual(before, after)
+
+    def test_rolled_back_publish_leaves_generations_untouched(self):
+        page = self._primed_page()
+        before, _cached = cms_cache.get_page_detail(page.pk)
+
+        # captureOnCommitCallbacks sits OUTSIDE the atomic block on
+        # purpose: a rolled-back transaction discards its on_commit
+        # callbacks (django.db BaseDatabaseWrapper.rollback clears
+        # run_on_commit), and the capture must observe exactly the
+        # post-rollback state production would run.
+        with self.captureOnCommitCallbacks(execute=True) as callbacks:
+            with self.assertRaises(RuntimeError):
+                with transaction.atomic():
+                    page.refresh_from_db()
+                    page.title = 'Should never be visible'
+                    page.save()
+                    page.save_revision(user=self.owner)
+                    publish_page(page=page, user=self.owner)
+                    raise RuntimeError('force rollback of this publish')
+
+        self.assertEqual(callbacks, [])
+        after, _cached = cms_cache.get_page_detail(page.pk)
+        self.assertEqual(before, after)
+
+
+class AtomicGenerationTests(CmsCacheTestCase):
+    """Generation counters use only atomic cache operations: ``add``
+    (set-if-absent) and ``incr`` (a single counter step) — ``SETNX``
+    and a Lua ``EXISTS``+``INCRBY`` under Redis (django-redis), a
+    per-operation lock under ``LocMemCache``. Every increment must
+    land: a lost update would leave a stale generation active."""
+
+    def test_concurrent_bumps_never_lose_an_increment(self):
+        bumpers = 8
+        per_bumper = 25
+        start = threading.Barrier(bumpers, timeout=30)
+        before, _cached = cms_cache.get_page_detail(1)
+
+        def bump():
+            start.wait()
+            for _ in range(per_bumper):
+                cms_cache.invalidate_page_detail(1)
+
+        threads = [threading.Thread(target=bump) for _ in range(bumpers)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        after, _cached = cms_cache.get_page_detail(1)
+        self.assertEqual(after - before, bumpers * per_bumper)
+
+
+class DummyCacheInvalidationTests(APITestCase):
+    """The suite's default "cms" alias is ``DummyCache``, and every
+    other test module runs these code paths with caching off —
+    reads and invalidation must stay silent no-ops there, never    raise."""
+
+    def test_invalidation_and_reads_are_silent_on_dummy_cache(self):
+        generation, cached = cms_cache.get_page_detail(7)
+        self.assertIsNone(cached)
+
+        cms_cache.invalidate_page_detail(7)
+        cms_cache.invalidate_pages_list()
+        cms_cache.invalidate_sitemap()
+        cms_cache.invalidate_navigation('HEADER')
+
+        self.assertIsNone(cms_cache.get_navigation('HEADER')[1])

@@ -259,9 +259,9 @@ class SectionTypeViewSet(viewsets.ViewSet):
         responses=SectionTypeSchemaSerializer(many=True)
     )
     def list(self, request):
-        cached = cms_cache.get_section_types()
+        generation, cached = cms_cache.get_section_types()
         if cached is not None:
             return Response(cached)
         data = section_type_schemas()
-        cms_cache.set_section_types(data)
+        cms_cache.set_section_types(generation, data)
         return Response(data)
