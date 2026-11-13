@@ -37,7 +37,6 @@ from types import SimpleNamespace
 
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect
 
 from rest_framework.exceptions import (
     ValidationError as DrfValidationError,
