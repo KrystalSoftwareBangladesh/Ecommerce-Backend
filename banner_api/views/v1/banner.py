@@ -100,9 +100,9 @@ class BannerViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
             )
 
         except BannerReorderError:
-            raise ValidationError(
-                {"banners": "Unable to reorder banners with the provided data."}
-            )
+            raise ValidationError({
+                "banners": "Unable to reorder banners with the provided data."
+            })
 
         return Response(
             {"detail": "Banners reordered successfully."}
