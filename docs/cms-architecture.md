@@ -332,7 +332,7 @@ the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
 | `GET/POST/PATCH/DELETE /navigation/` | menu CRUD, gated on `manage_cms_navigation` |
 | `POST /navigation/{id}/items/` `GET/PATCH/DELETE /navigation/{id}/items/{item_id}/` `PUT /navigation/{id}/items/reorder/` | nested item management (same sub-resource shape as page composition rows); same permission |
 | `GET/PATCH /media-config/` | the `CmsMediaConfig` singleton, gated on `manage_cms_media` |
-| `GET/POST/PATCH/DELETE /media/images/` | Wagtail `Image` CRUD: upload, title, `alt_text` (`Image.description`), delete-with-reference-check |
+| `GET/POST/PATCH/DELETE /media/images/` | Wagtail `Image` CRUD: `image` (upload/URL field, Wagtail's `file`), title, `alt_text` (`Image.description`), delete-with-reference-check |
 | `GET/POST/PATCH/DELETE /media/documents/` | Wagtail `Document` CRUD: upload, title, delete-with-reference-check |
 | `GET /redirects/` | redirect list/history, gated on `view_cmspage` per §16 item 8 |
 | `GET /audit-logs/` | CMS activity (actor, action, object, timestamp), gated on `view_cmspage`; `start_date`/`end_date`/`action`/`content_type` query params |
@@ -990,7 +990,10 @@ API (Phase 4C) is **not** part of this phase.
    native field on both models, defaulting to the uploaded filename
    when omitted. `Document` has no description/alt-text equivalent in
    Wagtail core and none was added (no custom model, per this phase's
-   constraints).
+   constraints). The image upload/URL field is likewise exposed as
+   `image` (`source="file"` on both read and write serializers), so
+   an image resource is `image` + `alt_text` like
+   `product_api.ProductImage`; documents keep `file`.
 6. **Reference-aware deletion** — `ReferenceIndex.get_grouped_
    references_to(obj)`, the exact call `delete_section` already uses;
    `Image`/`Document` are registered as `ReferenceIndex` targets by
