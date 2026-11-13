@@ -122,7 +122,7 @@ class ImageCrudTests(CmsMediaTestCase):
 
         response = self.client.post(
             IMAGES_URL,
-            {'title': 'Pic', 'file': factories.image_upload()},
+            {'title': 'Pic', 'image': factories.image_upload()},
             format='multipart',
         )
 
@@ -136,7 +136,7 @@ class ImageCrudTests(CmsMediaTestCase):
             {
                 'title': 'Hero banner',
                 'alt_text': 'A red square',
-                'file': factories.image_upload(),
+                'image': factories.image_upload(),
             },
             format='multipart',
         )
@@ -144,6 +144,7 @@ class ImageCrudTests(CmsMediaTestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['title'], 'Hero banner')
         self.assertEqual(response.data['alt_text'], 'A red square')
+        self.assertTrue(response.data['image'])
         image = Image.objects.get(pk=response.data['id'])
         self.assertEqual(image.description, 'A red square')
         self.assertEqual(image.width, 10)
@@ -154,7 +155,7 @@ class ImageCrudTests(CmsMediaTestCase):
 
         response = self.client.post(
             IMAGES_URL,
-            {'file': factories.image_upload(name='banner.png')},
+            {'image': factories.image_upload(name='banner.png')},
             format='multipart',
         )
 
@@ -191,7 +192,7 @@ class ImageCrudTests(CmsMediaTestCase):
 
         response = self.client.patch(
             image_detail_url(image),
-            {'file': factories.image_upload(size=(20, 20))},
+            {'image': factories.image_upload(size=(20, 20))},
             format='multipart',
         )
 
@@ -228,11 +229,12 @@ class ImageValidationTests(CmsMediaTestCase):
 
         response = self.client.post(
             IMAGES_URL,
-            {'file': factories.image_upload()},
+            {'image': factories.image_upload()},
             format='multipart',
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertIn('image', response.data['errors'])
 
     def test_rejects_a_disallowed_extension(self):
         self.authenticate()
@@ -240,7 +242,7 @@ class ImageValidationTests(CmsMediaTestCase):
 
         response = self.client.post(
             IMAGES_URL,
-            {'file': factories.image_upload(name='pic.png')},
+            {'image': factories.image_upload(name='pic.png')},
             format='multipart',
         )
 
@@ -258,7 +260,7 @@ class ImageValidationTests(CmsMediaTestCase):
         )
 
         response = self.client.post(
-            IMAGES_URL, {'file': fake}, format='multipart',
+            IMAGES_URL, {'image': fake}, format='multipart',
         )
 
         self.assertEqual(response.status_code, 400)
@@ -278,7 +280,7 @@ class ImageValidationTests(CmsMediaTestCase):
         )
 
         response = self.client.post(
-            IMAGES_URL, {'file': mismatched}, format='multipart',
+            IMAGES_URL, {'image': mismatched}, format='multipart',
         )
 
         self.assertEqual(response.status_code, 400)
@@ -289,7 +291,7 @@ class ImageValidationTests(CmsMediaTestCase):
 
         response = self.client.post(
             IMAGES_URL,
-            {'file': factories.image_upload(size=(10, 10))},
+            {'image': factories.image_upload(size=(10, 10))},
             format='multipart',
         )
 
@@ -300,7 +302,7 @@ class ImageValidationTests(CmsMediaTestCase):
 
         response = self.client.post(
             IMAGES_URL,
-            {'file': factories.image_upload()},
+            {'image': factories.image_upload()},
             format='multipart',
         )
 
