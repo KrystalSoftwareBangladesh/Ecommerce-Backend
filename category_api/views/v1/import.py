@@ -1,3 +1,4 @@
+import logging
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -15,6 +16,7 @@ from category_api.serializers import (
 )
 from category_api.services import CategoryImportService
 
+logger = logging.getLogger(__name__)
 
 @extend_schema(tags=["Categories - Import"])
 class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
@@ -70,8 +72,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
+            logger.exception("JSON category import failed: %s", e)
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred while importing the file.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -111,8 +114,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
+            logger.exception("CSV category import failed: %s", e)
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred while importing the file.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
