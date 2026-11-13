@@ -1,4 +1,5 @@
 # shipping_api/views/v1/shipping_option.py
+import logging
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,6 +11,8 @@ from shipping_api.serializers import (
     ShippingOptionSerializer,
 )
 from shipping_api.services import get_shipping_options
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(
@@ -58,15 +61,19 @@ class ShippingOptionView(APIView):
                 user=request.user,
                 address_id=address_id,
             )
-        except Exception as e:
-            error_detail = (
-                str(e.detail[0])
-                if hasattr(e, "detail")
-                and isinstance(e.detail, list)
-                else str(e)
+        except Exception:
+            logger.exception(
+                "Failed to get shipping options for user_id=%s address_id=%s",
+                request.user.id,
+                address_id,
             )
             return Response(
-                {"detail": error_detail},
+                {
+                    "detail": (
+                        "Unable to retrieve shipping options "
+                        "at this time."
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
