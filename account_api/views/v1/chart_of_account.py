@@ -1,4 +1,6 @@
 # accounting_api/views/v1/chart_of_account.py
+import logging
+
 from django.db import transaction
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,6 +20,9 @@ from account_api.serializers import (
     ChartOfAccountOpeningBalanceSerializer,
 )
 from account_api.services import set_opening_balance
+
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema_view(
@@ -154,9 +159,10 @@ class ChartOfAccountViewSet(viewsets.ModelViewSet):
                 user=request.user,
                 contra_account=serializer.validated_data.get('contra_account'),
             )
-        except Exception as exc:
+        except Exception:
+            logger.exception("Failed to set opening balance for account id=%s", account.pk)
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to set opening balance.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
