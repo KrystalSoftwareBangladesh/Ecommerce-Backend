@@ -161,8 +161,12 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 serializer.validated_data,
             )
         except Exception as exc:
+            logger.exception(
+                'Failed to partially update transaction id=%s',
+                instance.id,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to update transaction.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
