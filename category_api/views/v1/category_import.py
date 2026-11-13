@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,6 +16,8 @@ from category_api.serializers import (
     CategoryImportResultSerializer,
 )
 from category_api.services import CategoryImportService
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=["Categories - Import"])
@@ -152,7 +156,8 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
+            logger.exception("Unexpected error during XLSX category import: %s", e)
             return Response(
-                {'error': str(e)},
+                {'error': 'Failed to import XLSX file.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
