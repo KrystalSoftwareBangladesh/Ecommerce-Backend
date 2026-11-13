@@ -59,8 +59,8 @@ class CategoryImportService:
                 )
             else:
                 return CategoryImportService._process_categories(data, user)
-        except json.JSONDecodeError as e:
-            raise ValidationError(f"Invalid JSON format: {str(e)}")
+        except json.JSONDecodeError:
+            raise ValidationError("Invalid JSON format")
 
     @staticmethod
     def import_from_csv(file_content: bytes, user=None) -> Dict[str, Any]:
