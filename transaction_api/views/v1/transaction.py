@@ -135,8 +135,12 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 serializer.validated_data,
             )
         except Exception as exc:
+            logger.exception(
+                'Failed to create transaction for user id=%s',
+                request.user.id,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to create transaction.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
