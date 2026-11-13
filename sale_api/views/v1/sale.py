@@ -14,6 +14,7 @@ from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter,
 )
 import django_filters
+import logging
 from sale_api.models import Sale, SaleStatus, get_next_sale_statuses
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
@@ -28,6 +29,9 @@ from sale_api.services import (
     mark_cod_payment_collected,
 )
 from EcommerceBackend.core.permission import CustomPermissionAccessMixin
+
+
+logger = logging.getLogger(__name__)
 
 
 def _growth_percentage(current_value, previous_value):
@@ -189,8 +193,12 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 sale,
             )
         except (DjangoValidationError, DRFValidationError) as exc:
+            logger.warning(
+                'Validation error while marking COD payment as collected.',
+                exc_info=True,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to mark payment as collected.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({
