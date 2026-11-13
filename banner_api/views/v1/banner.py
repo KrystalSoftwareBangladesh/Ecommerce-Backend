@@ -99,8 +99,10 @@ class BannerViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
                 banner_orders=serializer.validated_data["banners"],
             )
 
-        except BannerReorderError as exc:
-            raise ValidationError({"banners": str(exc)})
+        except BannerReorderError:
+            raise ValidationError({
+                "banners": "Unable to reorder banners with the provided data."
+            })
 
         return Response(
             {"detail": "Banners reordered successfully."}
