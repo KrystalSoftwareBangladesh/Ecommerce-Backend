@@ -113,9 +113,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 request.user,
                 serializer.validated_data
             )
-        except (DjangoValidationError, DRFValidationError) as e:
+        except (DjangoValidationError, DRFValidationError):
             return Response({
-                'detail': str(e)
+                'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(
             SaleDetailSerializer(sale).data,
@@ -141,9 +141,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     account=account,
                     payment_method=payment_method,
                 )
-        except (DjangoValidationError, DRFValidationError) as e:
+        except (DjangoValidationError, DRFValidationError):
             return Response({
-                'detail': str(e)
+                'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
 
@@ -170,9 +170,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 account=serializer.validated_data.get('account'),
                 payment_method=serializer.validated_data.get('payment_method'),
             )
-        except (DjangoValidationError, DRFValidationError) as e:
+        except (DjangoValidationError, DRFValidationError):
             return Response({
-                'detail': str(e)
+                'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
 
@@ -188,9 +188,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 request.user,
                 sale,
             )
-        except (DjangoValidationError, DRFValidationError) as exc:
+        except (DjangoValidationError, DRFValidationError):
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Invalid request data.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({
