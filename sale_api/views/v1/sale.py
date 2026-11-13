@@ -1,4 +1,5 @@
 # sale_api/views/v1/sale.py
+import logging
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -28,6 +29,8 @@ from sale_api.services import (
     mark_cod_payment_collected,
 )
 from EcommerceBackend.core.permission import CustomPermissionAccessMixin
+
+logger = logging.getLogger(__name__)
 
 
 def _growth_percentage(current_value, previous_value):
@@ -114,8 +117,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 serializer.validated_data
             )
         except (DjangoValidationError, DRFValidationError) as e:
+            logger.warning('Validation error while creating sale', exc_info=True)
             return Response({
-                'detail': str(e)
+                'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(
             SaleDetailSerializer(sale).data,
@@ -142,8 +146,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     payment_method=payment_method,
                 )
         except (DjangoValidationError, DRFValidationError) as e:
+            logger.warning('Validation error while partially updating sale', exc_info=True)
             return Response({
-                'detail': str(e)
+                'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
 
@@ -171,8 +176,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 payment_method=serializer.validated_data.get('payment_method'),
             )
         except (DjangoValidationError, DRFValidationError) as e:
+            logger.warning('Validation error while updating sale status', exc_info=True)
             return Response({
-                'detail': str(e)
+                'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleDetailSerializer(sale).data)
 
