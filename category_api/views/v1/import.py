@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,6 +16,9 @@ from category_api.serializers import (
     CategoryImportResultSerializer,
 )
 from category_api.services import CategoryImportService
+
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=["Categories - Import"])
@@ -69,9 +74,10 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
+        except Exception:
+            logger.exception("Error importing categories from JSON file.")
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred while importing categories.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -110,9 +116,10 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
+        except Exception:
+            logger.exception("Error importing categories from CSV file.")
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred while importing categories.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
