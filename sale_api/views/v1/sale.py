@@ -33,6 +33,9 @@ from EcommerceBackend.core.permission import CustomPermissionAccessMixin
 logger = logging.getLogger(__name__)
 
 
+logger = logging.getLogger(__name__)
+
+
 def _growth_percentage(current_value, previous_value):
     if not previous_value:
         return None
@@ -196,8 +199,12 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 sale,
             )
         except (DjangoValidationError, DRFValidationError) as exc:
+            logger.warning(
+                'Validation error while marking COD payment as collected.',
+                exc_info=True,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to mark payment as collected.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({
