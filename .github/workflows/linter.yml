@@ -9,6 +9,9 @@ on:
     branches:
       - dev
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Run Flake8 Lint
