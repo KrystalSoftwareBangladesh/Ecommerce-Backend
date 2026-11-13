@@ -458,7 +458,7 @@ class CmsSectionDeleteView(_BaseDeleteView):
                 self.request,
                 format_validation_error(exc),
             )
-            return redirect(self.request.path)
+            return HttpResponseRedirect(".")
         success_url = self.get_success_url()
         messages.success(self.request, self.get_success_message())
         hook_response = self.run_after_hook()
