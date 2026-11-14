@@ -1,4 +1,6 @@
 # accounting_api/views/v1/chart_of_account.py
+import logging
+
 from django.db import transaction
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,6 +20,8 @@ from account_api.serializers import (
     ChartOfAccountOpeningBalanceSerializer,
 )
 from account_api.services import set_opening_balance
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema_view(
@@ -89,8 +93,9 @@ class ChartOfAccountViewSet(viewsets.ModelViewSet):
                         contra_account=contra_account,
                     )
         except Exception as exc:
+            logger.exception('Failed to create chart of account', exc_info=exc)
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'An internal error occurred.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -155,8 +160,9 @@ class ChartOfAccountViewSet(viewsets.ModelViewSet):
                 contra_account=serializer.validated_data.get('contra_account'),
             )
         except Exception as exc:
+            logger.exception('Failed to set opening balance', exc_info=exc)
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'An internal error occurred.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
