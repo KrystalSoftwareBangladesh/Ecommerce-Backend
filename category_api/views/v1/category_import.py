@@ -74,8 +74,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
+            logger.exception("Category JSON import failed: %s", e)
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred during import.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -115,8 +116,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
+            logger.exception("Category CSV import failed: %s", e)
             return Response(
-                {'error': str(e)},
+                {'error': 'An internal error occurred during import.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
