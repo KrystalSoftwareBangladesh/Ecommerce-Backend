@@ -1,4 +1,5 @@
 # sale_api/views/v1/sale.py
+import logging
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -29,9 +30,6 @@ from sale_api.services import (
     mark_cod_payment_collected,
 )
 from EcommerceBackend.core.permission import CustomPermissionAccessMixin
-
-logger = logging.getLogger(__name__)
-
 
 logger = logging.getLogger(__name__)
 
