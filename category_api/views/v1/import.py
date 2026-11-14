@@ -20,6 +20,9 @@ from category_api.services import CategoryImportService
 logger = logging.getLogger(__name__)
 
 
+logger = logging.getLogger(__name__)
+
+
 @extend_schema(tags=["Categories - Import"])
 class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
     """
