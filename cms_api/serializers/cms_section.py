@@ -11,6 +11,9 @@ import json
 from django.core.exceptions import (
     ValidationError as DjangoValidationError,
 )
+
+from drf_spectacular.utils import extend_schema_field
+
 from rest_framework import serializers
 
 from cms_api.models import CmsSection
@@ -93,6 +96,21 @@ class SectionContentField(serializers.Field):
         return stream
 
 
+class SectionBlockSerializer(serializers.Serializer):
+    """One entry of a ``content`` list: a single Wagtail block."""
+
+    type = serializers.CharField()
+    value = serializers.JSONField()
+
+
+@extend_schema_field(serializers.ListField(
+    child=SectionBlockSerializer(),
+    help_text="Exactly one section block.",
+))
+class SectionContentSchemaField(SectionContentField):
+    """``SectionContentField`` typed as the block list it accepts."""
+
+
 class CmsSectionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CmsSection
@@ -158,6 +176,8 @@ class CmsSectionWriteBaseSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionCreateSerializer(CmsSectionWriteBaseSerializer):
+    content = SectionContentSchemaField()
+
     class Meta:
         model = CmsSection
         fields = ["name", "section_type", "content"]
