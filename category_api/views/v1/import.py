@@ -75,10 +75,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
             )
         except Exception as e:
             logger.exception("JSON category import failed: %s", e)
-            return Response(
-                {'error': 'An internal error occurred while importing the file.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({
+                'error': 'An internal error occurred while importing the file.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=CategoryCsvImportSerializer,
@@ -117,10 +116,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
             )
         except Exception as e:
             logger.exception("CSV category import failed: %s", e)
-            return Response(
-                {'error': 'An internal error occurred while importing the file.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({
+                'error': 'An internal error occurred while importing the file.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=CategoryXlsxImportSerializer,
