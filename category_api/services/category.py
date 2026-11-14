@@ -77,8 +77,8 @@ class CategoryImportService:
             df = pd.read_csv(io.StringIO(csv_string))
             data = df.fillna(None).to_dict('records')
             return CategoryImportService._process_categories(data, user)
-        except Exception as e:
-            raise ValidationError(f"Invalid CSV format: {str(e)}")
+        except Exception:
+            raise ValidationError("Invalid CSV format")
 
     @staticmethod
     def import_from_xlsx(file_content: bytes, user=None) -> Dict[str, Any]:
@@ -95,8 +95,8 @@ class CategoryImportService:
             df = pd.read_excel(bytes_io, engine='openpyxl')
             data = df.fillna(None).to_dict('records')
             return CategoryImportService._process_categories(data, user)
-        except Exception as e:
-            raise ValidationError(f"Invalid XLSX format: {str(e)}")
+        except Exception:
+            raise ValidationError("Invalid XLSX format")
 
     @staticmethod
     def _process_categories(
