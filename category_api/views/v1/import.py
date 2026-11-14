@@ -17,6 +17,8 @@ from category_api.serializers import (
 )
 from category_api.services import CategoryImportService
 
+logger = logging.getLogger(__name__)
+
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +76,11 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception:
-            logger.exception("Error importing categories from JSON file.")
-            return Response(
-                {'error': 'An internal error occurred while importing categories.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        except Exception as e:
+            logger.exception("JSON category import failed: %s", e)
+            return Response({
+                'error': 'An internal error occurred while importing the file.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=CategoryCsvImportSerializer,
@@ -116,12 +117,11 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception:
-            logger.exception("Error importing categories from CSV file.")
-            return Response(
-                {'error': 'An internal error occurred while importing categories.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        except Exception as e:
+            logger.exception("CSV category import failed: %s", e)
+            return Response({
+                'error': 'An internal error occurred while importing the file.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=CategoryXlsxImportSerializer,
@@ -158,8 +158,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
+        except Exception:
+            logger.exception("Unexpected error while importing categories from XLSX")    # noqa
             return Response(
-                {'error': str(e)},
+                {'error': 'Import failed due to an internal error.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
