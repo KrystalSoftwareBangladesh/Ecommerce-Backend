@@ -24,6 +24,9 @@ from account_api.services import set_opening_balance
 logger = logging.getLogger(__name__)
 
 
+logger = logging.getLogger(__name__)
+
+
 @extend_schema_view(
     create=extend_schema(
         responses={201: ChartOfAccountDetailSerializer}
