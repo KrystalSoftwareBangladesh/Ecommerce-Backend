@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,6 +16,8 @@ from category_api.serializers import (
     CategoryImportResultSerializer,
 )
 from category_api.services import CategoryImportService
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=["Categories - Import"])
@@ -70,10 +74,10 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            logger.exception("JSON category import failed: %s", e)
+            return Response({
+                'error': 'An internal error occurred while importing the file.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=CategoryCsvImportSerializer,
@@ -111,10 +115,10 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            logger.exception("CSV category import failed: %s", e)
+            return Response({
+                'error': 'An internal error occurred while importing the file.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=CategoryXlsxImportSerializer,
@@ -151,8 +155,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
+        except Exception:
+            logger.exception("Unexpected error while importing categories from XLSX")    # noqa
             return Response(
-                {'error': str(e)},
+                {'error': 'Import failed due to an internal error.'},
                 status=status.HTTP_400_BAD_REQUEST
             )

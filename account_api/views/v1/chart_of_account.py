@@ -21,6 +21,8 @@ from account_api.serializers import (
 )
 from account_api.services import set_opening_balance
 
+logger = logging.getLogger(__name__)
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +96,9 @@ class ChartOfAccountViewSet(viewsets.ModelViewSet):
                         contra_account=contra_account,
                     )
         except Exception as exc:
+            logger.exception('Failed to create chart of account', exc_info=exc)
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'An internal error occurred.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -159,10 +162,10 @@ class ChartOfAccountViewSet(viewsets.ModelViewSet):
                 user=request.user,
                 contra_account=serializer.validated_data.get('contra_account'),
             )
-        except Exception:
-            logger.exception("Failed to set opening balance for account id=%s", account.pk)
+        except Exception as exc:
+            logger.exception('Failed to set opening balance', exc_info=exc)
             return Response(
-                {'detail': 'Unable to set opening balance.'},
+                {'detail': 'An internal error occurred.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
