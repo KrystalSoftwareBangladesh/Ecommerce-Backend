@@ -158,7 +158,7 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            logger.exception("Unexpected error during XLSX category import: %s", e)
+            logger.exception("Unexpected error during XLSX category import: %s", e)    # noqa
             return Response(
                 {'error': 'Failed to import XLSX file.'},
                 status=status.HTTP_400_BAD_REQUEST
