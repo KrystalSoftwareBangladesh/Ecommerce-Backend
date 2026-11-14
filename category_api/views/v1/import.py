@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,6 +16,8 @@ from category_api.serializers import (
     CategoryImportResultSerializer,
 )
 from category_api.services import CategoryImportService
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=["Categories - Import"])
@@ -151,8 +155,9 @@ class CategoryImportViewSet(PublicReadPermissionMixin, ViewSet):
                 response_serializer.data,
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
+        except Exception:
+            logger.exception("Unexpected error while importing categories from XLSX")    # noqa
             return Response(
-                {'error': str(e)},
+                {'error': 'Import failed due to an internal error.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
