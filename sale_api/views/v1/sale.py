@@ -15,6 +15,7 @@ from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter,
 )
 import django_filters
+import logging
 from sale_api.models import Sale, SaleStatus, get_next_sale_statuses
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
@@ -116,10 +117,13 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 request.user,
                 serializer.validated_data
             )
-        except (DjangoValidationError, DRFValidationError) as e:
-            logger.warning('Validation error while creating sale', exc_info=True)    # noqa
+        except (DjangoValidationError, DRFValidationError):
+            logger.warning(
+                "Sale creation failed due to validation error.",
+                exc_info=True
+            )
             return Response({
-                'detail': 'Invalid request data.'
+                'detail': 'Invalid sale data provided.'
             }, status=status.HTTP_400_BAD_REQUEST)
         return Response(
             SaleDetailSerializer(sale).data,
@@ -145,8 +149,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     account=account,
                     payment_method=payment_method,
                 )
-        except (DjangoValidationError, DRFValidationError) as e:
-            logger.warning('Validation error while partially updating sale', exc_info=True)    # noqa
+        except (DjangoValidationError, DRFValidationError):
             return Response({
                 'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -175,8 +178,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 account=serializer.validated_data.get('account'),
                 payment_method=serializer.validated_data.get('payment_method'),
             )
-        except (DjangoValidationError, DRFValidationError) as e:
-            logger.warning('Validation error while updating sale status', exc_info=True)    # noqa
+        except (DjangoValidationError, DRFValidationError):
             return Response({
                 'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -195,8 +197,12 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 sale,
             )
         except (DjangoValidationError, DRFValidationError) as exc:
+            logger.warning(
+                'Validation error while marking COD payment as collected.',
+                exc_info=True,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to mark payment as collected.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({
