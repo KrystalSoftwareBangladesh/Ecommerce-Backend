@@ -117,7 +117,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 serializer.validated_data
             )
         except (DjangoValidationError, DRFValidationError) as e:
-            logger.warning('Validation error while creating sale', exc_info=True)
+            logger.warning('Validation error while creating sale', exc_info=True)    # noqa
             return Response({
                 'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -146,7 +146,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     payment_method=payment_method,
                 )
         except (DjangoValidationError, DRFValidationError) as e:
-            logger.warning('Validation error while partially updating sale', exc_info=True)
+            logger.warning('Validation error while partially updating sale', exc_info=True)    # noqa
             return Response({
                 'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -176,7 +176,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 payment_method=serializer.validated_data.get('payment_method'),
             )
         except (DjangoValidationError, DRFValidationError) as e:
-            logger.warning('Validation error while updating sale status', exc_info=True)
+            logger.warning('Validation error while updating sale status', exc_info=True)    # noqa
             return Response({
                 'detail': 'Invalid request data.'
             }, status=status.HTTP_400_BAD_REQUEST)
