@@ -6,6 +6,12 @@
 audit for why a custom Image model was rejected for just a field
 rename. Documents have no description/alt-text equivalent in Wagtail
 core.
+
+Likewise the image upload/URL field is exposed as ``image`` (Wagtail's
+own ``file`` attribute, renamed to match
+``product_api.ProductImage``), so an image resource is always
+``image`` + ``alt_text`` on both read and write. Documents keep
+``file``, matching the other file-upload APIs in this project.
 """
 from rest_framework import serializers
 
@@ -48,7 +54,7 @@ class CmsMediaConfigSerializer(serializers.ModelSerializer):
 
 
 class CmsImageListSerializer(serializers.ModelSerializer):
-    file = AbsoluteImageField(read_only=True)
+    image = AbsoluteImageField(source="file", read_only=True)
     alt_text = serializers.CharField(source="description", read_only=True)
 
     class Meta:
@@ -57,7 +63,7 @@ class CmsImageListSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "alt_text",
-            "file",
+            "image",
             "width",
             "height",
             "created_at",
@@ -86,7 +92,7 @@ class CmsImageCreateSerializer(serializers.Serializer):
         required=False,
         allow_blank=True,
     )
-    file = serializers.ImageField()
+    image = serializers.ImageField(source="file")
 
     def create(self, validated_data):
         return create_image(
@@ -105,7 +111,7 @@ class CmsImageUpdateSerializer(serializers.Serializer):
         required=False,
         allow_blank=True,
     )
-    file = serializers.ImageField(required=False)
+    image = serializers.ImageField(source="file", required=False)
 
     def update(self, instance, validated_data):
         return update_image(

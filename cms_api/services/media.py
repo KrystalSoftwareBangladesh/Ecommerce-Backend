@@ -57,7 +57,7 @@ def validate_image_file(file, config=None):
     size = getattr(file, "size", None)
     if size is not None and size > config.max_image_upload_size:
         raise ValidationError({
-            "file": (
+            "image": (
                 "Image is too large. Maximum size is %d bytes."
                 % config.max_image_upload_size
             ),
@@ -66,7 +66,7 @@ def validate_image_file(file, config=None):
     extension = _extension_of(file.name or "")
     if extension not in config.allowed_image_extensions:
         raise ValidationError({
-            "file": (
+            "image": (
                 "Unsupported image format. Allowed formats: %s."
                 % ", ".join(config.allowed_image_extensions)
             ),
@@ -78,7 +78,7 @@ def validate_image_file(file, config=None):
             width, height = image_file.size
             image_file.verify()
     except (UnidentifiedImageError, OSError):
-        raise ValidationError({"file": "Uploaded file is not a valid image."})
+        raise ValidationError({"image": "Uploaded file is not a valid image."})
     finally:
         file.seek(0)
 
@@ -86,7 +86,7 @@ def validate_image_file(file, config=None):
     expected_format = _PILLOW_FORMAT_BY_EXTENSION.get(extension)
     if not normalised_format or normalised_format != expected_format:
         raise ValidationError({
-            "file": (
+            "image": (
                 "The file extension does not match the actual "
                 "image format."
             ),
@@ -94,7 +94,7 @@ def validate_image_file(file, config=None):
 
     if width * height > config.max_image_pixels:
         raise ValidationError({
-            "file": (
+            "image": (
                 "Image has too many pixels. Maximum is %d."
                 % config.max_image_pixels
             ),

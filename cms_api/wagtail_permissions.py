@@ -37,7 +37,6 @@ from types import SimpleNamespace
 
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect
 
 from rest_framework.exceptions import (
     ValidationError as DrfValidationError,
@@ -458,7 +457,7 @@ class CmsSectionDeleteView(_BaseDeleteView):
                 self.request,
                 format_validation_error(exc),
             )
-            return redirect(self.request.path)
+            return HttpResponseRedirect(".")
         success_url = self.get_success_url()
         messages.success(self.request, self.get_success_message())
         hook_response = self.run_after_hook()

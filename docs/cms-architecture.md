@@ -332,7 +332,7 @@ the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
 | `GET/POST/PATCH/DELETE /navigation/` | menu CRUD, gated on `manage_cms_navigation` |
 | `POST /navigation/{id}/items/` `GET/PATCH/DELETE /navigation/{id}/items/{item_id}/` `PUT /navigation/{id}/items/reorder/` | nested item management (same sub-resource shape as page composition rows); same permission |
 | `GET/PATCH /media-config/` | the `CmsMediaConfig` singleton, gated on `manage_cms_media` |
-| `GET/POST/PATCH/DELETE /media/images/` | Wagtail `Image` CRUD: upload, title, `alt_text` (`Image.description`), delete-with-reference-check |
+| `GET/POST/PATCH/DELETE /media/images/` | Wagtail `Image` CRUD: `image` (upload/URL field, Wagtail's `file`), title, `alt_text` (`Image.description`), delete-with-reference-check |
 | `GET/POST/PATCH/DELETE /media/documents/` | Wagtail `Document` CRUD: upload, title, delete-with-reference-check |
 | `GET /redirects/` | redirect list/history, gated on `view_cmspage` per §16 item 8 |
 | `GET /audit-logs/` | CMS activity (actor, action, object, timestamp), gated on `view_cmspage`; `start_date`/`end_date`/`action`/`content_type` query params |
@@ -442,9 +442,11 @@ wrong (noted inline):
   page id* (not "page id + revision id" as originally written here —
   see the Phase 5C report for why), the sitemap, navigation trees,
   and the section-type schema.
-- Invalidation is registry-based (`cms_api/services/cache.py`, the
-  same pattern as `category_api/services/cache.py`, not
-  `delete_pattern()`), driven by `transaction.on_commit` from two
+- Invalidation advances a per-payload *generation* counter
+  (`cms_api/services/cache.py` — no key registry, no
+  `delete_pattern()`; `add`/`incr` are atomic on Redis and on
+  `LocMemCache`, so concurrent workers cannot clobber each other's
+  cache state), driven by `transaction.on_commit` from two
   sources:
   - Wagtail's generic `published`/`unpublished` signals (filtered to
     `sender=CmsSection`) and the Page-specific `page_published`/
@@ -458,16 +460,22 @@ wrong (noted inline):
     delete), `services/cms_section.py` (archive) and
     `services/navigation.py` (every menu/item write) — none of these
     fire any Wagtail signal.
-  - A global section's referencing pages are found via
-    `ReferenceIndex.get_grouped_references_to`, filtered to
-    `isinstance(source, Page)` (the index groups by the referencing
-    object, which is an instance of the *base* `Page` model from
-    multi-table inheritance — not the `CmsPage` class, which is what
-    this section originally implied).
+  - A global section change drops **every** cached page detail
+    (published output embeds the section's published content, and
+    `ReferenceIndex` tracks the *draft* composition — see the
+    [Phase 5C cache consistency
+    fixes](#phase-5c-cache-consistency-fixes-2026-11-12)).
 - Cache safety net TTL (`CMS_PUBLIC_CACHE_TTL`, 5 min) exists only for
   missed events; the defined consistency window after a successful,
   committed publish is **zero** (confirmed by tests that assert fresh
-  content immediately after invalidation, no TTL wait).
+  content immediately after invalidation, no TTL wait). The
+  cache-aside race of read-through caching — a reader that loaded
+  pre-change content just before the commit writing it just after
+  the on-commit invalidation ran — is closed by generation-keyed
+  payloads ([Phase 5C cache-consistency
+  hardening](#phase-5c-cache-consistency-hardening-2026-11-12)):
+  the stale write lands under the pre-publish generation and can
+  never be read again.
 - **Drafts and previews are never cached** (approved): preview responses
   send `Cache-Control: no-store`, and no draft payload is ever written
   to the cache. A 404 (unknown page path, inactive navigation key) is
@@ -982,7 +990,10 @@ API (Phase 4C) is **not** part of this phase.
    native field on both models, defaulting to the uploaded filename
    when omitted. `Document` has no description/alt-text equivalent in
    Wagtail core and none was added (no custom model, per this phase's
-   constraints).
+   constraints). The image upload/URL field is likewise exposed as
+   `image` (`source="file"` on both read and write serializers), so
+   an image resource is `image` + `alt_text` like
+   `product_api.ProductImage`; documents keep `file`.
 6. **Reference-aware deletion** — `ReferenceIndex.get_grouped_
    references_to(obj)`, the exact call `delete_section` already uses;
    `Image`/`Document` are registered as `ReferenceIndex` targets by
@@ -1318,7 +1329,9 @@ configured.
    mechanism this phase's brief did not call for. The safety-net TTL
    bounds the resulting staleness window to `CMS_PUBLIC_CACHE_TTL`
    (5 minutes); this is the one case where this phase's "zero stale"
-   claim does not hold.
+   claim does not hold. *(Closed same-day by the [Phase 5C cache
+   consistency fixes](#phase-5c-cache-consistency-fixes-2026-11-12):
+   section changes now drop every cached page detail.)*
 8. **Page move, delete and the pre-existing `pre_delete_page_unpublish`
    hook.** Wagtail unpublishes any live page before deleting it
    (`wagtail/signal_handlers.py`, unconditional on every page delete,
@@ -1355,12 +1368,122 @@ with reasons — see §10 above for the fixed text):**
   which cannot be invalidated correctly for a descendant whose own
   revision never changed when an ancestor's slug does.
 
-**Spec gaps inherited from Phase 5C scope:** the known
-`ReferenceIndex` draft/published fan-out gap (item 7 above) and the
-redirect-resolution endpoint, which stays uncached per this phase's
-brief ("do not introduce caching for redirect resolution unless the
-existing architecture demonstrates a specific need" — it does not:
-§10 never listed it among the payloads to cache).
+**Spec gaps inherited from Phase 5C scope:** the
+`ReferenceIndex` draft/published fan-out gap (item 7 above — closed
+same-day, see below) and the redirect-resolution endpoint, which
+stays uncached per this phase's brief ("do not introduce caching for
+redirect resolution unless the existing architecture demonstrates a
+specific need" — it does not: §10 never listed it among the payloads
+to cache).
+
+## Phase 5C cache consistency fixes (2026-11-12)
+
+Two follow-up fixes to the cache layer above, found after the Phase
+5C review:
+
+1. **Published-vs-draft section dependencies (item 7's gap).** The
+   section-change fan-out resolved referencing pages through
+   `ReferenceIndex`, which tracks a page's *current* (possibly
+   draft) composition — while the public payload is built from the
+   page's *published* revision. A published page embedding section S
+   whose unpublished draft had dropped S was missed by the index and
+   kept serving stale content after S changed. Fix: a global section
+   change (publish/unpublish signal or explicit archive call) now
+   drops **every** cached page detail
+   (`invalidate_all_page_details`), the simplest reliable option —
+   enumerating dependencies from published revision content was the
+   alternative and is deliberately not attempted. The cost is
+   one-sided and bounded (one query + one `delete_many`; unrelated
+   page payloads recompute on the next read); the benefit is that no
+   published page referencing S can ever be missed. The page list,
+   sitemap and navigation still stay out of section fan-out — they
+   never embed section content.
+2. **Concurrent registry updates.** The pre-fix registry (copied
+   from `category_api/services/cache.py`) recorded cached keys with
+   a non-atomic read-modify-write per group. Concurrent workers
+   could lose registrations, and a write landing between an
+   invalidation's member deletes and its registry delete orphaned
+   the payload key — invisible to every later invalidation. Since
+   every group here is exactly one deterministic key, the registry
+   was removed entirely: each payload is read/written/deleted under
+   its literal key alone, and single-key GET/SET/DEL are atomic on
+   Redis and `LocMemCache`. Cross-process invalidation holds on
+   Redis (shared keyspace); `LocMemCache` is per-process and never
+   shared a cache across processes (a backend property, not a module
+   one); the residual cache-aside write race was TTL-bounded as
+   described in §10 and is closed entirely by the [Phase 5C
+   cache-consistency
+   hardening](#phase-5c-cache-consistency-hardening-2026-11-12)
+   below. The concurrency tests in `cms_api/tests/
+   test_api_cms_cache.py` use real threads and a deliberately
+   slow-delete cache proxy (in-process threads alone can never
+   reproduce a cross-worker interleaving — the GIL plus
+   `LocMemCache`'s lock serialize operations), asserting that
+   concurrent writes all land and that a write racing invalidation
+   can never strand a key past a later invalidation.
+
+## Phase 5C cache-consistency hardening (2026-11-12)
+
+Final follow-up to the cache layer above: the cache-aside race is
+closed with generation-keyed payloads, and the global-section
+invalidation surface is verified end to end.
+
+1. **Cache-aside invalidation race (the last open gap).** With
+   literal cache keys, a request that read pre-publish content just
+   before a publishing transaction committed could write it just
+   after the on-commit invalidation deleted the key — repopulating
+   the active cache with stale content until the safety-net TTL
+   expired it. Every payload now lives under a *generation-keyed*
+   key `cms:<base>:<generation>`, with the generation kept under
+   `cms:gen:<base>`:
+   - a reader captures its family's generation *before* it reads
+     the database and writes only under that captured generation;
+   - invalidation advances the generation (`incr`) from
+     `transaction.on_commit` — so only after a successful database
+     commit — and every key written under an earlier generation
+     becomes unreachable at once;
+   - the stale write therefore lands under the pre-publish
+     generation and can never be read again, while a reader that
+     captures the generation after the increment is post-commit and
+     rebuilds from fresh content.
+
+   Atomicity: `add` (set-if-absent) and `incr` (a single counter
+   step) — `SETNX` and a Lua `EXISTS`+`INCRBY` under Redis
+   (django-redis), a per-operation lock under `LocMemCache`.
+   Generation keys never expire (`timeout=None`) so TTL expiry
+   cannot reset a counter, and seeding is `time.time_ns()` rather
+   than 0, so a generation key dropped by an evicting backend and
+   re-created can never resurrect an older era's payload keys.
+   `CMS_PUBLIC_CACHE_TTL` stays as the safety net for missed events.
+   No key registry is reintroduced: every payload key is
+   deterministic (base + generation).
+2. **Global-section invalidation surface (verified).** Only the
+   page-detail payload embeds section content (`sections` resolves a
+   global section's published content; `CmsPagePublicListSerializer`
+   and `resolve_navigation_tree` carry none). A global section
+   change advances every cached page detail's generation through the
+   same mechanism as everything else, and the page list, sitemap and
+   navigation stay out of section fan-out by design, not oversight.
+3. **Tests** (`cms_api/tests/test_api_cms_cache.py`): a
+   deterministic single-threaded race regression — a request paused
+   exactly at its cache write while the publish and its invalidation
+   complete; a subsequent request must never receive the old
+   content, for both the detail and the list payloads — plus
+   generation-advances-only-after-commit,
+   rollback-leaves-generations-untouched and concurrent-increment
+   (no lost update) tests. The earlier concurrent cache tests keep
+   passing: their writers now capture the generation the way a
+   request does.
+
+Known limits (honest): generation keys never expire (one tiny
+persistent counter per page id / menu key ever read);
+`invalidate_all_page_details` costs one increment per page id; a
+generation key dropped by an evicting backend is re-seeded from the
+wall clock, so two re-seeds inside one clock tick — or a clock step
+backwards across a drop — could in principle revive an old key,
+bounded by `CMS_PUBLIC_CACHE_TTL`. Cross-process invalidation still
+holds only where the `"cms"` cache is shared (Redis); `LocMemCache`
+remains per-process.
 
 ## 14. Implementation phases
 

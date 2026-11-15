@@ -748,8 +748,8 @@ Architecture: [cms-architecture.md](cms-architecture.md).
 
 Public CMS reads are cached on the `"cms"` Redis alias with event-
 driven invalidation, not a fixed TTL alone. Architecture, including
-the exact signals and the known fan-out limitation:
-[cms-architecture.md](cms-architecture.md#phase-5c-verification-results-2026-11-12).
+the exact signals and the generation-keyed cache keys:
+[cms-architecture.md](cms-architecture.md#phase-5c-cache-consistency-hardening-2026-11-12).
 
 - **Cached endpoints:** `GET /api/v1/cms/public/pages/` (list and
   `?path=` detail), `GET /api/v1/cms/public/sitemap/`,
@@ -761,14 +761,17 @@ the exact signals and the known fan-out limitation:
   sends `Cache-Control: no-store`, unchanged), an unknown/inactive
   navigation key, and an unresolved `?path=` lookup — a cache only
   ever holds a successful response.
-- **Zero consistency window after a committed write**, with one
-  documented exception: a global section's referencing pages are
-  found through Wagtail's `ReferenceIndex`, which reflects a page's
-  *current* (possibly draft) composition rather than its *published*
-  revision. A page whose live revision still embeds a section that an
-  unpublished draft edit has since dropped would not be invalidated
-  when that section next changes, until the safety-net TTL
-  (`CMS_PUBLIC_CACHE_TTL`, 5 minutes) expires it anyway.
+- **Zero consistency window after a committed write.** Every cached
+  payload lives under a generation-keyed key: a write advances the
+  generation after its database commit, so pre-publish cache entries
+  — including one an in-flight request started writing before the
+  commit — are unreachable to every subsequent request. A global
+  section change advances the generation of every cached page
+  detail; the earlier `ReferenceIndex` fan-out is gone (the index
+  reflects a page's *current*, possibly draft, composition rather
+  than its *published* revision and could miss a page). The
+  safety-net TTL (`CMS_PUBLIC_CACHE_TTL`, 5 minutes) now bounds only
+  invalidation events the code has no hook for.
 - **Every page publish, unpublish, archive, restore, delete and
   Wagtail Admin tree move invalidates every active navigation menu**,
   not only menus that reference that page — a menu embeds any PAGE

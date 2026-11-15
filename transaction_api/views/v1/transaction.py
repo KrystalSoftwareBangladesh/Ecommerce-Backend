@@ -1,3 +1,5 @@
+import logging
+
 import django_filters
 
 from django.db.models import Prefetch
@@ -27,6 +29,8 @@ from transaction_api.services import (
     post_transaction,
     update_transaction,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AccountingTransactionFilter(django_filters.FilterSet):
@@ -131,8 +135,12 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 serializer.validated_data,
             )
         except Exception as exc:
+            logger.exception(
+                'Failed to create transaction for user id=%s',
+                request.user.id,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to create transaction.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
@@ -157,8 +165,12 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 serializer.validated_data,
             )
         except Exception as exc:
+            logger.exception(
+                'Failed to partially update transaction id=%s',
+                instance.id,
+            )
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to update transaction.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
@@ -186,8 +198,9 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 instance,
             )
         except Exception as exc:
+            logger.exception('Failed to post transaction id=%s', instance.id)
             return Response(
-                {'detail': str(exc)},
+                {'detail': 'Unable to post transaction.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(

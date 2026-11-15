@@ -355,13 +355,16 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
     def _cached_list(self):
         """The public page list, cached whole (docs/cms-architecture.
         md §10): also used to resolve ``?path=`` without recomputing
-        every page's published path on a cache hit."""
-        cached = cms_cache.get_pages_list()
+        every page's published path on a cache hit. The generation is
+        captured before the queryset is read and handed back to the
+        write (services/cache.py) so a stale payload can never land
+        under the active generation."""
+        generation, cached = cms_cache.get_pages_list()
         if cached is not None:
             return cached
         pages = self.get_queryset().order_by("url_path")
         data = CmsPagePublicListSerializer(pages, many=True).data
-        cms_cache.set_pages_list(data)
+        cms_cache.set_pages_list(generation, data)
         return data
 
     @extend_schema(
@@ -385,7 +388,7 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         page_id = row["id"]
-        cached_detail = cms_cache.get_page_detail(page_id)
+        generation, cached_detail = cms_cache.get_page_detail(page_id)
         if cached_detail is not None:
             return Response(cached_detail)
         page = self.get_queryset().filter(pk=page_id).first()
@@ -397,7 +400,7 @@ class CmsPagePublicViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         detail = CmsPagePublicDetailSerializer(page).data
-        cms_cache.set_page_detail(page_id, detail)
+        cms_cache.set_page_detail(generation, page_id, detail)
         return Response(detail)
 
 
@@ -419,7 +422,7 @@ class CmsSitemapViewSet(viewsets.GenericViewSet):
 
     @extend_schema(responses=CmsPagePublicListSerializer(many=True))
     def list(self, request):
-        cached = cms_cache.get_sitemap()
+        generation, cached = cms_cache.get_sitemap()
         if cached is not None:
             return Response(cached)
         pages = [
@@ -427,5 +430,5 @@ class CmsSitemapViewSet(viewsets.GenericViewSet):
             if not published_snapshot(page).seo_noindex
         ]
         data = CmsPagePublicListSerializer(pages, many=True).data
-        cms_cache.set_sitemap(data)
+        cms_cache.set_sitemap(generation, data)
         return Response(data)
