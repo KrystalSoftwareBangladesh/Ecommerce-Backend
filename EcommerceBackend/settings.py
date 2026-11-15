@@ -172,7 +172,11 @@ SPECTACULAR_SETTINGS = {
         "KeywordMatchTypeEnum": "content_security_api.models.choices.KeywordMatchType.choices",  # noqa
         "DomainMatchTypeEnum": "content_security_api.models.choices.DomainMatchType.choices",  # noqa
         "BlogPostStatusEnum": "blog_api.models.choices.BlogPostStatus.choices",  # noqa
+        "SectionTypeEnum": "cms_api.sections.registry.SECTION_TYPE_CHOICES",  # noqa
     },
+    "PREPROCESSING_HOOKS": [
+        "EcommerceBackend.core.schema.exclude_wagtail_admin_api",
+    ],
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "displayRequestDuration": True,

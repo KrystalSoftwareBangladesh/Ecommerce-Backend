@@ -17,7 +17,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from cms_api.models import CmsSection
-from cms_api.sections import SECTION_TYPES
+from cms_api.sections import SECTION_TYPE_CHOICES, SECTION_TYPES
 from cms_api.services import (
     create_section,
     update_section,
@@ -192,7 +192,7 @@ class CmsSectionCreateSerializer(CmsSectionWriteBaseSerializer):
 class _SectionContentBlockSchemaSerializer(serializers.Serializer):
     """Documents one ``{"type", "value"}`` block (schema only)."""
 
-    type = serializers.ChoiceField(choices=sorted(SECTION_TYPES))
+    type = serializers.ChoiceField(choices=SECTION_TYPE_CHOICES)
     value = serializers.DictField(
         help_text=(
             "Fields for this block type. See GET "
@@ -210,7 +210,7 @@ class CmsSectionCreateRequestSchemaSerializer(serializers.Serializer):
     """
 
     name = serializers.CharField()
-    section_type = serializers.ChoiceField(choices=sorted(SECTION_TYPES))
+    section_type = serializers.ChoiceField(choices=SECTION_TYPE_CHOICES)
     content = _SectionContentBlockSchemaSerializer(many=True)
 
 
