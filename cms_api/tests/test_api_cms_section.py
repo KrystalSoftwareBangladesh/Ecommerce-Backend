@@ -170,6 +170,32 @@ class CmsSectionCrudTests(CmsSectionApiTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('content', response.data['errors'])
 
+    def test_create_rejects_empty_string_chooser_value(self):
+        """An empty-string image id must 400, not crash with a 500."""
+        self.authenticate()
+
+        response = self.client.post(
+            SECTIONS_URL,
+            {
+                'name': 'Bad',
+                'section_type': 'hero_banner',
+                'content': [{
+                    'type': 'hero_banner',
+                    'value': {
+                        'heading': 'Hello',
+                        'subheading': '',
+                        'image': '',
+                        'cta_label': '',
+                        'cta_url': '',
+                    },
+                }],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('content', response.data['errors'])
+
     def test_update_changes_name_and_content(self):
         self.authenticate()
         section = factories.section()

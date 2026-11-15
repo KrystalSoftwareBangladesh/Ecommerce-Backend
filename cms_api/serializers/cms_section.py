@@ -93,6 +93,13 @@ class SectionContentField(serializers.Field):
             raise serializers.ValidationError(
                 _flatten_wagtail_error(exc)
             )
+        except (TypeError, ValueError):
+            # A chooser field (image/category/brand/product) was given
+            # a value Wagtail doesn't treat as "empty", e.g. "" instead
+            # of null, which reaches a PK lookup unvalidated.
+            raise serializers.ValidationError(
+                "Content contains an invalid reference value."
+            )
         return stream
 
 
