@@ -15,7 +15,10 @@ from rest_framework import serializers
 from cms_api.models import CmsPage, CmsPageSection
 from cms_api.models.cms_section import CmsSection
 from cms_api.pages.templates import PAGE_TEMPLATE_CHOICES
-from cms_api.serializers.cms_section import SectionContentField
+from cms_api.serializers.cms_section import (
+    SectionBlockSerializer,
+    SectionContentField,
+)
 from cms_api.services import (
     add_page_section,
     create_page,
@@ -33,10 +36,18 @@ class PageSectionContentField(SectionContentField):
     model = CmsPageSection
 
 
+@extend_schema_field(serializers.ListField(
+    child=SectionBlockSerializer(),
+    help_text="Exactly one section block.",
+))
+class PageSectionContentSchemaField(PageSectionContentField):
+    """``PageSectionContentField`` typed as the block list it accepts."""
+
+
 class CmsPageSectionSerializer(serializers.ModelSerializer):
     """Read shape of one composition row (management)."""
 
-    content = PageSectionContentField(read_only=True)
+    content = PageSectionContentSchemaField(read_only=True)
 
     class Meta:
         model = CmsPageSection
@@ -66,7 +77,9 @@ class CmsPageSectionWriteSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
-    content = PageSectionContentField(required=False, allow_null=True)
+    content = PageSectionContentSchemaField(
+        required=False, allow_null=True,
+    )
     archived = serializers.BooleanField(required=False, default=False)
     base_revision_id = serializers.IntegerField(
         required=False, allow_null=True, write_only=True,
