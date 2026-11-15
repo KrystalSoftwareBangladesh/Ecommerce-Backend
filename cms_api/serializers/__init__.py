@@ -49,6 +49,7 @@ from .cms_redirect import (
     CmsRedirectSerializer,
 )
 from .cms_section import (
+    CmsSectionCreateRequestSchemaSerializer,
     CmsSectionCreateSerializer,
     CmsSectionDetailSerializer,
     CmsSectionListSerializer,
@@ -104,6 +105,7 @@ __all__ = [
     "CmsPageUpdateSerializer",
     "CmsRedirectResolveSerializer",
     "CmsRedirectSerializer",
+    "CmsSectionCreateRequestSchemaSerializer",
     "CmsSectionCreateSerializer",
     "CmsSectionDetailSerializer",
     "CmsSectionListSerializer",

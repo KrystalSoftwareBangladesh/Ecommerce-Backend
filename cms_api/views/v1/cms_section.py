@@ -6,7 +6,7 @@ permissions: standard CRUD uses ``add/change/view/delete_cmssection``,
 the lifecycle actions use the custom CMS permissions declared in
 ``custom_permissions``.
 """
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiExample, extend_schema
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -20,6 +20,7 @@ from EcommerceBackend.core.permission import ModelPermissionAccess
 from cms_api.models import CmsSection
 from cms_api.sections import section_type_schemas
 from cms_api.serializers import (
+    CmsSectionCreateRequestSchemaSerializer,
     CmsSectionCreateSerializer,
     CmsSectionDetailSerializer,
     CmsSectionListSerializer,
@@ -104,6 +105,30 @@ class CmsSectionViewSet(viewsets.ModelViewSet):
             status=response_status,
         )
 
+    @extend_schema(
+        request=CmsSectionCreateRequestSchemaSerializer,
+        responses=CmsSectionDetailSerializer,
+        examples=[
+            OpenApiExample(
+                "Brand collection section",
+                value={
+                    "name": "Featured Brands",
+                    "section_type": "brand_collection",
+                    "content": [
+                        {
+                            "type": "brand_collection",
+                            "value": {
+                                "mode": "ALL",
+                                "brands": [],
+                                "limit": 8,
+                            },
+                        },
+                    ],
+                },
+                request_only=True,
+            ),
+        ],
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
