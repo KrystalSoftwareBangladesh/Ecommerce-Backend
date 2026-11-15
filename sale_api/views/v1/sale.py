@@ -1,5 +1,4 @@
 # sale_api/views/v1/sale.py
-import logging
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -9,13 +8,15 @@ from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter,
 )
+
 import django_filters
 import logging
+
 from sale_api.models import Sale, SaleStatus, get_next_sale_statuses
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
@@ -196,7 +197,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 request.user,
                 sale,
             )
-        except (DjangoValidationError, DRFValidationError) as exc:
+        except (DjangoValidationError, DRFValidationError) as exc:  # noqa
             logger.warning(
                 'Validation error while marking COD payment as collected.',
                 exc_info=True,
