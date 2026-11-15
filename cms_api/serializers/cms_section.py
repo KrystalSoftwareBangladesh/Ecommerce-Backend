@@ -126,7 +126,7 @@ class CmsSectionListSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionDetailSerializer(serializers.ModelSerializer):
-    content = SectionContentField(read_only=True)
+    content = SectionContentSchemaField(read_only=True)
     created_by = serializers.StringRelatedField(read_only=True)
     updated_by = serializers.StringRelatedField(read_only=True)
 
@@ -154,7 +154,7 @@ class CmsSectionDetailSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionWriteBaseSerializer(serializers.ModelSerializer):
-    content = SectionContentField()
+    content = SectionContentSchemaField()
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -176,8 +176,6 @@ class CmsSectionWriteBaseSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionCreateSerializer(CmsSectionWriteBaseSerializer):
-    content = SectionContentSchemaField()
-
     class Meta:
         model = CmsSection
         fields = ["name", "section_type", "content"]
