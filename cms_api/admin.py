@@ -5,7 +5,53 @@ from cms_api.models import (
     CmsMediaConfig,
     CmsNavigationItem,
     CmsNavigationMenu,
+    CmsPage,
+    CmsPageSection,
+    CmsSection,
 )
+
+
+@admin.register(CmsPage)
+class CmsPageAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "slug",
+        "template_key",
+        "live",
+        "seo_noindex",
+        "archived_at",
+    )
+    list_filter = ("template_key", "live", "seo_noindex", "seo_nofollow")
+    search_fields = ("title", "slug", "seo_description")
+    ordering = ("-latest_revision_created_at",)
+
+
+@admin.register(CmsSection)
+class CmsSectionAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "section_type",
+        "live",
+        "archived_at",
+        "updated_at",
+    )
+    list_filter = ("section_type", "live")
+    search_fields = ("name",)
+    ordering = ("-updated_at",)
+
+
+@admin.register(CmsPageSection)
+class CmsPageSectionAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "page",
+        "global_section",
+        "sort_order",
+        "archived_at",
+    )
+    list_filter = ("global_section",)
+    search_fields = ("name",)
+    ordering = ("page", "sort_order")
 
 
 @admin.register(CmsMediaConfig)
