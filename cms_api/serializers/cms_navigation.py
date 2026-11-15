@@ -6,6 +6,8 @@ Management serializers expose the raw row shape (``page`` as an id,
 to one ``url`` field and prunes draft/invisible content (built by
 ``services.navigation.resolve_navigation_tree``).
 """
+from drf_spectacular.utils import extend_schema_field
+
 from rest_framework import serializers
 
 from cms_api.models import (
@@ -219,3 +221,8 @@ class CmsNavigationPublicNodeSerializer(serializers.Serializer):
         return CmsNavigationPublicNodeSerializer(
             instance["children"], many=True,
         ).data
+
+
+CmsNavigationPublicNodeSerializer.get_children = extend_schema_field(
+    CmsNavigationPublicNodeSerializer(many=True),
+)(CmsNavigationPublicNodeSerializer.get_children)

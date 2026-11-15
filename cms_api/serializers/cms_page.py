@@ -8,12 +8,17 @@ full replace) or one row at a time through the row serializers.
 Public serializers render only the published revision (draft
 isolation) and resolve global sections to their published content.
 """
+from drf_spectacular.utils import extend_schema_field
+
 from rest_framework import serializers
 
 from cms_api.models import CmsPage, CmsPageSection
 from cms_api.models.cms_section import CmsSection
 from cms_api.pages.templates import PAGE_TEMPLATE_CHOICES
-from cms_api.serializers.cms_section import SectionContentField
+from cms_api.serializers.cms_section import (
+    SectionBlockSerializer,
+    SectionContentField,
+)
 from cms_api.services import (
     add_page_section,
     create_page,
@@ -31,10 +36,18 @@ class PageSectionContentField(SectionContentField):
     model = CmsPageSection
 
 
+@extend_schema_field(serializers.ListField(
+    child=SectionBlockSerializer(),
+    help_text="Exactly one section block.",
+))
+class PageSectionContentSchemaField(PageSectionContentField):
+    """``PageSectionContentField`` typed as the block list it accepts."""
+
+
 class CmsPageSectionSerializer(serializers.ModelSerializer):
     """Read shape of one composition row (management)."""
 
-    content = PageSectionContentField(read_only=True)
+    content = PageSectionContentSchemaField(read_only=True)
 
     class Meta:
         model = CmsPageSection
@@ -64,7 +77,9 @@ class CmsPageSectionWriteSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
-    content = PageSectionContentField(required=False, allow_null=True)
+    content = PageSectionContentSchemaField(
+        required=False, allow_null=True,
+    )
     archived = serializers.BooleanField(required=False, default=False)
     base_revision_id = serializers.IntegerField(
         required=False, allow_null=True, write_only=True,
@@ -360,6 +375,18 @@ def _resolved_rows(value):
     return _resolve_composition_rows(published_snapshot(value))
 
 
+class _ResolvedSectionRowSchemaSerializer(serializers.Serializer):
+    """Documents one ``_resolve_composition_rows()`` row (schema only).
+    """
+
+    name = serializers.CharField()
+    source = serializers.ChoiceField(choices=["global", "local"])
+    global_section = serializers.IntegerField(allow_null=True)
+    content = serializers.ListField(
+        child=serializers.DictField(), allow_null=True,
+    )
+
+
 class CmsPagePublicListSerializer(serializers.Serializer):
     """Lightweight published-page list (sitemap, navigation)."""
 
@@ -403,6 +430,7 @@ class CmsPagePublicDetailSerializer(serializers.Serializer):
     seo_nofollow = serializers.BooleanField(read_only=True)
     sections = serializers.SerializerMethodField()
 
+    @extend_schema_field(_ResolvedSectionRowSchemaSerializer(many=True))
     def get_sections(self, instance):
         return _resolved_rows(instance)
 
@@ -457,8 +485,10 @@ class CmsPagePreviewSerializer(serializers.Serializer):
     seo_nofollow = serializers.BooleanField(read_only=True)
     sections = serializers.SerializerMethodField()
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_path(self, instance):
         return prospective_url_path(instance)
 
+    @extend_schema_field(_ResolvedSectionRowSchemaSerializer(many=True))
     def get_sections(self, instance):
         return _resolve_composition_rows(instance)

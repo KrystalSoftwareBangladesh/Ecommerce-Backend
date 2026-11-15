@@ -17,7 +17,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from cms_api.models import CmsSection
-from cms_api.sections import SECTION_TYPES
+from cms_api.sections import SECTION_TYPE_CHOICES, SECTION_TYPES
 from cms_api.services import (
     create_section,
     update_section,
@@ -126,7 +126,7 @@ class CmsSectionListSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionDetailSerializer(serializers.ModelSerializer):
-    content = SectionContentField(read_only=True)
+    content = SectionContentSchemaField(read_only=True)
     created_by = serializers.StringRelatedField(read_only=True)
     updated_by = serializers.StringRelatedField(read_only=True)
 
@@ -154,7 +154,7 @@ class CmsSectionDetailSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionWriteBaseSerializer(serializers.ModelSerializer):
-    content = SectionContentField()
+    content = SectionContentSchemaField()
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -176,8 +176,6 @@ class CmsSectionWriteBaseSerializer(serializers.ModelSerializer):
 
 
 class CmsSectionCreateSerializer(CmsSectionWriteBaseSerializer):
-    content = SectionContentSchemaField()
-
     class Meta:
         model = CmsSection
         fields = ["name", "section_type", "content"]
@@ -187,6 +185,31 @@ class CmsSectionCreateSerializer(CmsSectionWriteBaseSerializer):
             validated_data=validated_data,
             user=self.context["request"].user,
         )
+
+
+class _SectionContentBlockSchemaSerializer(serializers.Serializer):
+    """Documents one ``{"type", "value"}`` block (schema only)."""
+
+    type = serializers.ChoiceField(choices=SECTION_TYPE_CHOICES)
+    value = serializers.DictField(
+        help_text=(
+            "Fields for this block type. See GET "
+            "/api/v1/cms/section-types/ for each type's schema."
+        ),
+    )
+
+
+class CmsSectionCreateRequestSchemaSerializer(serializers.Serializer):
+    """Request schema for ``POST /api/v1/cms/sections/`` (docs only).
+
+    ``CmsSectionCreateSerializer`` still does the real validation; this
+    exists only so Swagger/OpenAPI shows ``content`` as a one-item list
+    of ``{"type", "value"}`` blocks instead of a bare string.
+    """
+
+    name = serializers.CharField()
+    section_type = serializers.ChoiceField(choices=SECTION_TYPE_CHOICES)
+    content = _SectionContentBlockSchemaSerializer(many=True)
 
 
 class CmsSectionUpdateSerializer(CmsSectionWriteBaseSerializer):
