@@ -16,6 +16,7 @@ from cms_api.models import CmsPage, CmsPageSection
 from cms_api.models.cms_section import CmsSection
 from cms_api.pages.templates import PAGE_TEMPLATE_CHOICES
 from cms_api.serializers.cms_section import (
+    ExpandedSectionContentField,
     SectionBlockSerializer,
     SectionContentField,
 )
@@ -32,6 +33,17 @@ from cms_api.services import (
 
 class PageSectionContentField(SectionContentField):
     """One-block ``CmsPageSection.content`` payload."""
+
+    model = CmsPageSection
+
+
+class ExpandedPageSectionContentField(ExpandedSectionContentField):
+    """``PageSectionContentField`` with rich text expanded to URLs.
+
+    Public page and preview rows only: management rows keep raw
+    database HTML so a read-modify-write round-trip never stores
+    expanded URLs in place of tracked links.
+    """
 
     model = CmsPageSection
 
@@ -336,7 +348,7 @@ def _resolve_composition_rows(source):
     object directly (never re-resolved through its own, possibly
     stale, ``live_revision``).
     """
-    content_field = PageSectionContentField()
+    content_field = ExpandedPageSectionContentField()
     rows = []
     for row in source.sections.all():
         if row.archived_at is not None:

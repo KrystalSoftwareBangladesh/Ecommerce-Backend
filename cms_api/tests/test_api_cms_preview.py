@@ -1,5 +1,6 @@
 # cms_api/tests/test_api_cms_preview.py
 """Signed preview tokens (docs/cms-architecture.md §5.7, AD-15)."""
+from django.conf import settings
 from django.core import signing
 
 from rest_framework.test import APITestCase
@@ -169,3 +170,60 @@ class SectionPreviewTests(CmsPreviewTestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+
+class PreviewRichTextExpansionTests(CmsPreviewTestCase):
+    """Preview responses expand rich text like the public API."""
+
+    def test_page_preview_expands_links_and_images(self):
+        self.authenticate()
+        target = factories.page(self.editor, slug='about', title='About')
+        image = factories.cms_image(user=self.editor)
+        page = factories.page(self.editor, slug='compose')
+        factories.page_section(
+            page, self.editor, name='Rich',
+            content=factories.rich_text_content(
+                '<p><a linktype="page" id="%d">About</a> '
+                '<embed embedtype="image" id="%d" '
+                'format="fullwidth" /></p>' % (target.pk, image.pk),
+            ),
+        )
+
+        issued = self.client.post(
+            preview_token_url(PAGES_URL, page), {}, format='json',
+        )
+        self.assertEqual(issued.status_code, 200)
+        response = self.client.get(preview_url(issued.data['token']), {})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.data['sections'][0]['content'][0]['value']['body']
+        self.assertNotIn('linktype', body)
+        self.assertNotIn('embedtype', body)
+        self.assertIn('<a href=', body)
+        self.assertIn(target.url_path, body)
+        self.assertIn('src="', body)
+        self.assertIn(settings.MEDIA_URL, body)
+
+    def test_section_preview_expands_rich_text(self):
+        self.authenticate()
+        target = factories.page(self.editor, slug='about', title='About')
+        section = factories.section(
+            name='Rich copy', section_type='rich_text',
+            content=factories.rich_text_content(
+                '<p><a linktype="page" id="%d">About</a></p>'
+                % target.pk,
+            ),
+            user=self.editor,
+        )
+
+        issued = self.client.post(
+            preview_token_url(SECTIONS_URL, section), {}, format='json',
+        )
+        self.assertEqual(issued.status_code, 200)
+        response = self.client.get(preview_url(issued.data['token']), {})
+
+        self.assertEqual(response.status_code, 200)
+        body = response.data['content'][0]['value']['body']
+        self.assertNotIn('linktype', body)
+        self.assertIn('<a href=', body)
+        self.assertIn(target.url_path, body)

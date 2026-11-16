@@ -1485,6 +1485,43 @@ bounded by `CMS_PUBLIC_CACHE_TTL`. Cross-process invalidation still
 holds only where the `"cms"` cache is shared (Redis); `LocMemCache`
 remains per-process.
 
+## Storefront readiness — rich text expansion (2026-11-16)
+
+Follow-up to the 2026-11-16 storefront-readiness audit (verdict:
+READY WITH MINOR FIXES). The one gap — rich text returned with
+unexpanded `linktype`/`embedtype` database placeholders — is fixed in
+the public and preview responses.
+
+- Expansion runs in `cms_api/serializers/cms_section.py`
+  (`expand_rich_text` / `expand_stream_rich_text`), used by
+  `ExpandedSectionContentField` and
+  `ExpandedPageSectionContentField`. Management reads keep raw
+  database HTML so a read-modify-write round-trip never stores
+  expanded URLs in place of tracked links.
+- Page links resolve to `published_url_path` (live-revision slugs),
+  not Wagtail's own `Page.url`/`Site.root_page` expansion: the latter
+  yields `None` for every page in this project (see the Phase 3
+  redirect note) and would embed draft slugs. A link whose page no
+  longer exists becomes a bare `<a>`, matching Wagtail's fallback.
+- Images expand through `wagtail.rich_text.expand_db_html` to
+  rendition `<img>` tags under `MEDIA_URL`. Placeholders are
+  normalised to Wagtail's canonical `<embed ... />` spelling first,
+  so either stored form (`<embed ... />` or `<img embedtype=...>`)
+  expands. Ordinary HTML is untouched.
+- Deployment requirement (unchanged, now load-bearing): Django mounts
+  no `/media/` route; the web server must serve `MEDIA_URL`. Expanded
+  image URLs are relative to `MEDIA_URL`.
+- `og_image` still serialises as an integer PK in the public detail
+  response; making it a usable URL is a separate serializer change,
+  deferred by instruction.
+- Verified 2026-11-16: 33 tests in `test_api_cms_page_public.py` +
+  `test_api_cms_preview.py` (10 covering expansion: link → public URL,
+  published path after draft slug change, broken-link fallback, image
+  `<embed/>` and `<img embedtype=...>` forms, media-URL placement,
+  formatting preservation, draft/archived isolation, page + section
+  preview); full `cms_api` suite 305 tests green; flake8 clean;
+  expansion regressions proven red against pre-fix serializers.
+
 ## 14. Implementation phases
 
 Each phase ends with `flake8`, tests for the new surface, and docs

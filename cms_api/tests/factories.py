@@ -79,6 +79,10 @@ def hero_content(heading='Welcome'):
     }]
 
 
+def rich_text_content(body):
+    return [{'type': 'rich_text', 'value': {'body': body}}]
+
+
 def section(name='Home hero', section_type='hero_banner',
             content=None, user=None, **kwargs):
     instance = CmsSection.objects.create(
