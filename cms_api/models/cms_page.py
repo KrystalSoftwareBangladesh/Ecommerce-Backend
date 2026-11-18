@@ -23,6 +23,12 @@ class CmsPage(Page):
         choices=PAGE_TEMPLATE_CHOICES,
         default="blank",
     )
+    legacy_id = models.PositiveBigIntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     seo_description = models.CharField(max_length=500, blank=True, default="")
     meta_keywords = models.CharField(max_length=255, blank=True, default="")
     og_title = models.CharField(max_length=255, blank=True, default="")
