@@ -29,6 +29,11 @@ class CmsPage(Page):
         blank=True,
         db_index=True,
     )
+    legacy_data = models.JSONField(
+        default=dict,
+        blank=True,
+        editable=False,
+    )
     seo_description = models.CharField(max_length=500, blank=True, default="")
     meta_keywords = models.CharField(max_length=255, blank=True, default="")
     og_title = models.CharField(max_length=255, blank=True, default="")
