@@ -13,7 +13,7 @@ unpublished and archived pages 404, and global sections resolve to
 their published content.
 """
 from drf_spectacular.utils import extend_schema
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -89,6 +89,8 @@ class CmsPageViewSet(viewsets.ModelViewSet):
         "preview_token": "change_cmspage",
     }
     queryset = CmsPage.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title", "slug"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
