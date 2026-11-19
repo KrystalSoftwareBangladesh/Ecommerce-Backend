@@ -516,6 +516,33 @@ class PublicNavigationTests(CmsNavigationTestCase):
 
         self.assertEqual(response.data[0]['url'], '/about-us/')
 
+    def test_page_items_expose_their_slug(self):
+        menu = factories.navigation_menu(key='HEADER')
+        page = factories.page(self.editor, slug='about-us')
+        self.publish(page)
+        factories.navigation_item(menu, label='About', page=page)
+        factories.navigation_item(menu, label='External')
+
+        response = self.client.get(public_url('HEADER'))
+
+        self.assertEqual(response.data[0]['slug'], 'about-us')
+        self.assertIsNone(response.data[1]['slug'])
+
+    def test_nested_children_expose_their_slug(self):
+        menu = factories.navigation_menu(key='HEADER')
+        page = factories.page(self.editor, slug='about-us')
+        self.publish(page)
+        parent = factories.navigation_item(menu, label='Parent')
+        factories.navigation_item(
+            menu, label='About', page=page, parent=parent,
+        )
+
+        response = self.client.get(public_url('HEADER'))
+
+        self.assertEqual(
+            response.data[0]['children'][0]['slug'], 'about-us',
+        )
+
     def test_unpublished_page_item_is_excluded(self):
         menu = factories.navigation_menu(key='HEADER')
         page = factories.page(self.editor, slug='draft-page')

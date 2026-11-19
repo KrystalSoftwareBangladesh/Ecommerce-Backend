@@ -864,6 +864,9 @@ this phase (Phase 4B).
    prunes its whole subtree (not just itself), and a PAGE item whose
    target is not live or is archived is omitted — the same draft-
    isolation rule every other public CMS endpoint already enforces.
+   Each node carries `id`, `label`, `slug` (the linked page's slug;
+   `null` for external links), `url`, `open_in_new_tab` and nested
+   `children`.
 3. **`is_active` is the soft-delete flag, not a separate toggle.**
    `CmsNavigationMenu` inherits `is_active` from `SoftDeleteModel`;
    per §5.5 it is also the menu's only "enabled" field, so there is

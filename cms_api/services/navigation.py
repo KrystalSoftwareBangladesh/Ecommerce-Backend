@@ -204,6 +204,7 @@ def resolve_navigation_tree(menu):
             nodes.append({
                 "id": item.pk,
                 "label": item.label,
+                "slug": item.page.slug if item.page_id else None,
                 "url": url,
                 "open_in_new_tab": item.open_in_new_tab,
                 "children": build(item.pk),

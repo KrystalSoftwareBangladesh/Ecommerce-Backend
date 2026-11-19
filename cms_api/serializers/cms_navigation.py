@@ -213,6 +213,7 @@ class CmsNavigationMenuUpdateSerializer(CmsNavigationMenuWriteSerializer):
 class CmsNavigationPublicNodeSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     label = serializers.CharField(read_only=True)
+    slug = serializers.CharField(read_only=True, allow_null=True)
     url = serializers.CharField(read_only=True)
     open_in_new_tab = serializers.BooleanField(read_only=True)
     children = serializers.SerializerMethodField()
