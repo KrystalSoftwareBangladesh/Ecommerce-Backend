@@ -216,3 +216,16 @@ Import and map customer addresses
 ```bash
 python manage.py import_customer_addresses
 ```
+Export CMS pages
+```bash
+python scripts/export_cms_pages.py
+```
+Import CMS pages
+```bash
+python manage.py import_cms_pages resources/cms_pages.json
+```
+If your Wagtail site hostname differs:
+```bash
+python manage.py import_cms_pages resources/cms_pages.json \
+    --site-hostname localhost
+```

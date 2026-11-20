@@ -1,5 +1,7 @@
 # cms_api/serializers/cms_redirect.py
 """Redirect read shapes (docs/cms-architecture.md §6, §9)."""
+from drf_spectacular.utils import extend_schema_field
+
 from rest_framework import serializers
 
 from wagtail.contrib.redirects.models import Redirect
@@ -22,6 +24,7 @@ class CmsRedirectSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_current_path(self, instance):
         if not instance.redirect_page_id:
             return instance.redirect_link or None

@@ -12,13 +12,18 @@ The public viewset exposes published content only (draft isolation):
 unpublished and archived pages 404, and global sections resolve to
 their published content.
 """
+from django.shortcuts import get_object_or_404
+
 from drf_spectacular.utils import extend_schema
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from EcommerceBackend.core.permission import ModelPermissionAccess
+from EcommerceBackend.core.permission import (
+    ModelPermissionAccess,
+    PublicReadPermissionMixin,
+)
 
 from cms_api.models import CmsPage
 from cms_api.serializers.cms_page import (
@@ -67,7 +72,7 @@ def _base_revision_id(request):
 
 
 @extend_schema(tags=["CMS Pages"])
-class CmsPageViewSet(viewsets.ModelViewSet):
+class CmsPageViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     """Page CRUD, lifecycle, revisions and composition writes."""
 
     permission_classes = [IsAuthenticated, ModelPermissionAccess]
@@ -89,6 +94,31 @@ class CmsPageViewSet(viewsets.ModelViewSet):
         "preview_token": "change_cmspage",
     }
     queryset = CmsPage.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title", "slug"]
+    lookup_value_regex = r"[^/]+"
+
+    def get_object(self):
+        lookup_value = self.kwargs[
+            self.lookup_url_kwarg or self.lookup_field
+        ]
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if lookup_value.isdigit():
+            obj = get_object_or_404(
+                queryset,
+                pk=int(lookup_value),
+            )
+        else:
+            obj = get_object_or_404(
+                queryset,
+                slug=lookup_value,
+            )
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
     def get_queryset(self):
         queryset = super().get_queryset()

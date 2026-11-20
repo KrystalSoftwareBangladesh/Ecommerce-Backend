@@ -1677,6 +1677,57 @@ class SalePerformanceReportApiTests(APITestCase):
         self.assertEqual(data['overview']['total_revenue'], '0.00')
         self.assertEqual(data['overview']['average_order_value'], '0.00')
 
+    def test_today_count_and_last_order_details(self):
+        self.customer_user.first_name = 'Perf'
+        self.customer_user.last_name = 'Customer'
+        self.customer_user.save()
+        self._create_sale(
+            self.today - timedelta(days=30), Decimal('50.00')
+        )
+        last_sale = self._create_sale(self.today, Decimal('150.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/?days=10'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['today_orders'], 1)
+        last_order = data['last_order']
+        self.assertEqual(last_order['id'], last_sale.id)
+        self.assertEqual(
+            last_order['customer_name'], 'Perf Customer'
+        )
+        self.assertEqual(
+            last_order['customer_email'], 'customer-perf@example.com'
+        )
+        self.assertEqual(str(last_order['sale_date']), str(self.today))
+        self.assertIsNotNone(last_order['created_at'])
+        self.assertEqual(last_order['total_amount'], '150.00')
+
+    def test_no_sales_returns_zero_today_count_and_null_last_order(self):
+        response = self.client.get('/api/v1/sales/reports/performance/')
+
+        data = response.data['data']
+        self.assertEqual(data['today_orders'], 0)
+        self.assertIsNone(data['last_order'])
+
+    def test_today_count_and_last_order_respect_filters(self):
+        self._create_sale(
+            self.today, Decimal('100.00'), channel=Sale.SaleChannel.WEBSITE
+        )
+        phone_sale = self._create_sale(
+            self.today, Decimal('300.00'), channel=Sale.SaleChannel.PHONE
+        )
+
+        response = self.client.get(
+            '/api/v1/sales/reports/performance/'
+            '?days=10&channel=Phone'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['today_orders'], 1)
+        self.assertEqual(data['last_order']['id'], phone_sale.id)
+
     def test_channel_filter_applies_to_both_periods(self):
         start_date = self.today - timedelta(days=9)
         previous_sale_date = start_date - timedelta(days=1)

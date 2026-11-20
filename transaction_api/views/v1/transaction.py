@@ -134,7 +134,7 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 request.user,
                 serializer.validated_data,
             )
-        except Exception as exc:
+        except Exception as exc:    # noqa
             logger.exception(
                 'Failed to create transaction for user id=%s',
                 request.user.id,
@@ -164,7 +164,7 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 instance,
                 serializer.validated_data,
             )
-        except Exception as exc:
+        except Exception as exc:    # noqa
             logger.exception(
                 'Failed to partially update transaction id=%s',
                 instance.id,
@@ -197,7 +197,7 @@ class AccountingTransactionViewSet(viewsets.ModelViewSet):
                 request.user,
                 instance,
             )
-        except Exception as exc:
+        except Exception as exc:    # noqa
             logger.exception('Failed to post transaction id=%s', instance.id)
             return Response(
                 {'detail': 'Unable to post transaction.'},
