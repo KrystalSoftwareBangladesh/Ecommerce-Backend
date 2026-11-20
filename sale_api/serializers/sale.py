@@ -312,11 +312,22 @@ class SalePerformanceDailyTrendSerializer(serializers.Serializer):
     revenue = serializers.DecimalField(max_digits=20, decimal_places=2)
 
 
+class SalePerformanceLastOrderSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    customer_name = serializers.CharField(allow_blank=True)
+    customer_email = serializers.EmailField(allow_null=True)
+    sale_date = serializers.DateField()
+    created_at = serializers.DateTimeField()
+    total_amount = serializers.DecimalField(max_digits=20, decimal_places=2)
+
+
 class SalePerformanceReportDataSerializer(serializers.Serializer):
     period = SalePerformancePeriodSerializer()
     overview = SalePerformanceOverviewSerializer()
     comparison = SalePerformanceComparisonSerializer()
     daily_trend = SalePerformanceDailyTrendSerializer(many=True)
+    today_orders = serializers.IntegerField()
+    last_order = SalePerformanceLastOrderSerializer(allow_null=True)
 
 
 class SalePerformanceReportSerializer(serializers.Serializer):

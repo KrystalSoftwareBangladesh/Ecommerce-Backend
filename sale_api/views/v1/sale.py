@@ -329,7 +329,8 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
         description=(
             "Order and revenue totals for a reporting period ending "
             "today, compared against the immediately preceding period "
-            "of equal duration, plus a zero-filled daily trend."
+            "of equal duration, plus a zero-filled daily trend, "
+            "today's order count and the latest order's details."
         ),
         parameters=[
             OpenApiParameter(
@@ -442,6 +443,25 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
             })
             cursor += timedelta(days=1)
 
+        today_orders = filtered_queryset.filter(
+            sale_date=end_date
+        ).count()
+        last_sale = (
+            filtered_queryset.select_related('customer__user')
+            .order_by('-sale_date', '-id')
+            .first()
+        )
+        last_order = None
+        if last_sale is not None:
+            last_order = {
+                'id': last_sale.id,
+                'customer_name': last_sale.customer.user.full_name,
+                'customer_email': last_sale.customer.user.email,
+                'sale_date': last_sale.sale_date,
+                'created_at': last_sale.created_at,
+                'total_amount': last_sale.total_amount,
+            }
+
         serializer = SalePerformanceReportSerializer({
             'success': True,
             'data': {
@@ -466,6 +486,8 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     ),
                 },
                 'daily_trend': daily_trend,
+                'today_orders': today_orders,
+                'last_order': last_order,
             },
         })
         return Response(serializer.data)
