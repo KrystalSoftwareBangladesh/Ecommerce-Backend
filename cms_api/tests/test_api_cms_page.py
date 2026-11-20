@@ -259,3 +259,15 @@ class CompositionTests(CmsPageTestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(page.sections.count(), 2)
+
+
+class PublicReadTests(CmsPageTestCase):
+    def test_detail_is_public_by_id_and_slug(self):
+        page = factories.page(self.editor)
+
+        self.client.force_authenticate(user=None)
+        by_id = self.client.get(detail_url(page))
+        by_slug = self.client.get(f'{PAGES_URL}{page.slug}/')
+
+        self.assertEqual(by_id.status_code, 200)
+        self.assertEqual(by_slug.status_code, 200)

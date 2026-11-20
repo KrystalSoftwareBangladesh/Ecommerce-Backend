@@ -318,7 +318,7 @@ the same pattern `/pages/{id}/publish/` already uses next to page CRUD.
 
 | Endpoint | Purpose |
 |---|---|
-| `POST/GET/PATCH/DELETE /pages/` | CRUD; create accepts `template_key`; nested `sections` writes via `drf-writable-nested` |
+| `POST/GET/PATCH/DELETE /pages/` | CRUD; create accepts `template_key`; nested `sections` writes via `drf-writable-nested`. GET list/detail are public (`PublicReadPermissionMixin`, like categories/products; detail takes id or slug); writes stay management |
 | `POST /pages/{id}/publish/` `…/unpublish/` `…/archive/` `…/restore/` | lifecycle (each behind its own custom permission); `publish` optionally takes `go_live_at`/`expire_at` to schedule instead of `revision_id` |
 | `PUT /pages/{id}/sections/reorder/` | composition ordering |
 | `GET /pages/{id}/revisions/` `POST /pages/{id}/rollback/` | revision history + rollback |
