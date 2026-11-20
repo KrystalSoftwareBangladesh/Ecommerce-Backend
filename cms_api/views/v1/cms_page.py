@@ -12,6 +12,8 @@ The public viewset exposes published content only (draft isolation):
 unpublished and archived pages 404, and global sections resolve to
 their published content.
 """
+from django.shortcuts import get_object_or_404
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -91,6 +93,29 @@ class CmsPageViewSet(viewsets.ModelViewSet):
     queryset = CmsPage.objects.all()
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "slug"]
+    lookup_value_regex = r"[^/]+"
+
+    def get_object(self):
+        lookup_value = self.kwargs[
+            self.lookup_url_kwarg or self.lookup_field
+        ]
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if lookup_value.isdigit():
+            obj = get_object_or_404(
+                queryset,
+                pk=int(lookup_value),
+            )
+        else:
+            obj = get_object_or_404(
+                queryset,
+                slug=lookup_value,
+            )
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
     def get_queryset(self):
         queryset = super().get_queryset()
