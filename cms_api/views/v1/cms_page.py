@@ -20,7 +20,10 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from EcommerceBackend.core.permission import ModelPermissionAccess
+from EcommerceBackend.core.permission import (
+    ModelPermissionAccess,
+    PublicReadPermissionMixin,
+)
 
 from cms_api.models import CmsPage
 from cms_api.serializers.cms_page import (
@@ -69,7 +72,7 @@ def _base_revision_id(request):
 
 
 @extend_schema(tags=["CMS Pages"])
-class CmsPageViewSet(viewsets.ModelViewSet):
+class CmsPageViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
     """Page CRUD, lifecycle, revisions and composition writes."""
 
     permission_classes = [IsAuthenticated, ModelPermissionAccess]
