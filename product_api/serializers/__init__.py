@@ -27,6 +27,7 @@ from .product_image import (
     ProductImageOptimizationSerializer,
     BulkProductImageOptimizationSerializer,
     ProductImageResolutionRecalcSerializer,
+    ProductImageResolutionRecalcStatusSerializer,
 )
 
 
@@ -54,4 +55,5 @@ __all__ = [
     "ProductImageOptimizationSerializer",
     "BulkProductImageOptimizationSerializer",
     "ProductImageResolutionRecalcSerializer",
+    "ProductImageResolutionRecalcStatusSerializer",
 ]

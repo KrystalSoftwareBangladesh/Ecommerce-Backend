@@ -1,6 +1,8 @@
 from io import BytesIO
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from PIL import Image as PilImage
@@ -10,12 +12,16 @@ from rest_framework.test import APIClient
 from category_api.models import Category
 from product_api.models import Product, ProductVariant, ProductImage
 from product_api.services import (
+    get_product_image_recalc_run,
+    record_product_image_recalc_batch,
     reorder_product_images,
     replace_product_image,
     set_product_image_default,
     soft_delete_product_image,
+    start_product_image_recalc_run,
     upload_product_image,
 )
+from product_api.tasks import recalculate_product_image_resolution_task
 
 
 class ProductVariantApiTests(TestCase):
@@ -902,3 +908,171 @@ class ProductImagePermissionTests(TestCase):
 
         delete_response = self.client.delete(f'/api/v1/product-images/{image.id}/')
         self.assertEqual(delete_response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ProductImageResolutionRecalcApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='recalc_tester@example.com',
+            username='recalc_tester',
+            password='secret123',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.user.user_permissions.add(
+            Permission.objects.get(codename='change_productimage'),
+        )
+        self.product = Product.objects.create(
+            name='Recalc Product',
+            current_selling_price='10.00',
+            slug='recalc-product',
+        )
+
+    def _create_image_row(self, index):
+        buffer = BytesIO()
+        image = PilImage.new('RGB', (100, 100), color=(255, 0, 0))
+        image.save(buffer, format='PNG')
+        buffer.seek(0)
+        return ProductImage.objects.create(
+            product=self.product,
+            image=SimpleUploadedFile(
+                'test.png',
+                buffer.getvalue(),
+                content_type='image/png',
+            ),
+            alt_text=f'Image {index}',
+            display_order=index,
+        )
+
+    def test_post_queues_batches_and_returns_202(self):
+        first = self._create_image_row(1)
+        second = self._create_image_row(2)
+
+        with patch(
+            'product_api.views.v1.product_image'
+            '.recalculate_product_image_resolution_task'
+        ) as mock_task:
+            response = self.client.post(
+                '/api/v1/product-images/recalculate-resolution/'
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.data['queued'], 2)
+        self.assertEqual(response.data['batches'], 1)
+        self.assertEqual(len(response.data['run_id']), 32)
+        mock_task.delay.assert_called_once()
+        batch_ids, run_id = mock_task.delay.call_args[0]
+        self.assertEqual(
+            sorted(batch_ids), sorted([first.id, second.id]),
+        )
+        self.assertEqual(run_id, response.data['run_id'])
+
+    def test_post_splits_into_batches(self):
+        images = [self._create_image_row(index) for index in range(3)]
+
+        with patch(
+            'product_api.views.v1.product_image.RECALC_BATCH_SIZE', 2
+        ):
+            with patch(
+                'product_api.views.v1.product_image'
+                '.recalculate_product_image_resolution_task'
+            ) as mock_task:
+                response = self.client.post(
+                    '/api/v1/product-images/recalculate-resolution/'
+                )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.data['batches'], 2)
+        self.assertEqual(mock_task.delay.call_count, 2)
+        queued_ids = []
+        for call in mock_task.delay.call_args_list:
+            queued_ids.extend(call[0][0])
+        self.assertEqual(
+            sorted(queued_ids),
+            sorted(image.id for image in images),
+        )
+
+    def test_task_updates_dimensions_and_run_counters(self):
+        good = self._create_image_row(1)
+        broken = ProductImage.objects.create(
+            product=self.product,
+            image=SimpleUploadedFile(
+                'broken.png',
+                b'fake-bytes',
+                content_type='image/png',
+            ),
+            alt_text='Broken',
+            display_order=2,
+        )
+        run_id = start_product_image_recalc_run(2)
+
+        result = recalculate_product_image_resolution_task(
+            [good.id, broken.id], run_id,
+        )
+
+        self.assertEqual(
+            result, {'total': 2, 'updated': 1, 'failed': 1},
+        )
+        good.refresh_from_db()
+        self.assertEqual(good.width, 100)
+        self.assertEqual(good.height, 100)
+        broken.refresh_from_db()
+        self.assertEqual(broken.width, 0)
+        self.assertEqual(broken.height, 0)
+
+        run = get_product_image_recalc_run(run_id)
+        self.assertEqual(run['total'], 2)
+        self.assertEqual(run['processed'], 2)
+        self.assertEqual(run['updated'], 1)
+        self.assertEqual(run['failed'], 1)
+        self.assertTrue(run['completed'])
+
+    def test_status_endpoint_returns_run_counters(self):
+        run_id = start_product_image_recalc_run(2)
+        record_product_image_recalc_batch(
+            run_id, processed=1, updated=1, failed=0,
+        )
+
+        response = self.client.get(
+            '/api/v1/product-images/recalculate-resolution/'
+            f'status/?run_id={run_id}'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['total'], 2)
+        self.assertEqual(response.data['processed'], 1)
+        self.assertEqual(response.data['updated'], 1)
+        self.assertEqual(response.data['failed'], 0)
+        self.assertFalse(response.data['completed'])
+
+    def test_status_endpoint_unknown_run_returns_404(self):
+        response = self.client.get(
+            '/api/v1/product-images/recalculate-resolution/'
+            'status/?run_id=missing'
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_status_endpoint_requires_run_id(self):
+        response = self.client.get(
+            '/api/v1/product-images/recalculate-resolution/status/'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_recalc_actions_require_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        post_response = self.client.post(
+            '/api/v1/product-images/recalculate-resolution/'
+        )
+        status_response = self.client.get(
+            '/api/v1/product-images/recalculate-resolution/'
+            'status/?run_id=whatever'
+        )
+
+        self.assertEqual(
+            post_response.status_code, status.HTTP_401_UNAUTHORIZED,
+        )
+        self.assertEqual(
+            status_response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
