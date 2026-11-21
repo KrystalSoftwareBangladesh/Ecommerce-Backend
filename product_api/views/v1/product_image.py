@@ -166,7 +166,11 @@ class ProductImageViewSet(
 
     def get_queryset(self):
         return (
-            self.queryset.select_related('product', 'created_by', 'updated_by')
+            self.queryset.select_related(
+                'product',
+                'created_by',
+                'updated_by',
+            )
             .prefetch_related('product__categories')
             .order_by('display_order', 'created_at', 'id')
         )
