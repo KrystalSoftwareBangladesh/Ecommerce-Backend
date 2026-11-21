@@ -2,6 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 
 from product_api.models import ProductImage, Product, ProductVariant
 
@@ -226,3 +227,31 @@ def get_or_create_default_variant(*, product):
             product=locked_product,
             sku=_default_variant_sku(locked_product),
         )
+
+
+def soft_delete_product(product, deleted_by=None):
+    """Soft delete a product and all its active images."""
+
+    if product is None:
+        raise ValidationError('A product is required.')
+
+    with transaction.atomic():
+        now = timezone.now()
+
+        # Soft delete the product.
+        product.is_active = False
+        product.save(update_fields=['is_active', 'updated_at'])
+
+        # Soft delete all active images belonging to the product.
+        ProductImage.objects.filter(
+            product=product,
+            is_active=True,
+            deleted_at__isnull=True,
+        ).update(
+            is_active=False,
+            deleted_at=now,
+            updated_by=deleted_by,
+            updated_at=now,
+        )
+
+        return product

@@ -26,7 +26,10 @@ from product_api.models import (
 from review_api.models import Review
 from wishlist_api.models import Wishlist
 from cart_api.models import CartItem
-from product_api.services import increment_product_view_count
+from product_api.services import (
+    increment_product_view_count,
+    soft_delete_product,
+)
 from product_api.serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
@@ -217,9 +220,8 @@ class ProductViewSet(PublicReadPermissionMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.is_active = False
-        instance.save(update_fields=['is_active', 'updated_at'])
+        product = self.get_object()
+        soft_delete_product(product, deleted_by=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
