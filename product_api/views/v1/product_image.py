@@ -23,6 +23,8 @@ from product_api.serializers import (
     BulkProductImageOptimizationSerializer,
     ProductImageResolutionRecalcSerializer,
     ProductImageResolutionRecalcStatusSerializer,
+    BulkProductImageOptimizationRunSerializer,
+    BulkProductImageOptimizationStatusSerializer,
 )
 from product_api.services import (
     replace_product_image,
@@ -34,11 +36,16 @@ from product_api.services import (
     get_product_image_summary,
     get_product_image_recalc_run,
     start_product_image_recalc_run,
+    get_product_image_optimize_run,
+    start_product_image_optimize_run,
     optimize_product_image,
     bulk_optimize_product_images,
     RECALC_BATCH_SIZE,
 )
-from product_api.tasks import recalculate_product_image_resolution_task
+from product_api.tasks import (
+    optimize_product_image_task,
+    recalculate_product_image_resolution_task,
+)
 
 
 def _parse_bulk_image_data(data, files):
@@ -72,6 +79,36 @@ def _parse_bulk_image_data(data, files):
         images[index]
         for index in sorted(images)
     ]
+
+
+def _parse_bulk_optimize_ids(raw_ids):
+    """Return (image_ids, error_message) parsed from query values."""
+    if not raw_ids:
+        return None, 'At least one image ID is required.'
+
+    try:
+        image_ids = [
+            int(value.strip())
+            for item in raw_ids
+            for value in item.split(',')
+            if value.strip()
+        ]
+
+        if not image_ids or any(image_id <= 0 for image_id in image_ids):
+            raise ValueError
+
+    except ValueError:
+        return None, 'Provide valid positive image IDs.'
+
+    # Remove duplicate IDs while preserving order.
+    image_ids = list(dict.fromkeys(image_ids))
+
+    if len(image_ids) > 100:
+        return None, (
+            'A maximum of 100 images can be processed per request.'
+        )
+
+    return image_ids, None
 
 
 class ProductImageFilter(django_filters.FilterSet):
@@ -160,6 +197,8 @@ class ProductImageViewSet(
         "reorder": "change_productimage",
         "recalculate_resolution": "change_productimage",
         "recalculate_resolution_status": "change_productimage",
+        "bulk_optimize_async": "change_productimage",
+        "bulk_optimize_status": "change_productimage",
     }
     queryset = ProductImage.objects.filter(
         is_active=True,
@@ -464,38 +503,13 @@ class ProductImageViewSet(
         url_path='bulk-optimize',
     )
     def bulk_optimize(self, request, *args, **kwargs):
-        raw_ids = request.query_params.getlist('ids')
+        image_ids, error = _parse_bulk_optimize_ids(
+            request.query_params.getlist('ids'),
+        )
 
-        if not raw_ids:
+        if error:
             return Response(
-                {'ids': ['At least one image ID is required.']},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            image_ids = [
-                int(value.strip())
-                for item in raw_ids
-                for value in item.split(',')
-                if value.strip()
-            ]
-
-            if not image_ids or any(image_id <= 0 for image_id in image_ids):
-                raise ValueError
-
-        except ValueError:
-            return Response(
-                {'ids': ['Provide valid positive image IDs.']},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Remove duplicate IDs while preserving order.
-        image_ids = list(dict.fromkeys(image_ids))
-
-        if len(image_ids) > 100:
-            return Response({
-                'ids': ['A maximum of 100 images can be processed per request.']    # noqa
-            },
+                {'ids': [error]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -510,3 +524,87 @@ class ProductImageViewSet(
             serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        summary="Bulk optimize product images asynchronously",
+        description=(
+            "Queue an asynchronous run that optimizes the given "
+            "product images. Pass image IDs through the `ids` query "
+            "parameter. One Celery task is queued per image so the "
+            "worker pool can process them in parallel. Poll "
+            "`bulk-optimize/status` with the returned `run_id` for "
+            "per-image results. The maximum image dimension after "
+            "optimization is 500px."
+        ),
+        request=None,
+        responses=BulkProductImageOptimizationRunSerializer(),
+    )
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='bulk-optimize/async',
+    )
+    def bulk_optimize_async(self, request, *args, **kwargs):
+        image_ids, error = _parse_bulk_optimize_ids(
+            request.query_params.getlist('ids'),
+        )
+
+        if error:
+            return Response(
+                {'ids': [error]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        run_id = start_product_image_optimize_run(image_ids)
+
+        for image_id in image_ids:
+            optimize_product_image_task.delay(
+                image_id, run_id, request.user.id,
+            )
+
+        serializer = BulkProductImageOptimizationRunSerializer({
+            'run_id': run_id,
+            'queued': len(image_ids),
+        })
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    @extend_schema(
+        summary="Bulk optimize run status",
+        description=(
+            "Progress counters and per-image results for one "
+            "asynchronous bulk-optimization run. Images still "
+            "queued are missing from `results` until processed. "
+            "Run data is retained for 7 days."
+        ),
+        request=None,
+        responses=BulkProductImageOptimizationStatusSerializer(),
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='bulk-optimize/status',
+    )
+    def bulk_optimize_status(self, request, *args, **kwargs):
+        run_id = request.query_params.get('run_id')
+
+        if not run_id:
+            return Response(
+                {'run_id': ['This query parameter is required.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        run = get_product_image_optimize_run(run_id)
+
+        if run is None:
+            return Response(
+                {'run_id': ['Unknown run ID.']},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = BulkProductImageOptimizationStatusSerializer(run)
+
+        return Response(serializer.data)

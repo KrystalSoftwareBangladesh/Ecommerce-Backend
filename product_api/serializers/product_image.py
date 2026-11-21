@@ -260,3 +260,22 @@ class ProductImageResolutionRecalcStatusSerializer(serializers.Serializer):
     updated = serializers.IntegerField()
     failed = serializers.IntegerField()
     completed = serializers.BooleanField()
+
+
+class BulkProductImageOptimizationRunSerializer(serializers.Serializer):
+    run_id = serializers.CharField()
+    queued = serializers.IntegerField()
+
+
+class BulkProductImageOptimizationStatusSerializer(serializers.Serializer):
+    run_id = serializers.CharField()
+    total = serializers.IntegerField()
+    processed = serializers.IntegerField()
+    optimized = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    failed = serializers.IntegerField()
+    not_found = serializers.IntegerField()
+    completed = serializers.BooleanField()
+    results = serializers.ListField(
+        child=serializers.DictField()
+    )
