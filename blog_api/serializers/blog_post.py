@@ -5,7 +5,6 @@ from EcommerceBackend.core.serializers.fields import AbsoluteImageField
 
 from category_api.models import Category
 from category_api.serializers import CategorySummarySerializer
-from user_api.serializers import UserSummarySerializer
 
 from blog_api.models import BlogPost, BlogTag
 from blog_api.services import create_blog_post, update_blog_post
@@ -24,7 +23,6 @@ TAG_QUERYSET = BlogTag.objects.filter(
 
 
 class BlogPostListSerializer(serializers.ModelSerializer):
-    author = UserSummarySerializer(read_only=True)
     categories = CategorySummarySerializer(many=True, read_only=True)
     tags = BlogTagSummarySerializer(many=True, read_only=True)
     featured_image = AbsoluteImageField(read_only=True)
@@ -35,7 +33,6 @@ class BlogPostListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'slug',
-            'author',
             'status',
             'published_at',
             'featured_image',
@@ -47,7 +44,6 @@ class BlogPostListSerializer(serializers.ModelSerializer):
 
 
 class BlogPostDetailSerializer(serializers.ModelSerializer):
-    author = UserSummarySerializer(read_only=True)
     categories = CategorySummarySerializer(many=True, read_only=True)
     tags = BlogTagSummarySerializer(many=True, read_only=True)
     featured_image = AbsoluteImageField(read_only=True)
@@ -61,7 +57,6 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
             'title',
             'slug',
             'content',
-            'author',
             'status',
             'published_at',
             'featured_image',

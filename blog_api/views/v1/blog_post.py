@@ -140,10 +140,9 @@ class BlogPostViewSet(
         queryset = queryset.prefetch_related('categories', 'tags')
 
         if self.action == 'list':
-            return queryset.select_related('author')
+            return queryset
 
         return queryset.select_related(
-            'author',
             'created_by',
             'updated_by',
         )
