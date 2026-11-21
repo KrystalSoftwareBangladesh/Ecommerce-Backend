@@ -5,8 +5,6 @@ from .product import (
     replace_product_image,
     set_product_image_default,
     reorder_product_images,
-    soft_delete_product_image,
-    bulk_upload_product_images,
     increment_product_view_count,
     get_or_create_default_variant,
 )
@@ -19,6 +17,8 @@ from .product_image import (
     bulk_optimize_product_images,
     set_product_image_resolution,
     recalculate_product_image_resolution,
+    soft_delete_product_image,
+    bulk_upload_product_images,
 )
 
 
