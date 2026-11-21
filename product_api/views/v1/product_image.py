@@ -22,6 +22,7 @@ from product_api.serializers import (
     ProductImageOptimizationSerializer,
     BulkProductImageOptimizationSerializer,
     ProductImageResolutionRecalcSerializer,
+    ProductImageResolutionRecalcStatusSerializer,
 )
 from product_api.services import (
     replace_product_image,
@@ -31,10 +32,13 @@ from product_api.services import (
     upload_product_image,
     bulk_upload_product_images,
     get_product_image_summary,
-    recalculate_product_image_resolution,
+    get_product_image_recalc_run,
+    start_product_image_recalc_run,
     optimize_product_image,
     bulk_optimize_product_images,
+    RECALC_BATCH_SIZE,
 )
+from product_api.tasks import recalculate_product_image_resolution_task
 
 
 def _parse_bulk_image_data(data, files):
@@ -155,6 +159,7 @@ class ProductImageViewSet(
         "set_default": "change_productimage",
         "reorder": "change_productimage",
         "recalculate_resolution": "change_productimage",
+        "recalculate_resolution_status": "change_productimage",
     }
     queryset = ProductImage.objects.filter(
         is_active=True,
@@ -341,8 +346,11 @@ class ProductImageViewSet(
     @extend_schema(
         summary="Recalculate product image resolution",
         description=(
-            "Recompute the stored width/height of every product "
-            "image from its file. Images whose file cannot be read "
+            "Queue an asynchronous run that recomputes the stored "
+            "width/height of every product image from its file. "
+            "The images are split into batches processed by Celery "
+            "tasks; poll the status endpoint with the returned "
+            "`run_id` for progress. Images whose file cannot be read "
             "are counted as failed and left unchanged."
         ),
         request=None,
@@ -355,9 +363,59 @@ class ProductImageViewSet(
         url_name='recalculate-resolution',
     )
     def recalculate_resolution(self, request, *args, **kwargs):
-        queryset = ProductImage.objects.all()
-        result = recalculate_product_image_resolution(queryset)
-        serializer = ProductImageResolutionRecalcSerializer(result)
+        image_ids = list(
+            ProductImage.objects.values_list('id', flat=True)
+        )
+        batches = [
+            image_ids[index:index + RECALC_BATCH_SIZE]
+            for index in range(0, len(image_ids), RECALC_BATCH_SIZE)
+        ]
+        run_id = start_product_image_recalc_run(len(image_ids))
+        for batch in batches:
+            recalculate_product_image_resolution_task.delay(
+                batch, run_id,
+            )
+        serializer = ProductImageResolutionRecalcSerializer({
+            'run_id': run_id,
+            'queued': len(image_ids),
+            'batches': len(batches),
+        })
+        return Response(
+            serializer.data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    @extend_schema(
+        summary="Resolution recalculation status",
+        description=(
+            "Progress counters for one asynchronous "
+            "resolution-recalculation run."
+        ),
+        request=None,
+        responses=ProductImageResolutionRecalcStatusSerializer(),
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='recalculate-resolution/status',
+        url_name='recalculate-resolution-status',
+    )
+    def recalculate_resolution_status(self, request, *args, **kwargs):
+        run_id = request.query_params.get('run_id')
+        if not run_id:
+            return Response(
+                {'run_id': ['This query parameter is required.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        run = get_product_image_recalc_run(run_id)
+        if run is None:
+            return Response(
+                {'run_id': ['Unknown run ID.']},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ProductImageResolutionRecalcStatusSerializer(run)
         return Response(serializer.data)
 
     @extend_schema(

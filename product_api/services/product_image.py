@@ -1,4 +1,7 @@
 # product_api/services/product_image.py
+import uuid
+
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, F, Q
 from django.utils import timezone
@@ -474,3 +477,73 @@ def bulk_upload_product_images(
             )
 
         return created_images
+
+
+#
+# Asynchronous resolution-recalculation run tracking. A run is split
+# into batches (each one Celery task); counters live in the default
+# cache and expire after a week.
+#
+RECALC_BATCH_SIZE = 1000
+
+_RECALC_RUN_TTL = 7 * 24 * 60 * 60
+
+
+def _recalc_run_key(run_id, field):
+    return f'product-image-recalc:{run_id}:{field}'
+
+
+def start_product_image_recalc_run(total):
+    """Create run counters and return the new run ID."""
+    run_id = uuid.uuid4().hex
+
+    for field, value in (
+        ('total', total),
+        ('processed', 0),
+        ('updated', 0),
+        ('failed', 0),
+    ):
+        cache.set(
+            _recalc_run_key(run_id, field),
+            value,
+            _RECALC_RUN_TTL,
+        )
+
+    return run_id
+
+
+def record_product_image_recalc_batch(
+    run_id, processed, updated, failed
+):
+    """Add one finished batch's counts to the run counters."""
+    for field, value in (
+        ('processed', processed),
+        ('updated', updated),
+        ('failed', failed),
+    ):
+        key = _recalc_run_key(run_id, field)
+        cache.add(key, 0, _RECALC_RUN_TTL)
+        cache.incr(key, value)
+
+
+def get_product_image_recalc_run(run_id):
+    """Return the run's progress counters, or None if unknown."""
+    if not run_id:
+        return None
+
+    total = cache.get(_recalc_run_key(run_id, 'total'))
+    if total is None:
+        return None
+
+    processed = cache.get(_recalc_run_key(run_id, 'processed'), 0)
+    updated = cache.get(_recalc_run_key(run_id, 'updated'), 0)
+    failed = cache.get(_recalc_run_key(run_id, 'failed'), 0)
+
+    return {
+        'run_id': run_id,
+        'total': total,
+        'processed': processed,
+        'updated': updated,
+        'failed': failed,
+        'completed': processed >= total,
+    }

@@ -18,6 +18,10 @@ from .product_image import (
     bulk_optimize_product_images,
     set_product_image_resolution,
     recalculate_product_image_resolution,
+    start_product_image_recalc_run,
+    record_product_image_recalc_batch,
+    get_product_image_recalc_run,
+    RECALC_BATCH_SIZE,
     soft_delete_product_image,
     bulk_upload_product_images,
 )
@@ -42,4 +46,8 @@ __all__ = [
     'bulk_optimize_product_images',
     'set_product_image_resolution',
     'recalculate_product_image_resolution',
+    'start_product_image_recalc_run',
+    'record_product_image_recalc_batch',
+    'get_product_image_recalc_run',
+    'RECALC_BATCH_SIZE',
 ]
