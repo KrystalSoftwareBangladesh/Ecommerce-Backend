@@ -213,6 +213,86 @@ def optimize_product_image(image_instance, updated_by=None):
     }
 
 
+_OPTIMIZE_RUN_TTL = 7 * 24 * 60 * 60
+
+
+def _optimize_run_key(run_id, field):
+    return f'product-image-optimize:{run_id}:{field}'
+
+
+def _optimize_result_key(run_id, image_id):
+    return f'product-image-optimize:{run_id}:result:{image_id}'
+
+
+def start_product_image_optimize_run(image_ids):
+    """Create cache-backed progress tracking for one async
+    bulk-optimize run."""
+    run_id = uuid.uuid4().hex
+    cache.set(
+        _optimize_run_key(run_id, 'total'),
+        len(image_ids),
+        _OPTIMIZE_RUN_TTL,
+    )
+    cache.set(_optimize_run_key(run_id, 'processed'), 0, _OPTIMIZE_RUN_TTL)
+    cache.set(_optimize_run_key(run_id, 'optimized'), 0, _OPTIMIZE_RUN_TTL)
+    cache.set(_optimize_run_key(run_id, 'skipped'), 0, _OPTIMIZE_RUN_TTL)
+    cache.set(_optimize_run_key(run_id, 'failed'), 0, _OPTIMIZE_RUN_TTL)
+    cache.set(_optimize_run_key(run_id, 'not_found'), 0, _OPTIMIZE_RUN_TTL)
+    cache.set(
+        _optimize_run_key(run_id, 'ids'),
+        list(image_ids),
+        _OPTIMIZE_RUN_TTL,
+    )
+    return run_id
+
+
+def record_product_image_optimize_result(run_id, result):
+    """Store one image's optimize result and update run counters."""
+    cache.set(
+        _optimize_result_key(run_id, result['id']),
+        result,
+        _OPTIMIZE_RUN_TTL,
+    )
+
+    for field in ('processed', result['status']):
+        key = _optimize_run_key(run_id, field)
+
+        if cache.add(key, 1, _OPTIMIZE_RUN_TTL) is False:
+            cache.incr(key)
+
+    return result
+
+
+def get_product_image_optimize_run(run_id):
+    total = cache.get(_optimize_run_key(run_id, 'total'))
+
+    if total is None:
+        return None
+
+    processed = cache.get(_optimize_run_key(run_id, 'processed'), 0)
+    image_ids = cache.get(_optimize_run_key(run_id, 'ids'), [])
+    results = cache.get_many([
+        _optimize_result_key(run_id, image_id)
+        for image_id in image_ids
+    ])
+
+    return {
+        'run_id': run_id,
+        'total': total,
+        'processed': processed,
+        'optimized': cache.get(_optimize_run_key(run_id, 'optimized'), 0),
+        'skipped': cache.get(_optimize_run_key(run_id, 'skipped'), 0),
+        'failed': cache.get(_optimize_run_key(run_id, 'failed'), 0),
+        'not_found': cache.get(_optimize_run_key(run_id, 'not_found'), 0),
+        'completed': processed >= total,
+        'results': [
+            results[_optimize_result_key(run_id, image_id)]
+            for image_id in image_ids
+            if _optimize_result_key(run_id, image_id) in results
+        ],
+    }
+
+
 def bulk_optimize_product_images(image_ids, updated_by=None):
     """
     Optimize multiple product images independently.

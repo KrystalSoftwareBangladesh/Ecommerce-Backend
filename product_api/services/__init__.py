@@ -21,6 +21,9 @@ from .product_image import (
     start_product_image_recalc_run,
     record_product_image_recalc_batch,
     get_product_image_recalc_run,
+    start_product_image_optimize_run,
+    record_product_image_optimize_result,
+    get_product_image_optimize_run,
     RECALC_BATCH_SIZE,
     soft_delete_product_image,
     bulk_upload_product_images,
@@ -49,5 +52,8 @@ __all__ = [
     'start_product_image_recalc_run',
     'record_product_image_recalc_batch',
     'get_product_image_recalc_run',
+    'start_product_image_optimize_run',
+    'record_product_image_optimize_result',
+    'get_product_image_optimize_run',
     'RECALC_BATCH_SIZE',
 ]

@@ -12,16 +12,21 @@ from rest_framework.test import APIClient
 from category_api.models import Category
 from product_api.models import Product, ProductVariant, ProductImage
 from product_api.services import (
+    get_product_image_optimize_run,
     get_product_image_recalc_run,
     record_product_image_recalc_batch,
     reorder_product_images,
     replace_product_image,
     set_product_image_default,
     soft_delete_product_image,
+    start_product_image_optimize_run,
     start_product_image_recalc_run,
     upload_product_image,
 )
-from product_api.tasks import recalculate_product_image_resolution_task
+from product_api.tasks import (
+    optimize_product_image_task,
+    recalculate_product_image_resolution_task,
+)
 
 
 class ProductVariantApiTests(TestCase):
@@ -1067,6 +1072,174 @@ class ProductImageResolutionRecalcApiTests(TestCase):
         status_response = self.client.get(
             '/api/v1/product-images/recalculate-resolution/'
             'status/?run_id=whatever'
+        )
+
+        self.assertEqual(
+            post_response.status_code, status.HTTP_401_UNAUTHORIZED,
+        )
+        self.assertEqual(
+            status_response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+
+class ProductImageBulkOptimizeAsyncApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='optimize_tester@example.com',
+            username='optimize_tester',
+            password='secret123',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.user.user_permissions.add(
+            Permission.objects.get(codename='change_productimage'),
+        )
+        self.product = Product.objects.create(
+            name='Optimize Product',
+            current_selling_price='10.00',
+            slug='optimize-product',
+        )
+
+    def _create_image_row(self, index, size=(800, 600)):
+        buffer = BytesIO()
+        image = PilImage.new('RGB', size, color=(255, 0, 0))
+        image.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        return ProductImage.objects.create(
+            product=self.product,
+            image=SimpleUploadedFile(
+                f'optimize-{index}.png',
+                buffer.getvalue(),
+                content_type='image/png',
+            ),
+            alt_text=f'Optimize {index}',
+            display_order=index,
+        )
+
+    def test_post_queues_one_task_per_image(self):
+        first = self._create_image_row(1)
+        second = self._create_image_row(2)
+
+        with patch(
+            'product_api.views.v1.product_image'
+            '.optimize_product_image_task'
+        ) as task_mock:
+            response = self.client.post(
+                '/api/v1/product-images/bulk-optimize/async/'
+                f'?ids={first.id}&ids={second.id}'
+            )
+
+        self.assertEqual(
+            response.status_code, status.HTTP_202_ACCEPTED,
+        )
+        self.assertEqual(response.data['queued'], 2)
+
+        run = get_product_image_optimize_run(response.data['run_id'])
+        self.assertEqual(run['total'], 2)
+        self.assertEqual(run['processed'], 0)
+
+        self.assertEqual(task_mock.delay.call_count, 2)
+        queued_ids = [
+            call.args[0] for call in task_mock.delay.call_args_list
+        ]
+        self.assertEqual(
+            sorted(queued_ids), sorted([first.id, second.id]),
+        )
+        for call in task_mock.delay.call_args_list:
+            self.assertEqual(call.args[1], response.data['run_id'])
+            self.assertEqual(call.args[2], self.user.id)
+
+    def test_post_rejects_missing_ids(self):
+        response = self.client.post(
+            '/api/v1/product-images/bulk-optimize/async/'
+        )
+
+        self.assertEqual(
+            response.status_code, status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_task_records_per_image_results_and_counters(self):
+        large = self._create_image_row(1, size=(800, 600))
+        small = self._create_image_row(2, size=(100, 100))
+
+        run_id = start_product_image_optimize_run(
+            [large.id, small.id, 999999],
+        )
+
+        optimize_product_image_task(large.id, run_id, self.user.id)
+        optimize_product_image_task(small.id, run_id, self.user.id)
+        optimize_product_image_task(999999, run_id, self.user.id)
+
+        run = get_product_image_optimize_run(run_id)
+
+        self.assertEqual(run['total'], 3)
+        self.assertEqual(run['processed'], 3)
+        self.assertEqual(run['optimized'], 1)
+        self.assertEqual(run['skipped'], 1)
+        self.assertEqual(run['not_found'], 1)
+        self.assertEqual(run['failed'], 0)
+        self.assertTrue(run['completed'])
+
+        results = {item['id']: item for item in run['results']}
+        self.assertEqual(results[large.id]['status'], 'optimized')
+        self.assertEqual(
+            results[large.id]['optimized_dimensions'],
+            {'width': 500, 'height': 375},
+        )
+        self.assertEqual(results[small.id]['status'], 'skipped')
+        self.assertEqual(results[999999]['status'], 'not_found')
+
+        large.refresh_from_db()
+        self.assertEqual(large.width, 500)
+        self.assertEqual(large.height, 375)
+
+    def test_status_returns_counters_and_results(self):
+        image = self._create_image_row(1)
+        run_id = start_product_image_optimize_run([image.id, 999999])
+
+        optimize_product_image_task(image.id, run_id, self.user.id)
+
+        response = self.client.get(
+            f'/api/v1/product-images/bulk-optimize/status/'
+            f'?run_id={run_id}'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['total'], 2)
+        self.assertEqual(response.data['processed'], 1)
+        self.assertFalse(response.data['completed'])
+        self.assertEqual(len(response.data['results']), 1)
+
+    def test_status_requires_run_id(self):
+        response = self.client.get(
+            '/api/v1/product-images/bulk-optimize/status/'
+        )
+
+        self.assertEqual(
+            response.status_code, status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_status_unknown_run_returns_404(self):
+        response = self.client.get(
+            '/api/v1/product-images/bulk-optimize/status/'
+            '?run_id=whatever'
+        )
+
+        self.assertEqual(
+            response.status_code, status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_async_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        post_response = self.client.post(
+            '/api/v1/product-images/bulk-optimize/async/?ids=1'
+        )
+        status_response = self.client.get(
+            '/api/v1/product-images/bulk-optimize/status/'
+            '?run_id=whatever'
         )
 
         self.assertEqual(
