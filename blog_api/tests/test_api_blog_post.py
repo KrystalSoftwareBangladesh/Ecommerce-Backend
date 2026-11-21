@@ -567,18 +567,17 @@ class BlogPostRelationshipTests(BlogPostApiTestCase):
         self.assertEqual(len(created.data['categories']), 2)
         self.assertEqual(len(created.data['tags']), 2)
 
-    def test_the_detail_payload_expands_author_categories_and_tags(self):
-        author = factories.user('house-writer')
+    def test_the_detail_payload_expands_categories_and_tags(self):
         post = factories.post(
             published=True,
-            author=author,
+            author=factories.user('house-writer'),
             categories=[factories.category('Skincare')],
             tags=[factories.tag('Routine')],
         )
 
         response = self.client.get(detail_url(post))
 
-        self.assertEqual(response.data['author']['id'], author.id)
+        self.assertNotIn('author', response.data)
         self.assertEqual(
             response.data['categories'][0]['name'],
             'Skincare',
