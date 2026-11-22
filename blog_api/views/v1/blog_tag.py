@@ -12,6 +12,7 @@ from EcommerceBackend.core.permission import (
     PublicReadPermissionMixin,
 )
 
+from blog_api.filters import BlogTagFilter
 from blog_api.models import BlogTag
 from blog_api.serializers import (
     BlogTagCreateSerializer,
@@ -40,9 +41,7 @@ class BlogTagViewSet(
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    filterset_fields = [
-        'is_active',
-    ]
+    filterset_class = BlogTagFilter
     search_fields = [
         'name',
         'slug',

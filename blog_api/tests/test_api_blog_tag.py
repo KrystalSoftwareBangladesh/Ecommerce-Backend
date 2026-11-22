@@ -1,4 +1,7 @@
 # blog_api/tests/test_api_blog_tag.py
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+
 from rest_framework.test import APITestCase
 
 from blog_api.models import BlogTag
@@ -266,3 +269,119 @@ class BlogTagPermissionTests(BlogTagApiTestCase):
             self.client.delete(detail_url(tag)).status_code,
             403,
         )
+
+
+class BlogTagFilterTests(BlogTagApiTestCase):
+    def test_no_blog_post_true_returns_only_unused_tags(self):
+        factories.tag('Unused')
+        used = factories.tag('Used')
+        factories.post(tags=[used])
+
+        response = self.client.get(
+            TAGS_URL,
+            {'no_blog_post': 'true'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item['name'] for item in response.data['results']],
+            ['Unused'],
+        )
+
+    def test_no_blog_post_false_returns_only_used_tags(self):
+        factories.tag('Unused')
+        used = factories.tag('Used')
+        factories.post(tags=[used])
+
+        response = self.client.get(
+            TAGS_URL,
+            {'no_blog_post': 'false'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item['name'] for item in response.data['results']],
+            ['Used'],
+        )
+
+    def test_a_draft_post_still_counts_as_a_blog_post(self):
+        tag = factories.tag('Routine')
+        factories.post(tags=[tag])
+
+        response = self.client.get(
+            TAGS_URL,
+            {'no_blog_post': 'true'},
+        )
+
+        self.assertEqual(response.data['count'], 0)
+
+    def test_an_inactive_post_does_not_count(self):
+        tag = factories.tag('Routine')
+        post = factories.post(tags=[tag])
+        post.is_active = False
+        post.save()
+
+        response = self.client.get(
+            TAGS_URL,
+            {'no_blog_post': 'true'},
+        )
+
+        self.assertEqual(
+            [item['name'] for item in response.data['results']],
+            ['Routine'],
+        )
+
+    def test_a_soft_deleted_post_does_not_count(self):
+        tag = factories.tag('Routine')
+        post = factories.post(tags=[tag])
+        post.soft_delete()
+
+        response = self.client.get(
+            TAGS_URL,
+            {'no_blog_post': 'true'},
+        )
+
+        self.assertEqual(
+            [item['name'] for item in response.data['results']],
+            ['Routine'],
+        )
+
+    def test_is_active_filter_still_works(self):
+        factories.tag('Live')
+        inactive = factories.tag('Hidden')
+        inactive.is_active = False
+        inactive.save()
+
+        response = self.client.get(
+            TAGS_URL,
+            {'is_active': 'true'},
+        )
+
+        self.assertEqual(
+            [item['name'] for item in response.data['results']],
+            ['Live'],
+        )
+
+    def test_the_filter_does_not_add_queries_per_tag(self):
+        used = factories.tag('Used')
+        factories.post(tags=[used])
+        factories.tag('Unused')
+
+        with CaptureQueriesContext(connection) as small:
+            self.client.get(
+                TAGS_URL,
+                {'no_blog_post': 'true'},
+            )
+
+        for index in range(4):
+            extra_used = factories.tag(f'Used {index}')
+            factories.post(title=f'Extra {index}', tags=[extra_used])
+            factories.tag(f'Unused {index}')
+
+        with CaptureQueriesContext(connection) as large:
+            self.client.get(
+                TAGS_URL,
+                {'no_blog_post': 'true'},
+            )
+
+        self.assertEqual(len(small), len(large))

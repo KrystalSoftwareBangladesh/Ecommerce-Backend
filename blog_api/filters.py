@@ -1,7 +1,8 @@
 # blog_api/filters.py
 import django_filters
+from django.db.models import Exists, OuterRef
 
-from blog_api.models import BlogPost
+from blog_api.models import BlogPost, BlogTag
 
 
 class BlogPostFilter(django_filters.FilterSet):
@@ -53,3 +54,36 @@ class BlogPostFilter(django_filters.FilterSet):
         fields = [
             'status',
         ]
+
+
+class BlogTagFilter(django_filters.FilterSet):
+    """
+    Filters for the blog tag list.
+
+    Mirrors `category_api.filters.CategoryFilter`: the `no_blog_post`
+    filter is an `Exists` subquery, so it adds no join and cannot
+    duplicate or drop rows in the list.
+    """
+    no_blog_post = django_filters.BooleanFilter(
+        method='filter_no_blog_post',
+        help_text=(
+            'If true, only tags with no active blog post; '
+            'if false, only tags with at least one.'
+        ),
+    )
+
+    class Meta:
+        model = BlogTag
+        fields = ['is_active']
+
+    def filter_no_blog_post(self, queryset, name, value):
+        condition = BlogPost.objects.filter(
+            tags=OuterRef('pk'),
+            is_active=True,
+            deleted_at__isnull=True,
+        )
+        if value is True:
+            return queryset.filter(~Exists(condition))
+        elif value is False:
+            return queryset.filter(Exists(condition))
+        return queryset
