@@ -159,6 +159,29 @@ class BlogTagCrudTests(BlogTagApiTestCase):
         self.assertIsNotNone(tag.deleted_at)
         self.assertEqual(tag.updated_by, self.manager)
 
+    def test_delete_is_blocked_while_a_post_uses_the_tag(self):
+        self.authenticate()
+        tag = factories.tag('Routine')
+        factories.post(tags=[tag])
+
+        response = self.client.delete(detail_url(tag))
+        tag.refresh_from_db()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(tag.is_active)
+
+    def test_delete_succeeds_once_the_last_post_detaches(self):
+        self.authenticate()
+        tag = factories.tag('Routine')
+        post = factories.post(tags=[tag])
+        post.tags.remove(tag)
+
+        response = self.client.delete(detail_url(tag))
+        tag.refresh_from_db()
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(tag.is_active)
+
     def test_a_soft_deleted_tag_disappears_from_the_public_list(self):
         tag = factories.tag('Routine')
         tag.soft_delete()
