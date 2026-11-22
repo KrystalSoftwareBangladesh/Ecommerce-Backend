@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 
 from category_api.models import Category
 from product_api.models import Product
+from supplier_api.models import Supplier
 from user_api.models import User
 
 
@@ -662,3 +663,44 @@ class CategoryNavigationCacheTests(APITestCase):
             f'/api/v1/categories/children/?ids={parent.id}'
         )
         self.assertEqual(empty_response.data, [])
+
+
+class CategoryDeleteGuardTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='category-delete-staff',
+            email='category-delete-staff@example.com',
+            password='test-pass-123',
+            role='STAFF',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.category = Category.objects.create(
+            name='Electronics',
+            slug='electronics',
+        )
+
+    def test_delete_is_blocked_while_a_supplier_uses_the_category(self):
+        supplier = Supplier.objects.create(name='Acme Supply')
+        supplier.categories.add(self.category)
+
+        response = self.client.delete(
+            f'/api/v1/categories/{self.category.id}/'
+        )
+        self.category.refresh_from_db()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('suppliers', response.data['errors'])
+        self.assertIsNone(self.category.deleted_at)
+
+    def test_delete_succeeds_once_the_supplier_detaches(self):
+        supplier = Supplier.objects.create(name='Acme Supply')
+        supplier.categories.add(self.category)
+        supplier.categories.remove(self.category)
+
+        response = self.client.delete(
+            f'/api/v1/categories/{self.category.id}/'
+        )
+        self.category.refresh_from_db()
+
+        self.assertEqual(response.status_code, 204)
+        self.assertIsNotNone(self.category.deleted_at)

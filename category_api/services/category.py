@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from category_api.models import Category
 from product_api.models import Product
 from blog_api.models import BlogPost
+from supplier_api.models import Supplier
 
 
 class CategoryImportService:
@@ -442,6 +443,7 @@ def delete_category(*, category: Category) -> None:
     - Active products
     - Active blog posts
     - Active subcategories
+    - Active suppliers
 
     Raises:
         ValidationError: If the category has active dependencies.
@@ -474,7 +476,14 @@ def delete_category(*, category: Category) -> None:
         deleted_at__isnull=True,
     ).exists()
 
-    if has_products or has_blog_posts or has_subcategories:
+    has_suppliers = Supplier.objects.filter(
+        categories=category,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).exists()
+
+    if (has_products or has_blog_posts or has_subcategories
+            or has_suppliers):
         errors = {}
 
         if has_products:
@@ -493,6 +502,12 @@ def delete_category(*, category: Category) -> None:
             errors["subcategories"] = (
                 "Cannot delete this category because it has "
                 "one or more active subcategories."
+            )
+
+        if has_suppliers:
+            errors["suppliers"] = (
+                "Cannot delete this category because it is "
+                "associated with one or more active suppliers."
             )
 
         raise ValidationError(errors)
