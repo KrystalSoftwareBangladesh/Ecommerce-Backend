@@ -37,9 +37,15 @@ resolution-based reads never open the stored file.
   reading each file.
 - Dimensions are not backfilled by migration. `POST
   /api/v1/product-images/recalculate-resolution/` (requires
-  `change_productimage`) recomputes width/height for **every** image from
-  its file — run it once after deploy. Images whose file cannot be read are
-  counted as `failed` and left unchanged.
+  `change_productimage`) queues an asynchronous run that recomputes
+  width/height for **every** image from its file. The images are split
+  into batches of 1000, each processed by a Celery task, so the request
+  returns `202` immediately with `run_id`, `queued` and `batches`. Poll
+  `GET /api/v1/product-images/recalculate-resolution/status/?run_id=...`
+  (same permission) for `total`, `processed`, `updated`, `failed` and
+  `completed`. Images whose file cannot be read are counted as `failed`
+  and left unchanged. Run counters live in the default cache and expire
+  after seven days.
 
 ### Brand
 

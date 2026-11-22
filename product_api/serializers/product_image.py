@@ -10,6 +10,13 @@ from product_api.services.product import set_product_image_default
 from product_api.services.product_image import set_product_image_resolution
 
 
+class ProductImageProductSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'slug']
+        read_only_fields = fields
+
+
 class ProductDefaultImageSerializer(serializers.Serializer):
     """Lightweight serializer for a product's default image."""
     id = serializers.IntegerField(read_only=True)
@@ -28,11 +35,13 @@ class ProductDefaultImageSerializer(serializers.Serializer):
 class ProductImageListSerializer(serializers.ModelSerializer):
     """Serializer for listing product images."""
     image = AbsoluteImageField(read_only=True)
+    product = ProductImageProductSummarySerializer(read_only=True)
 
     class Meta:
         model = ProductImage
         fields = [
             'id',
+            'product',
             'image',
             'alt_text',
             'display_order',
@@ -239,6 +248,34 @@ class BulkProductImageOptimizationSerializer(serializers.Serializer):
 
 
 class ProductImageResolutionRecalcSerializer(serializers.Serializer):
+    run_id = serializers.CharField()
+    queued = serializers.IntegerField()
+    batches = serializers.IntegerField()
+
+
+class ProductImageResolutionRecalcStatusSerializer(serializers.Serializer):
+    run_id = serializers.CharField()
     total = serializers.IntegerField()
+    processed = serializers.IntegerField()
     updated = serializers.IntegerField()
     failed = serializers.IntegerField()
+    completed = serializers.BooleanField()
+
+
+class BulkProductImageOptimizationRunSerializer(serializers.Serializer):
+    run_id = serializers.CharField()
+    queued = serializers.IntegerField()
+
+
+class BulkProductImageOptimizationStatusSerializer(serializers.Serializer):
+    run_id = serializers.CharField()
+    total = serializers.IntegerField()
+    processed = serializers.IntegerField()
+    optimized = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    failed = serializers.IntegerField()
+    not_found = serializers.IntegerField()
+    completed = serializers.BooleanField()
+    results = serializers.ListField(
+        child=serializers.DictField()
+    )

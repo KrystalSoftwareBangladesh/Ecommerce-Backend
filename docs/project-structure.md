@@ -242,6 +242,7 @@ Ecommerce-Backend/
 │   ├── views/v1/{product.py,product_image.py,brand.py}
 │   ├── management/commands/{import_products.py,import_product_categories.py}
 │   ├── urls/{__init__.py,v1.py}
+│   ├── tasks.py                     # Celery batch image-resolution recalc
 │   ├── admin.py
 │   └── tests.py
 │

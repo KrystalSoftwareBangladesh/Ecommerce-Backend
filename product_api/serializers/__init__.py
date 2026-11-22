@@ -16,6 +16,7 @@ from .brand import (
     BrandSummarySerializer,
 )
 from .product_image import (
+    ProductImageProductSummarySerializer,
     ProductDefaultImageSerializer,
     ProductImageListSerializer,
     ProductImageDetailSerializer,
@@ -26,6 +27,9 @@ from .product_image import (
     ProductImageOptimizationSerializer,
     BulkProductImageOptimizationSerializer,
     ProductImageResolutionRecalcSerializer,
+    ProductImageResolutionRecalcStatusSerializer,
+    BulkProductImageOptimizationRunSerializer,
+    BulkProductImageOptimizationStatusSerializer,
 )
 
 
@@ -35,6 +39,7 @@ __all__ = [
     "ProductDetailSerializer",
     "ProductCreateSerializer",
     "ProductUpdateSerializer",
+    "ProductImageProductSummarySerializer",
     "ProductVariantListSerializer",
     "ProductVariantDetailSerializer",
     "ProductVariantCreateUpdateSerializer",
@@ -52,4 +57,7 @@ __all__ = [
     "ProductImageOptimizationSerializer",
     "BulkProductImageOptimizationSerializer",
     "ProductImageResolutionRecalcSerializer",
+    "ProductImageResolutionRecalcStatusSerializer",
+    "BulkProductImageOptimizationRunSerializer",
+    "BulkProductImageOptimizationStatusSerializer",
 ]
