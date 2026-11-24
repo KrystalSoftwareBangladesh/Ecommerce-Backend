@@ -1,6 +1,6 @@
 # Project Structure
 
-Mirrors the actual repository. Last verified 2026-09-07.
+Mirrors the actual repository. Last verified 2026-11-24.
 
 ```text
 Ecommerce-Backend/
@@ -11,6 +11,7 @@ Ecommerce-Backend/
 ├── .env.example                     # copied to EcommerceBackend/env.py
 ├── .flake8
 ├── test_nested_import.py            # manage.py shell script, not a test module
+├── db_backup/                       # gitignored; hourly pg_dump output
 │
 ├── .claude/
 │   └── skills/
@@ -52,6 +53,7 @@ Ecommerce-Backend/
 │   ├── all_urls.py
 │   ├── asgi.py
 │   ├── wsgi.py
+│   ├── tasks.py                     # Celery: hourly pg_dump + backup cleanup
 │   └── core/
 │       ├── choices.py
 │       ├── exceptions.py

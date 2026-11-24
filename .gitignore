@@ -4,6 +4,7 @@ __pycache__
 /EcommerceBackend/env.py
 staticfiles/
 /media
+/db_backup/
 /.venv
 celerybeat-schedule
 .mimocode

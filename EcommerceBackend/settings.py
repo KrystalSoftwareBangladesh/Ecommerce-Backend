@@ -431,6 +431,8 @@ CMS_PUBLIC_CACHE_TTL = 60 * 5  # 5 minutes
 
 # Celery
 CELERY_BROKER_URL = CELERY_BROKER_URL_SETTINGS
+# EcommerceBackend is not a Django app, so autodiscover skips it.
+CELERY_IMPORTS = ("EcommerceBackend.tasks",)
 # Run by a separate `celery beat` process; see docs/deployment.md.
 CELERY_BEAT_SCHEDULE = {
     "expire-pending-orders": {
@@ -444,6 +446,14 @@ CELERY_BEAT_SCHEDULE = {
     "cms-publish-scheduled": {
         "task": "cms_api.tasks.run_scheduled_publishing_task",
         "schedule": 5 * 60,
+    },
+    "dump-database-hourly": {
+        "task": "EcommerceBackend.tasks.dump_database_task",
+        "schedule": 60 * 60,
+    },
+    "cleanup-old-db-backups": {
+        "task": "EcommerceBackend.tasks.cleanup_old_db_backups_task",
+        "schedule": 24 * 60 * 60,
     },
 }
 
