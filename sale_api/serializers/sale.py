@@ -51,11 +51,15 @@ class SaleItemSerializer(serializers.ModelSerializer):
         source='product_variant',
         write_only=True,
     )
+    product_slug = serializers.CharField(
+        source='product_variant.product.slug',
+        read_only=True,
+    )
 
     class Meta:
         model = SaleItem
         fields = ['id', 'product_variant', 'product_variant_id',
-                  'quantity', 'unit_price', 'line_total']
+                  'product_slug', 'quantity', 'unit_price', 'line_total']
         read_only_fields = ['line_total']
 
     def validate(self, data):
