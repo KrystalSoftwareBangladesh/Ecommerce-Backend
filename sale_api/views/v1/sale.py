@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
-from django.db.models import Count, Sum
+from django.db.models import Count, Prefetch, Sum
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -17,7 +17,9 @@ from drf_spectacular.utils import (
 import django_filters
 import logging
 
-from sale_api.models import Sale, SaleStatus, get_next_sale_statuses
+from sale_api.models import (
+    Sale, SaleItem, SaleStatus, get_next_sale_statuses,
+)
 from sale_api.serializers import (
     SaleCreateSerializer, SaleUpdateSerializer, SaleListSerializer,
     SaleDetailSerializer, SaleChannelListSerializer, SaleStatusListSerializer,
@@ -95,7 +97,14 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
             'account',
             'accounting_transaction',
             'return_transaction',
-        ).prefetch_related('items')
+        ).prefetch_related(
+            Prefetch(
+                'items',
+                queryset=SaleItem.objects.select_related(
+                    'product_variant__product'
+                ),
+            )
+        )
 
     def get_serializer_class(self):
         if self.action == 'list':

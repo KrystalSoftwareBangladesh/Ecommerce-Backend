@@ -1,12 +1,16 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
+from blog_api.models import BlogPost
 from category_api.models import Category
 from product_api.models import Product
+from supplier_api.models import Supplier
 from user_api.models import User
 
 
@@ -662,3 +666,159 @@ class CategoryNavigationCacheTests(APITestCase):
             f'/api/v1/categories/children/?ids={parent.id}'
         )
         self.assertEqual(empty_response.data, [])
+
+
+class CategoryDeleteGuardTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='category-delete-staff',
+            email='category-delete-staff@example.com',
+            password='test-pass-123',
+            role='STAFF',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.category = Category.objects.create(
+            name='Electronics',
+            slug='electronics',
+        )
+
+    def test_delete_is_blocked_while_a_supplier_uses_the_category(self):
+        supplier = Supplier.objects.create(name='Acme Supply')
+        supplier.categories.add(self.category)
+
+        response = self.client.delete(
+            f'/api/v1/categories/{self.category.id}/'
+        )
+        self.category.refresh_from_db()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('suppliers', response.data['errors'])
+        self.assertIsNone(self.category.deleted_at)
+
+    def test_delete_succeeds_once_the_supplier_detaches(self):
+        supplier = Supplier.objects.create(name='Acme Supply')
+        supplier.categories.add(self.category)
+        supplier.categories.remove(self.category)
+
+        response = self.client.delete(
+            f'/api/v1/categories/{self.category.id}/'
+        )
+        self.category.refresh_from_db()
+
+        self.assertEqual(response.status_code, 204)
+        self.assertIsNotNone(self.category.deleted_at)
+
+
+class CategoryListFilterTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='category-filter-staff',
+            email='category-filter-staff@example.com',
+            password='test-pass-123',
+            role='STAFF',
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.empty = Category.objects.create(name='Empty', slug='empty')
+        self.linked = Category.objects.create(name='Linked', slug='linked')
+        Category.objects.create(
+            name='Child', slug='child', parent=self.linked,
+        )
+
+        product = Product.objects.create(
+            name='Filter Product',
+            current_selling_price='0.00',
+        )
+        product.categories.add(self.linked)
+
+        post = BlogPost.objects.create(
+            title='Filter Post',
+            slug='filter-post',
+            content='body',
+            author=self.user,
+        )
+        post.categories.add(self.linked)
+
+        supplier = Supplier.objects.create(name='Filter Supplier')
+        supplier.categories.add(self.linked)
+
+    @staticmethod
+    def _names(response):
+        rows = response.data.get('results', response.data)
+        return sorted(item['name'] for item in rows)
+
+    def test_no_subcategory_filter(self):
+        response = self.client.get(
+            '/api/v1/categories/', {'no_subcategory': 'true'}
+        )
+        self.assertEqual(
+            self._names(response), ['Child', 'Empty'],
+        )
+
+        response = self.client.get(
+            '/api/v1/categories/', {'no_subcategory': 'false'}
+        )
+        self.assertEqual(self._names(response), ['Linked'])
+
+    def test_no_product_filter(self):
+        response = self.client.get(
+            '/api/v1/categories/', {'no_product': 'true'}
+        )
+        self.assertEqual(
+            self._names(response), ['Child', 'Empty'],
+        )
+
+        response = self.client.get(
+            '/api/v1/categories/', {'no_product': 'false'}
+        )
+        self.assertEqual(self._names(response), ['Linked'])
+
+    def test_no_blog_post_filter(self):
+        response = self.client.get(
+            '/api/v1/categories/', {'no_blog_post': 'true'}
+        )
+        self.assertEqual(
+            self._names(response), ['Child', 'Empty'],
+        )
+
+        response = self.client.get(
+            '/api/v1/categories/', {'no_blog_post': 'false'}
+        )
+        self.assertEqual(self._names(response), ['Linked'])
+
+    def test_no_supplier_filter(self):
+        response = self.client.get(
+            '/api/v1/categories/', {'no_supplier': 'true'}
+        )
+        self.assertEqual(
+            self._names(response), ['Child', 'Empty'],
+        )
+
+        response = self.client.get(
+            '/api/v1/categories/', {'no_supplier': 'false'}
+        )
+        self.assertEqual(self._names(response), ['Linked'])
+
+    def test_filter_queries_do_not_grow_with_row_count(self):
+        with CaptureQueriesContext(connection) as small:
+            self.client.get(
+                '/api/v1/categories/', {'no_product': 'true'}
+            )
+
+        for index in range(4):
+            category = Category.objects.create(
+                name=f'Extra {index}',
+                slug=f'extra-{index}',
+            )
+            product = Product.objects.create(
+                name=f'Extra Product {index}',
+                current_selling_price='0.00',
+            )
+            product.categories.add(category)
+
+        with CaptureQueriesContext(connection) as large:
+            self.client.get(
+                '/api/v1/categories/', {'no_product': 'true'}
+            )
+
+        self.assertEqual(len(small), len(large))

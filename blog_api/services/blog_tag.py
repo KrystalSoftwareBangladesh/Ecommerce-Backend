@@ -1,6 +1,8 @@
 # blog_api/services/blog_tag.py
 from django.db import transaction
 
+from rest_framework.exceptions import ValidationError
+
 from blog_api.models import BlogTag
 
 
@@ -39,9 +41,17 @@ def delete_blog_tag(*, tag, user):
     """
     Soft delete a blog tag, keeping the audit trail.
 
-    Posts keep their relationship to the tag; the tag simply stops being
-    listed and stops being selectable.
+    Business Rules
+    --------------
+    - A tag assigned to any blog post cannot be deleted; the post must
+      be detached from the tag first.
     """
+    if tag.posts.exists():
+        raise ValidationError(
+            'This tag is assigned to one or more blog posts and '
+            'cannot be deleted.'
+        )
+
     tag.updated_by = user
     tag.save(update_fields=['updated_by', 'updated_at'])
 

@@ -1,7 +1,9 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -1775,3 +1777,95 @@ class SalePerformanceReportApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+
+class SaleDetailProductSlugTests(APITestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username='staff-slug',
+            email='staffslug@example.com',
+            password='test-pass-123',
+            role='STAFF'
+        )
+        self.customer_user = User.objects.create_user(
+            username='customer-slug',
+            email='customerslug@example.com',
+            password='test-pass-123',
+            role='CUSTOMER'
+        )
+        self.customer = CustomerProfile.objects.create(
+            user=self.customer_user
+        )
+        self.cash_account = ChartOfAccount.objects.create(
+            name='Cash Slug',
+            account_type=AccountType.ASSET,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
+        self.client.force_authenticate(user=self.staff_user)
+
+    def _create_sale_with_items(self, count, sku_prefix, name_prefix):
+        items = []
+        for index in range(count):
+            product = Product.objects.create(
+                name=f'{name_prefix} Product {index}',
+                current_selling_price=Decimal('100.00')
+            )
+            variant = ProductVariant.objects.create(
+                product=product,
+                sku=f'{sku_prefix}-{index}'
+            )
+            InventoryMovement.objects.create(
+                product_variant=variant,
+                quantity=5,
+                movement_type=MovementType.OPENING,
+                reference_type=ReferenceType.MANUAL,
+                created_by=self.staff_user
+            )
+            items.append({
+                'product_variant': variant,
+                'quantity': 1,
+                'unit_price': Decimal('100.00'),
+                'line_total': Decimal('100.00'),
+            })
+        return create_sale(self.staff_user, {
+            'customer': self.customer,
+            'account': self.cash_account,
+            'sale_date': date(2026, 11, 25),
+            'invoice_number': None,
+            'discount_amount': Decimal('0.00'),
+            'tax_amount': Decimal('0.00'),
+            'notes': None,
+            'items': items,
+        })
+
+    def test_detail_items_include_product_slug(self):
+        sale = self._create_sale_with_items(2, 'SKU-SLUG', 'Slug')
+
+        response = self.client.get(f'/api/v1/sales/{sale.id}/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['items']), 2)
+        expected = {
+            item.product_variant_id: item.product_variant.product.slug
+            for item in sale.items.all()
+        }
+        for item in response.data['items']:
+            variant_id = item['product_variant']['id']
+            self.assertEqual(item['product_slug'], expected[variant_id])
+
+    def test_detail_product_slug_no_query_growth_per_item(self):
+        small_sale = self._create_sale_with_items(1, 'SKU-SMALL', 'Small')
+        large_sale = self._create_sale_with_items(3, 'SKU-LARGE', 'Large')
+
+        with CaptureQueriesContext(connection) as small_queries:
+            response = self.client.get(f'/api/v1/sales/{small_sale.id}/')
+        self.assertEqual(response.status_code, 200)
+
+        with CaptureQueriesContext(connection) as large_queries:
+            response = self.client.get(f'/api/v1/sales/{large_sale.id}/')
+        self.assertEqual(response.status_code, 200)
+
+        for item in response.data['items']:
+            self.assertTrue(item['product_slug'])
+        self.assertEqual(len(small_queries), len(large_queries))
