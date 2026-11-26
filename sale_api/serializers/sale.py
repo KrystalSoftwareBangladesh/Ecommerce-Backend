@@ -281,6 +281,42 @@ class SalePendingCountSerializer(serializers.Serializer):
     data = SalePendingCountDataSerializer()
 
 
+class SaleTrackingItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(
+        source='product_variant.product.name', read_only=True
+    )
+    variant_name = serializers.CharField(
+        source='product_variant.name', read_only=True, allow_null=True
+    )
+    sku = serializers.CharField(
+        source='product_variant.sku', read_only=True
+    )
+
+    class Meta:
+        model = SaleItem
+        fields = [
+            'product_name', 'variant_name', 'sku',
+            'quantity', 'unit_price', 'line_total',
+        ]
+
+
+class SaleTrackingSerializer(serializers.ModelSerializer):
+    status_label = serializers.CharField(
+        source='get_status_display', read_only=True
+    )
+    items = SaleTrackingItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Sale
+        fields = [
+            'invoice_number', 'sale_date', 'created_at',
+            'status', 'status_label',
+            'subtotal_amount', 'discount_amount', 'tax_amount',
+            'shipping_amount', 'total_amount',
+            'shipping_method_snapshot', 'items',
+        ]
+
+
 class SalePerformanceReportQuerySerializer(serializers.Serializer):
     days = serializers.IntegerField(
         required=False, default=90, min_value=1, max_value=365

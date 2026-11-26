@@ -1779,6 +1779,99 @@ class SalePerformanceReportApiTests(APITestCase):
         self.assertEqual(response.status_code, 400)
 
 
+class SaleTrackingApiTests(APITestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username='staff1', email='staff1@example.com', password='pw',
+            is_staff=True, is_superuser=True,
+        )
+        self.customer_user = User.objects.create_user(
+            username='cust1', email='cust1@example.com', password='pw',
+        )
+        self.customer = CustomerProfile.objects.create(user=self.customer_user)
+        self.product = Product.objects.create(
+            name='Laptop', current_selling_price=Decimal('50.00'),
+            created_by=self.staff_user, updated_by=self.staff_user,
+        )
+        self.variant = ProductVariant.objects.create(
+            product=self.product, sku='LAP-15'
+        )
+
+    def _create_tracked_sale(self, invoice_number, is_active=True):
+        sale = Sale.objects.create(
+            customer=self.customer,
+            invoice_number=invoice_number,
+            sale_date=date(2026, 11, 27),
+            status=SaleStatus.SHIPPED,
+            subtotal_amount=Decimal('100.00'),
+            total_amount=Decimal('110.00'),
+            is_active=is_active,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product_variant=self.variant,
+            quantity=2,
+            unit_price=Decimal('50.00'),
+            line_total=Decimal('100.00'),
+        )
+        return sale
+
+    def test_track_is_public_and_returns_order_details(self):
+        self._create_tracked_sale('SALE-20261127-000001')
+
+        response = self.client.get(
+            '/api/v1/sales/track/SALE-20261127-000001/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['invoice_number'], 'SALE-20261127-000001'
+        )
+        self.assertEqual(response.data['status'], SaleStatus.SHIPPED)
+        self.assertEqual(response.data['status_label'], 'Shipped')
+        self.assertEqual(len(response.data['items']), 1)
+        item = response.data['items'][0]
+        self.assertEqual(item['product_name'], 'Laptop')
+        self.assertEqual(item['sku'], 'LAP-15')
+        self.assertEqual(item['quantity'], 2)
+        self.assertEqual(Decimal(item['line_total']), Decimal('100.00'))
+
+    def test_track_hides_customer_and_payment_data(self):
+        self._create_tracked_sale('SALE-20261127-000002')
+
+        response = self.client.get(
+            '/api/v1/sales/track/SALE-20261127-000002/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        allowed = {
+            'invoice_number', 'sale_date', 'created_at',
+            'status', 'status_label',
+            'subtotal_amount', 'discount_amount', 'tax_amount',
+            'shipping_amount', 'total_amount',
+            'shipping_method_snapshot', 'items',
+        }
+        self.assertEqual(set(response.data.keys()), allowed)
+
+    def test_track_returns_404_for_unknown_invoice(self):
+        response = self.client.get(
+            '/api/v1/sales/track/SALE-DOES-NOT-EXIST/'
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_track_returns_404_for_soft_deleted_sale(self):
+        self._create_tracked_sale('SALE-20261127-000003', is_active=False)
+
+        response = self.client.get(
+            '/api/v1/sales/track/SALE-20261127-000003/'
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+
 class SaleDetailProductSlugTests(APITestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(
