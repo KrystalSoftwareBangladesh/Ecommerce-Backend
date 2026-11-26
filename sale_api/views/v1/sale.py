@@ -3,9 +3,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from django.db.models import Count, Prefetch, Sum
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -25,6 +27,7 @@ from sale_api.serializers import (
     SaleDetailSerializer, SaleChannelListSerializer, SaleStatusListSerializer,
     SaleStatusUpdateSerializer, SaleCountSummarySerializer,
     SaleAmountSummarySerializer, SalePendingCountSerializer,
+    SaleTrackingSerializer,
     SalePerformanceReportQuerySerializer,
     SalePerformanceReportSerializer,
 )
@@ -117,6 +120,8 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
             return SaleUpdateSerializer
         if self.action == 'update_status':
             return SaleStatusUpdateSerializer
+        if self.action == 'track':
+            return SaleTrackingSerializer
         return SaleDetailSerializer
 
     def create(self, request, *args, **kwargs):
@@ -499,4 +504,33 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 'last_order': last_order,
             },
         })
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Sales"],
+        summary="Track order by invoice number",
+        description=(
+            "Public endpoint. Returns the order details and fulfilment "
+            "status for the given invoice number. Customer identity, "
+            "contact details, notes and payment information are never "
+            "included. Unknown or inactive invoices return 404."
+        ),
+        request=None,
+        responses={200: SaleTrackingSerializer},
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='track/(?P<invoice_number>[^/.]+)',
+        permission_classes=[AllowAny],
+        pagination_class=None,
+    )
+    def track(self, request, invoice_number=None):
+        sale = get_object_or_404(
+            self.get_queryset().prefetch_related(
+                'items__product_variant__product'
+            ),
+            invoice_number=invoice_number,
+        )
+        serializer = self.get_serializer(sale)
         return Response(serializer.data)
