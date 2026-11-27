@@ -1,6 +1,6 @@
 # blog_api/services/blog_post.py
 from django.db import transaction
-from django.db.models import F
+from django.db.models import Count, F, Q
 from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
@@ -250,3 +250,33 @@ def remove_blog_post_category(*, post, category_id, user):
     post.save(update_fields=['updated_by', 'updated_at'])
 
     return post
+
+
+def get_blog_categories_with_post_counts():
+    """
+    Categories carrying at least one published blog post.
+
+    Business Rules
+    --------------
+    - Only published, active, non-deleted posts are counted, for every
+      caller.
+    - Categories without any such post are not returned.
+    - Posts count only on their own categories; a parent category does
+      not roll up its children's posts.
+    - Busiest category first, then by name.
+    """
+    return Category.objects.filter(
+        is_active=True,
+        deleted_at__isnull=True,
+    ).annotate(
+        blog_post_count=Count(
+            'blog_posts',
+            filter=Q(
+                blog_posts__status=BlogPostStatus.PUBLISHED,
+                blog_posts__is_active=True,
+                blog_posts__deleted_at__isnull=True,
+            ),
+        ),
+    ).filter(
+        blog_post_count__gt=0,
+    ).order_by('-blog_post_count', 'name')

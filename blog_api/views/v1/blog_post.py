@@ -24,6 +24,7 @@ from EcommerceBackend.core.permission import (
 from blog_api.filters import BlogPostFilter
 from blog_api.models import BlogPost, BlogPostStatus
 from blog_api.serializers import (
+    BlogCategoryCountSerializer,
     BlogPostCreateSerializer,
     BlogPostDetailSerializer,
     BlogPostListSerializer,
@@ -32,6 +33,7 @@ from blog_api.serializers import (
 )
 from blog_api.services import (
     delete_blog_post,
+    get_blog_categories_with_post_counts,
     publish_blog_post,
     record_blog_post_view,
     unpublish_blog_post,
@@ -69,6 +71,7 @@ class BlogPostViewSet(
     without being allowed to put them live.
     """
     permission_classes = [IsAuthenticated, ModelPermissionAccess]
+    public_actions = ["list", "retrieve", "categories"]
     custom_permissions = {
         "publish": "publish_blog_post",
         "unpublish": "unpublish_blog_post",
@@ -329,3 +332,31 @@ class BlogPostViewSet(
             updated_post,
             status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        tags=["Blog"],
+        request=None,
+        responses={200: BlogCategoryCountSerializer(many=True)},
+        description=(
+            "Blog categories with the number of blog posts on each, "
+            "busiest first. Only published, active, non-deleted posts "
+            "are counted, and categories without any are omitted."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="categories",
+        filter_backends=[],
+    )
+    def categories(self, request):
+        queryset = get_blog_categories_with_post_counts()
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = BlogCategoryCountSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = BlogCategoryCountSerializer(queryset, many=True)
+        return Response(serializer.data)
