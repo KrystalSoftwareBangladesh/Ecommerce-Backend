@@ -488,6 +488,18 @@ the published set and can never surface a draft or a soft-deleted post.
   categories and several tags.
 - Deleting a post or a tag is a soft delete.
 
+### View count
+
+- Every successful read of the post detail
+  (`GET /api/v1/blog/posts/{id}/` — by id or slug) increments the post's
+  `view_count` by one, atomically, and the response carries the new value.
+- The counter is read-only everywhere: not writable through create or
+  update, not exposed for assignment in the admin, and not reset by
+  publishing or unpublishing.
+- It is a plain lifetime counter — no per-user, per-day or bot
+  de-duplication. The intended future use is ranking popular posts,
+  categories and tags.
+
 ### Blog tags
 
 - A tag name is unique, case-insensitively, across tags.

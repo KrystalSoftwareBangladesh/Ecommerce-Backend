@@ -108,7 +108,9 @@ generic media entity in the repository — `ProductImage` is bound to a
 product by a foreign key — so the featured image is an `ImageField` on the
 post, the same shape `Brand.logo` uses. `legacy_id` on both blog models
 carries the identifier from the system the content was migrated from and is
-never client input.
+never client input. `view_count` on `BlogPost` is a lifetime view counter
+incremented on every post-detail read, kept for future popular-post,
+-category and -tag ranking.
 
 **Note on scan targets:** `ContentScan` does not use a foreign key to the
 object it scanned. It records `content_type` (a `ScanContentType` choice)
