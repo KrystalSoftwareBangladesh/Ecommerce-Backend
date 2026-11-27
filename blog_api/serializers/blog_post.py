@@ -68,6 +68,7 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
             'seo_focus_keyword',
             'seo_noindex',
             'seo_nofollow',
+            'view_count',
             'legacy_id',
             'is_active',
             'created_at',

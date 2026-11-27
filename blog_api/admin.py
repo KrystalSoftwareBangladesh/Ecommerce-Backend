@@ -83,6 +83,7 @@ class BlogPostAdmin(admin.ModelAdmin):
             'fields': (
                 'status',
                 'published_at',
+                'view_count',
             ),
             'description': 'Read-only. Publication state is changed '
                            'through the publish and unpublish endpoints '
@@ -136,6 +137,7 @@ class BlogPostAdmin(admin.ModelAdmin):
         'slug',
         'status',
         'published_at',
+        'view_count',
         'created_by',
         'updated_by',
         'created_at',

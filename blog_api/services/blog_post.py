@@ -1,5 +1,6 @@
 # blog_api/services/blog_post.py
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
 from rest_framework.exceptions import ValidationError
@@ -144,6 +145,20 @@ def unpublish_blog_post(*, post, user):
             'updated_at',
         ]
     )
+
+    return post
+
+
+def record_blog_post_view(*, post):
+    """
+    Increment the view counter of a blog post.
+
+    Uses an atomic F() update so concurrent views are never lost.
+    """
+    BlogPost.objects.filter(pk=post.pk).update(
+        view_count=F('view_count') + 1
+    )
+    post.refresh_from_db(fields=['view_count'])
 
     return post
 

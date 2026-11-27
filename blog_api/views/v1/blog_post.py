@@ -33,6 +33,7 @@ from blog_api.serializers import (
 from blog_api.services import (
     delete_blog_post,
     publish_blog_post,
+    record_blog_post_view,
     unpublish_blog_post,
     add_blog_post_categories,
     remove_blog_post_category,
@@ -180,6 +181,13 @@ class BlogPostViewSet(
             ).data,
             status=response_status,
         )
+
+    def retrieve(self, request, *args, **kwargs):
+        post = self.get_object()
+
+        record_blog_post_view(post=post)
+
+        return self._detail_response(post, status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

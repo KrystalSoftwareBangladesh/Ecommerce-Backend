@@ -154,6 +154,18 @@ class BlogPostCrudTests(BlogPostApiTestCase):
         self.assertEqual(by_slug.status_code, 200)
         self.assertEqual(by_slug.data['id'], post.id)
 
+    def test_retrieve_increments_the_view_count(self):
+        post = factories.post(published=True)
+
+        first = self.client.get(detail_url(post))
+        second = self.client.get(detail_url(post))
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.data['view_count'], 1)
+        self.assertEqual(second.data['view_count'], 2)
+        post.refresh_from_db()
+        self.assertEqual(post.view_count, 2)
+
     def test_put_updates_the_post_without_changing_the_slug(self):
         self.authenticate()
         post = factories.post(title='Before')
