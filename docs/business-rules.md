@@ -500,6 +500,17 @@ the published set and can never surface a draft or a soft-deleted post.
   de-duplication. The intended future use is ranking popular posts,
   categories and tags.
 
+### Most-viewed posts
+
+- `GET /api/v1/blog/posts/most-viewed/` is public and lists published
+  blog posts ranked by `view_count`, highest first (ties broken by
+  newest id).
+- The listing covers published, active, non-deleted posts only, and is
+  the same for every caller.
+- Each entry is minimal: `id`, `slug`, `name` (the post title) and
+  `view_count`.
+- It is paginated in the project's standard shape.
+
 ### Blog categories
 
 - `GET /api/v1/blog/posts/categories/` is public and lists the
