@@ -790,6 +790,25 @@ the exact signals and the generation-keyed cache keys:
   not only menus that reference that page — a menu embeds any PAGE
   item's resolved live state and published path.
 
+## Order tracking
+
+`GET /api/v1/sales/track/{invoice_number}/` is a public (unauthenticated)
+endpoint that lets anyone look up an order by its invoice number.
+
+- The response is a whitelist: `invoice_number`, `sale_date`,
+  `created_at`, `status`, `status_label`, `subtotal_amount`,
+  `discount_amount`, `tax_amount`, `shipping_amount`, `total_amount`,
+  `shipping_method_snapshot` and `items` (product name, variant name,
+  SKU, quantity, unit price, line total).
+- **Never exposed**: customer identity and contact details,
+  `shipping_address_snapshot` (contains name/phone/address), `notes`,
+  all payment information (`payment_status`, `payment_method`, `account`
+  and transactions), `idempotency_key`, `request_fingerprint`.
+- Unknown, soft-deleted or missing invoice numbers return **404**; no
+  distinction is leaked between "never existed" and "inactive".
+- Invoice numbers are guessable (`SALE-YYYYMMDD-NNNNNN`) and that risk
+  is accepted deliberately; no throttling is applied to this endpoint.
+
 ## Permissions
 
 Protected endpoints require authentication.
