@@ -8,6 +8,7 @@ from .blog_post import (
     BlogPostCategoryAddSerializer,
 )
 from .blog_tag import (
+    BlogTagCountSerializer,
     BlogTagCreateSerializer,
     BlogTagDetailSerializer,
     BlogTagListSerializer,
@@ -23,6 +24,7 @@ __all__ = [
     'BlogPostListSerializer',
     'BlogPostUpdateSerializer',
     'BlogPostCategoryAddSerializer',
+    'BlogTagCountSerializer',
     'BlogTagCreateSerializer',
     'BlogTagDetailSerializer',
     'BlogTagListSerializer',

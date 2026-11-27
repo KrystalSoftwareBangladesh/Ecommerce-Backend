@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 
 from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -15,12 +16,16 @@ from EcommerceBackend.core.permission import (
 from blog_api.filters import BlogTagFilter
 from blog_api.models import BlogTag
 from blog_api.serializers import (
+    BlogTagCountSerializer,
     BlogTagCreateSerializer,
     BlogTagDetailSerializer,
     BlogTagListSerializer,
     BlogTagUpdateSerializer,
 )
-from blog_api.services import delete_blog_tag
+from blog_api.services import (
+    delete_blog_tag,
+    get_blog_tags_with_post_counts,
+)
 
 
 @extend_schema(tags=["Blog"])
@@ -35,6 +40,7 @@ class BlogTagViewSet(
     them is driven by Django model permissions.
     """
     permission_classes = [IsAuthenticated, ModelPermissionAccess]
+    public_actions = ["list", "retrieve", "counts"]
     queryset = BlogTag.objects.filter(deleted_at__isnull=True)
     filter_backends = [
         DjangoFilterBackend,
@@ -108,3 +114,31 @@ class BlogTagViewSet(
         delete_blog_tag(tag=tag, user=request.user)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        tags=["Blog"],
+        request=None,
+        responses={200: BlogTagCountSerializer(many=True)},
+        description=(
+            "Blog tags with the number of blog posts on each, busiest "
+            "first. Only published, active, non-deleted posts are "
+            "counted, and tags without any are omitted."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="counts",
+        filter_backends=[],
+    )
+    def counts(self, request):
+        queryset = get_blog_tags_with_post_counts()
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = BlogTagCountSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = BlogTagCountSerializer(queryset, many=True)
+        return Response(serializer.data)

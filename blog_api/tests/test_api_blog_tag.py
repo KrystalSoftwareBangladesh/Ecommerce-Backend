@@ -385,3 +385,113 @@ class BlogTagFilterTests(BlogTagApiTestCase):
             )
 
         self.assertEqual(len(small), len(large))
+
+
+class BlogTagCountTests(BlogTagApiTestCase):
+    url = f'{TAGS_URL}counts/'
+
+    def test_the_endpoint_is_public(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_it_lists_tags_with_their_published_post_counts(self):
+        tag = factories.tag('Skincare')
+        factories.post(title='One', published=True, tags=[tag])
+        factories.post(title='Two', published=True, tags=[tag])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.data['results'], [
+            {
+                'id': tag.id,
+                'name': 'Skincare',
+                'blog_post_count': 2,
+            },
+        ])
+
+    def test_it_counts_only_published_active_undeleted_posts(self):
+        tag = factories.tag('Skincare')
+        factories.post(title='Live', published=True, tags=[tag])
+        factories.post(title='Draft', tags=[tag])
+        inactive = factories.post(
+            title='Inactive', published=True, tags=[tag],
+        )
+        inactive.is_active = False
+        inactive.save()
+        deleted = factories.post(
+            title='Deleted', published=True, tags=[tag],
+        )
+        deleted.soft_delete()
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.data['results'][0]['blog_post_count'], 1,
+        )
+
+    def test_it_omits_tags_without_published_posts(self):
+        tag = factories.tag('Skincare')
+        factories.post(title='Draft', tags=[tag])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.data['count'], 0)
+
+    def test_it_omits_inactive_or_deleted_tags(self):
+        active = factories.tag('Active')
+        factories.post(title='One', published=True, tags=[active])
+        inactive = factories.tag('Inactive')
+        factories.post(title='One', published=True, tags=[inactive])
+        inactive.is_active = False
+        inactive.save()
+        deleted = factories.tag('Deleted')
+        factories.post(title='One', published=True, tags=[deleted])
+        deleted.soft_delete()
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            [row['id'] for row in response.data['results']],
+            [active.id],
+        )
+
+    def test_a_post_counts_on_each_of_its_tags(self):
+        first = factories.tag('First')
+        second = factories.tag('Second')
+        factories.post(title='One', published=True, tags=[first, second])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            {row['name']: row['blog_post_count']
+             for row in response.data['results']},
+            {'First': 1, 'Second': 1},
+        )
+
+    def test_it_sorts_by_post_count_then_name(self):
+        busy = factories.tag('Busy')
+        factories.post(title='One', published=True, tags=[busy])
+        factories.post(title='Two', published=True, tags=[busy])
+        alpha = factories.tag('Alpha')
+        factories.post(title='Three', published=True, tags=[alpha])
+        zulu = factories.tag('Zulu')
+        factories.post(title='Four', published=True, tags=[zulu])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            [row['name'] for row in response.data['results']],
+            ['Busy', 'Alpha', 'Zulu'],
+        )
+
+    def test_the_response_carries_only_id_name_and_count(self):
+        tag = factories.tag('Skincare')
+        factories.post(title='One', published=True, tags=[tag])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            sorted(response.data['results'][0].keys()),
+            ['blog_post_count', 'id', 'name'],
+        )
