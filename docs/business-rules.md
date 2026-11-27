@@ -500,6 +500,17 @@ the published set and can never surface a draft or a soft-deleted post.
   de-duplication. The intended future use is ranking popular posts,
   categories and tags.
 
+### Blog categories
+
+- `GET /api/v1/blog/posts/categories/` is public and lists the
+  categories that carry at least one published blog post, each with its
+  `blog_post_count`, busiest category first (ties broken by name).
+- The count covers published, active, non-deleted posts only, and is the
+  same for every caller. Categories without any such post are omitted.
+- A post counts only on its own categories; a parent category does not
+  roll up its children's posts.
+- Each entry is minimal: `id`, `name`, `blog_post_count`.
+
 ### Blog tags
 
 - A tag name is unique, case-insensitively, across tags.

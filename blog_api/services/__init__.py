@@ -2,6 +2,7 @@
 from .blog_post import (
     create_blog_post,
     delete_blog_post,
+    get_blog_categories_with_post_counts,
     publish_blog_post,
     record_blog_post_view,
     unpublish_blog_post,
@@ -19,6 +20,7 @@ from .blog_tag import (
 __all__ = [
     'create_blog_post',
     'delete_blog_post',
+    'get_blog_categories_with_post_counts',
     'publish_blog_post',
     'record_blog_post_view',
     'unpublish_blog_post',
