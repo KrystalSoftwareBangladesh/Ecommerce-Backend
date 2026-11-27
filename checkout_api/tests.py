@@ -2219,6 +2219,32 @@ class StorefrontOrderEmailTemplateTest(TestCase):
                 )
                 self.assertTrue(rendered.strip())
 
+    def test_order_confirmation_includes_track_button(self):
+        from django.template.loader import render_to_string
+
+        track_url = (
+            "https://example.com/track-order/"
+            "?invoice_number=SALE-20261013-000001"
+        )
+        context = {
+            "customer_name": "Test Customer",
+            "invoice_number": "SALE-20261013-000001",
+            "total_amount": decimal.Decimal("1060.00"),
+            "currency": "BDT",
+            "orders_url": "https://example.com",
+            "track_order_url": track_url,
+        }
+        html = render_to_string(
+            "emails/order_confirmation.html", context
+        )
+        text = render_to_string(
+            "emails/order_confirmation.txt", context
+        )
+        self.assertIn("Track your order", html)
+        self.assertIn(track_url, html)
+        self.assertIn("Track your order", text)
+        self.assertIn(track_url, text)
+
     def test_cancelled_email_explains_expiry(self):
         from django.template.loader import render_to_string
 
