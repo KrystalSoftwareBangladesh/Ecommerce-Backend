@@ -30,10 +30,12 @@ from blog_api.serializers import (
     BlogPostListSerializer,
     BlogPostUpdateSerializer,
     BlogPostCategoryAddSerializer,
+    BlogPostMostViewedSerializer,
 )
 from blog_api.services import (
     delete_blog_post,
     get_blog_categories_with_post_counts,
+    get_most_viewed_blog_posts,
     publish_blog_post,
     record_blog_post_view,
     unpublish_blog_post,
@@ -71,7 +73,7 @@ class BlogPostViewSet(
     without being allowed to put them live.
     """
     permission_classes = [IsAuthenticated, ModelPermissionAccess]
-    public_actions = ["list", "retrieve", "categories"]
+    public_actions = ["list", "retrieve", "categories", "most_viewed"]
     custom_permissions = {
         "publish": "publish_blog_post",
         "unpublish": "unpublish_blog_post",
@@ -359,4 +361,33 @@ class BlogPostViewSet(
             return self.get_paginated_response(serializer.data)
 
         serializer = BlogCategoryCountSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Blog"],
+        request=None,
+        responses={200: BlogPostMostViewedSerializer(many=True)},
+        description=(
+            "Blog posts ranked by their view count, most-viewed first. "
+            "Only published, active, non-deleted posts are returned. "
+            "Each entry is minimal: `id`, `slug`, `name` (the post "
+            "title) and `view_count`."
+        ),
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="most-viewed",
+        filter_backends=[],
+    )
+    def most_viewed(self, request):
+        queryset = get_most_viewed_blog_posts()
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = BlogPostMostViewedSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = BlogPostMostViewedSerializer(queryset, many=True)
         return Response(serializer.data)

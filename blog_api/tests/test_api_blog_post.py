@@ -745,3 +745,64 @@ class BlogCategoryCountTests(BlogPostApiTestCase):
             sorted(response.data['results'][0].keys()),
             ['blog_post_count', 'id', 'name'],
         )
+
+
+class BlogPostMostViewedTests(BlogPostApiTestCase):
+    url = f'{POSTS_URL}most-viewed/'
+
+    def test_the_endpoint_is_public(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_it_lists_posts_by_view_count_desc(self):
+        less = factories.post(title='Less', published=True, view_count=3)
+        more = factories.post(title='More', published=True, view_count=12)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.data['results'], [
+            {
+                'id': more.id,
+                'slug': more.slug,
+                'name': 'More',
+                'view_count': 12,
+            },
+            {
+                'id': less.id,
+                'slug': less.slug,
+                'name': 'Less',
+                'view_count': 3,
+            },
+        ])
+
+    def test_it_includes_only_published_active_undeleted_posts(self):
+        factories.post(title='Draft', view_count=99)
+        inactive = factories.post(
+            title='Inactive', published=True, view_count=50,
+        )
+        inactive.is_active = False
+        inactive.save()
+        deleted = factories.post(
+            title='Deleted', published=True, view_count=40,
+        )
+        deleted.soft_delete()
+        live = factories.post(title='Live', published=True, view_count=1)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            [row['id'] for row in response.data['results']],
+            [live.id],
+        )
+
+    def test_it_returns_the_project_pagination_shape(self):
+        factories.post(title='One', published=True, view_count=7)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(
+            sorted(response.data['results'][0].keys()),
+            ['id', 'name', 'slug', 'view_count'],
+        )

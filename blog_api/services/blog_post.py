@@ -280,3 +280,20 @@ def get_blog_categories_with_post_counts():
     ).filter(
         blog_post_count__gt=0,
     ).order_by('-blog_post_count', 'name')
+
+
+def get_most_viewed_blog_posts():
+    """
+    Published blog posts ranked by their view count.
+
+    Business Rules
+    --------------
+    - Only published, active, non-deleted posts are returned, for every
+      caller.
+    - Highest `view_count` first; ties broken by newest id.
+    """
+    return BlogPost.objects.filter(
+        status=BlogPostStatus.PUBLISHED,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).order_by('-view_count', '-id')
