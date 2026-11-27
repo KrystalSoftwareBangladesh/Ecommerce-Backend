@@ -1779,6 +1779,77 @@ class SalePerformanceReportApiTests(APITestCase):
         self.assertEqual(response.status_code, 400)
 
 
+    def test_overview_delivered_order_amount_counts_delivered_only(self):
+        self._create_sale(
+            self.today, Decimal('300.00'),
+            sale_status=SaleStatus.DELIVERED,
+        )
+        self._create_sale(
+            self.today, Decimal('150.00'),
+            sale_status=SaleStatus.PENDING,
+        )
+        self._create_sale(
+            self.today, Decimal('200.00'),
+            sale_status=SaleStatus.RETURNED,
+        )
+
+        response = self.client.get('/api/v1/sales/reports/performance/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(
+                response.data['data']['overview'][
+                    'delivered_order_amount'
+                ]
+            ),
+            '300.00',
+        )
+
+    def test_overview_delivered_order_amount_zero_without_delivered(self):
+        self._create_sale(
+            self.today, Decimal('100.00'),
+            sale_status=SaleStatus.PENDING,
+        )
+
+        response = self.client.get('/api/v1/sales/reports/performance/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(
+                response.data['data']['overview'][
+                    'delivered_order_amount'
+                ]
+            ),
+            '0.00',
+        )
+
+    def test_delivered_order_amount_no_query_growth_with_sales(self):
+        for _ in range(2):
+            self._create_sale(
+                self.today, Decimal('100.00'),
+                sale_status=SaleStatus.DELIVERED,
+            )
+
+        with CaptureQueriesContext(connection) as small_queries:
+            response = self.client.get(
+                '/api/v1/sales/reports/performance/'
+            )
+        self.assertEqual(response.status_code, 200)
+
+        for _ in range(10):
+            self._create_sale(
+                self.today, Decimal('100.00'),
+                sale_status=SaleStatus.DELIVERED,
+            )
+
+        with CaptureQueriesContext(connection) as large_queries:
+            response = self.client.get(
+                '/api/v1/sales/reports/performance/'
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(small_queries), len(large_queries))
+
+
 class SaleDetailProductSlugTests(APITestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(

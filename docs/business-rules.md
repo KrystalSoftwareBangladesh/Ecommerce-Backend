@@ -126,7 +126,10 @@ orders. It honours the `channel`, `customer` and `status` sale filters
 percentage is `null` when the corresponding previous-period value is
 zero. Like `amount-summary`, revenue totals every matched status
 (including `CANCELLED` and `RETURNED`) unless `status` narrows it; it is
-not paginated. The response also carries `today_orders` (active sales
+not paginated. `overview.delivered_order_amount` is the sum of
+`total_amount` for matched sales in `DELIVERED` status within the
+period (`0.00` when none), computed in the same aggregate as the other
+overview totals. The response also carries `today_orders` (active sales
 dated today, respecting the same filters) and `last_order` (the most
 recent active sale's ID, customer name and email, `sale_date`,
 `created_at` and `total_amount`, or `null` when there are no sales;

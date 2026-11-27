@@ -299,6 +299,9 @@ class SalePerformanceOverviewSerializer(serializers.Serializer):
     average_order_value = serializers.DecimalField(
         max_digits=20, decimal_places=2
     )
+    delivered_order_amount = serializers.DecimalField(
+        max_digits=20, decimal_places=2
+    )
 
 
 class SalePerformanceComparisonSerializer(serializers.Serializer):
