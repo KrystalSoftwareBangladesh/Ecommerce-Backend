@@ -13,6 +13,7 @@ from .blog_post import (
 from .blog_tag import (
     create_blog_tag,
     delete_blog_tag,
+    get_blog_tags_with_post_counts,
     update_blog_tag,
 )
 
@@ -29,5 +30,6 @@ __all__ = [
     'remove_blog_post_category',
     'create_blog_tag',
     'delete_blog_tag',
+    'get_blog_tags_with_post_counts',
     'update_blog_tag',
 ]

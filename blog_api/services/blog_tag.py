@@ -1,9 +1,10 @@
 # blog_api/services/blog_tag.py
 from django.db import transaction
+from django.db.models import Count, Q
 
 from rest_framework.exceptions import ValidationError
 
-from blog_api.models import BlogTag
+from blog_api.models import BlogPostStatus, BlogTag
 
 
 @transaction.atomic
@@ -58,3 +59,31 @@ def delete_blog_tag(*, tag, user):
     tag.soft_delete()
 
     return tag
+
+
+def get_blog_tags_with_post_counts():
+    """
+    Tags carrying at least one published blog post.
+
+    Business Rules
+    --------------
+    - Only published, active, non-deleted posts are counted, for every
+      caller.
+    - Tags without any such post are not returned.
+    - Busiest tag first, then by name.
+    """
+    return BlogTag.objects.filter(
+        is_active=True,
+        deleted_at__isnull=True,
+    ).annotate(
+        blog_post_count=Count(
+            'posts',
+            filter=Q(
+                posts__status=BlogPostStatus.PUBLISHED,
+                posts__is_active=True,
+                posts__deleted_at__isnull=True,
+            ),
+        ),
+    ).filter(
+        blog_post_count__gt=0,
+    ).order_by('-blog_post_count', 'name')
