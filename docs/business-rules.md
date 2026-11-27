@@ -838,6 +838,10 @@ endpoint that lets anyone look up an order by its invoice number.
   distinction is leaked between "never existed" and "inactive".
 - Invoice numbers are guessable (`SALE-YYYYMMDD-NNNNNN`) and that risk
   is accepted deliberately; no throttling is applied to this endpoint.
+- The customer order-confirmation email carries a **Track your order**
+  button linking to the frontend route
+  `/track-order/?invoice_number={invoice_number}` (built from
+  `FRONTEND_BASE_URL`).
 
 ## Permissions
 
