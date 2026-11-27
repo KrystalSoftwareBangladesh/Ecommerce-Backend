@@ -1,5 +1,6 @@
 # blog_api/serializers/__init__.py
 from .blog_post import (
+    BlogCategoryCountSerializer,
     BlogPostCreateSerializer,
     BlogPostDetailSerializer,
     BlogPostListSerializer,
@@ -7,6 +8,7 @@ from .blog_post import (
     BlogPostCategoryAddSerializer,
 )
 from .blog_tag import (
+    BlogTagCountSerializer,
     BlogTagCreateSerializer,
     BlogTagDetailSerializer,
     BlogTagListSerializer,
@@ -16,11 +18,13 @@ from .blog_tag import (
 
 
 __all__ = [
+    'BlogCategoryCountSerializer',
     'BlogPostCreateSerializer',
     'BlogPostDetailSerializer',
     'BlogPostListSerializer',
     'BlogPostUpdateSerializer',
     'BlogPostCategoryAddSerializer',
+    'BlogTagCountSerializer',
     'BlogTagCreateSerializer',
     'BlogTagDetailSerializer',
     'BlogTagListSerializer',

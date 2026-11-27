@@ -68,6 +68,7 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
             'seo_focus_keyword',
             'seo_noindex',
             'seo_nofollow',
+            'view_count',
             'legacy_id',
             'is_active',
             'created_at',
@@ -181,3 +182,12 @@ class BlogPostCategoryAddSerializer(serializers.Serializer):
         allow_empty=False,
         help_text="List of category IDs to add to the blog post.",
     )
+
+
+class BlogCategoryCountSerializer(serializers.Serializer):
+    """A blog category with the number of blog posts on it."""
+
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    slug = serializers.SlugField(read_only=True)
+    blog_post_count = serializers.IntegerField(read_only=True)

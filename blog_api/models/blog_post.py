@@ -96,6 +96,10 @@ class BlogPost(TimeStampedModel, UserStampedModel, SoftDeleteModel):
         default=False,
         help_text='Ask search engines not to follow links in this post.',
     )
+    view_count = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of times the post detail was viewed.',
+    )
     legacy_id = models.BigIntegerField(
         unique=True,
         null=True,

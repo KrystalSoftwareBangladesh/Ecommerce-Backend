@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
-from django.db.models import Count, Prefetch, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, status
@@ -343,8 +343,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
         description=(
             "Order and revenue totals for a reporting period ending "
             "today, compared against the immediately preceding period "
-            "of equal duration, plus a zero-filled daily trend, "
-            "today's order count and the latest order's details."
+            "of equal duration, the period's total delivered-order "
+            "amount, plus a zero-filled daily trend, today's order "
+            "count and the latest order's details."
         ),
         parameters=[
             OpenApiParameter(
@@ -420,7 +421,12 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
         )
 
         current_totals = current_qs.aggregate(
-            total_orders=Count('id'), total_revenue=Sum('total_amount')
+            total_orders=Count('id'),
+            total_revenue=Sum('total_amount'),
+            delivered_order_amount=Sum(
+                'total_amount',
+                filter=Q(status=SaleStatus.DELIVERED),
+            ),
         )
         previous_totals = previous_qs.aggregate(
             total_orders=Count('id'), total_revenue=Sum('total_amount')
@@ -429,6 +435,9 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
         total_orders = current_totals['total_orders'] or 0
         total_revenue = (
             current_totals['total_revenue'] or Decimal('0.00')
+        )
+        delivered_order_amount = (
+            current_totals['delivered_order_amount'] or Decimal('0.00')
         )
         average_order_value = (
             (total_revenue / total_orders).quantize(
@@ -488,6 +497,7 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                     'total_orders': total_orders,
                     'total_revenue': total_revenue,
                     'average_order_value': average_order_value,
+                    'delivered_order_amount': delivered_order_amount,
                 },
                 'comparison': {
                     'previous_period_orders': previous_period_orders,

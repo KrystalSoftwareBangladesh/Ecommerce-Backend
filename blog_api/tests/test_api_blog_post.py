@@ -154,6 +154,18 @@ class BlogPostCrudTests(BlogPostApiTestCase):
         self.assertEqual(by_slug.status_code, 200)
         self.assertEqual(by_slug.data['id'], post.id)
 
+    def test_retrieve_increments_the_view_count(self):
+        post = factories.post(published=True)
+
+        first = self.client.get(detail_url(post))
+        second = self.client.get(detail_url(post))
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.data['view_count'], 1)
+        self.assertEqual(second.data['view_count'], 2)
+        post.refresh_from_db()
+        self.assertEqual(post.view_count, 2)
+
     def test_put_updates_the_post_without_changing_the_slug(self):
         self.authenticate()
         post = factories.post(title='Before')
@@ -629,3 +641,107 @@ class BlogPostRelationshipTests(BlogPostApiTestCase):
             add(f'Extra {index}')
 
         self.assertEqual(queries_for_the_list(), one_post)
+
+
+class BlogCategoryCountTests(BlogPostApiTestCase):
+    url = f'{POSTS_URL}categories/'
+
+    def test_the_endpoint_is_public(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_it_lists_categories_with_their_published_post_counts(self):
+        category = factories.category(name='Skincare')
+        factories.post(title='One', published=True, categories=[category])
+        factories.post(title='Two', published=True, categories=[category])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.data['results'], [
+            {
+                'id': category.id,
+                'name': 'Skincare',
+                'blog_post_count': 2,
+            },
+        ])
+
+    def test_it_counts_only_published_active_undeleted_posts(self):
+        category = factories.category(name='Skincare')
+        factories.post(title='Live', published=True, categories=[category])
+        factories.post(title='Draft', categories=[category])
+        inactive = factories.post(
+            title='Inactive', published=True, categories=[category],
+        )
+        inactive.is_active = False
+        inactive.save()
+        deleted = factories.post(
+            title='Deleted', published=True, categories=[category],
+        )
+        deleted.soft_delete()
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.data['results'][0]['blog_post_count'], 1,
+        )
+
+    def test_it_omits_categories_without_published_posts(self):
+        category = factories.category(name='Skincare')
+        factories.post(title='Draft', categories=[category])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.data['count'], 0)
+
+    def test_it_omits_inactive_or_deleted_categories(self):
+        active = factories.category(name='Active')
+        inactive = factories.category(name='Inactive', is_active=False)
+        deleted = factories.category(name='Deleted')
+        for cat in (active, inactive, deleted):
+            factories.post(title='One', published=True, categories=[cat])
+        deleted.soft_delete()
+
+        response = self.client.get(self.url)
+
+        names = [row['name'] for row in response.data['results']]
+        self.assertEqual(names, ['Active'])
+
+    def test_it_does_not_roll_up_child_posts_into_parents(self):
+        parent = factories.category(name='Parent')
+        child = factories.category(name='Child', parent=parent)
+        factories.post(title='One', published=True, categories=[child])
+
+        response = self.client.get(self.url)
+
+        names = [row['name'] for row in response.data['results']]
+        self.assertEqual(names, ['Child'])
+
+    def test_it_sorts_by_post_count_then_name(self):
+        quiet = factories.category(name='A quiet one')
+        busy = factories.category(name='Busy')
+        tie = factories.category(name='Tie')
+        factories.post(title='One', published=True, categories=[quiet])
+        for index in range(2):
+            factories.post(
+                title=f'B{index}', published=True, categories=[busy],
+            )
+            factories.post(
+                title=f'T{index}', published=True, categories=[tie],
+            )
+
+        response = self.client.get(self.url)
+
+        names = [row['name'] for row in response.data['results']]
+        self.assertEqual(names, ['Busy', 'Tie', 'A quiet one'])
+
+    def test_the_response_carries_only_id_name_and_count(self):
+        category = factories.category(name='Skincare')
+        factories.post(title='One', published=True, categories=[category])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            sorted(response.data['results'][0].keys()),
+            ['blog_post_count', 'id', 'name'],
+        )
