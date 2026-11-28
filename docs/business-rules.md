@@ -141,6 +141,16 @@ lock the product variant rows (in primary-key order) before checking it, so
 a POS sale cannot take stock reserved for a storefront order and concurrent
 sales cannot oversell.
 
+`GET /api/v1/sales/reports/by-category/` returns the sales amount
+grouped by top-level product category for a reporting period ending
+today (`days`, default `90`, max `365`). `CANCELLED` and `RETURNED`
+sales and soft-deleted sales are excluded. A sale is attributed to the
+root of each of its product's category trees (a product in several
+categories is counted in each of them), and products without a category
+are reported as "Uncategorized"; percentages are each row's share of the
+reported total. Rows are ordered by sales amount descending. It is not
+paginated and does not honour the list filters.
+
 ### Storefront orders
 
 API contract: [checkout-api.md](checkout-api.md).

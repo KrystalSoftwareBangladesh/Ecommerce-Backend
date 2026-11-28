@@ -23,6 +23,8 @@ from .sale import (
     SaleTrackingSerializer,
     SalePerformanceReportQuerySerializer,
     SalePerformanceReportSerializer,
+    SalesByCategoryQuerySerializer,
+    SalesByCategoryReportSerializer,
 )
 
 
@@ -48,4 +50,6 @@ __all__ = [
     SaleTrackingSerializer,
     SalePerformanceReportQuerySerializer,
     SalePerformanceReportSerializer,
+    SalesByCategoryQuerySerializer,
+    SalesByCategoryReportSerializer,
 ]

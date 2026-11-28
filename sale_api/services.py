@@ -1,11 +1,13 @@
 # sale_api/services.py
-from decimal import Decimal
+from datetime import timedelta
+from decimal import Decimal, ROUND_HALF_UP
 
 from account_api.models import AccountType, ChartOfAccount
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from email_api.constants import EmailType
 from email_api.services.order_notification import (
@@ -20,6 +22,7 @@ from .models import (
     PaymentStatus,
     get_next_sale_statuses,
 )
+from category_api.models import Category
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
 from inventory_api.services.reservation import (
     consume_reservations,
@@ -922,3 +925,89 @@ def mark_cod_payment_collected(user, sale):
         ]
     )
     return locked_sale
+
+
+def get_sales_by_category(days):
+    """Sales amount grouped by top-level product category.
+
+    Covers ``days`` days ending today. CANCELLED and RETURNED sales
+    are excluded. A product in several categories is counted in
+    each of them; a product with no category is reported as
+    "Uncategorized". Percentages are the share of each row in the
+    reported total.
+    """
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=days - 1)
+
+    rows = (
+        SaleItem.objects.filter(
+            sale__is_active=True,
+            sale__sale_date__gte=start_date,
+            sale__sale_date__lte=end_date,
+        )
+        .exclude(
+            sale__status__in=[
+                SaleStatus.CANCELLED,
+                SaleStatus.RETURNED,
+            ],
+        )
+        .order_by()
+        .values(cat_id=F('product_variant__product__categories__id'))
+        .annotate(sales=Sum('line_total'))
+    )
+
+    category_map = {
+        row['id']: row
+        for row in Category.objects.all().values(
+            'id', 'name', 'slug', 'parent_id'
+        )
+    }
+
+    buckets = {}
+    for row in rows:
+        category = category_map.get(row['cat_id'])
+        root_id = None
+        name = 'Uncategorized'
+        slug = None
+        if category is not None:
+            root_id = category['id']
+            while category_map[root_id]['parent_id'] is not None:
+                root_id = category_map[root_id]['parent_id']
+            root = category_map[root_id]
+            name = root['name']
+            slug = root['slug']
+        bucket = buckets.setdefault(root_id, {
+            'id': root_id,
+            'name': name,
+            'slug': slug,
+            'sales_amount': Decimal('0.00'),
+        })
+        bucket['sales_amount'] += row['sales'] or Decimal('0.00')
+
+    total_sales = sum(
+        (bucket['sales_amount'] for bucket in buckets.values()),
+        Decimal('0.00'),
+    )
+    categories = []
+    for bucket in buckets.values():
+        if total_sales:
+            percentage = (
+                bucket['sales_amount'] / total_sales * 100
+            ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        else:
+            percentage = Decimal('0.00')
+        bucket['percentage'] = percentage
+        categories.append(bucket)
+    categories.sort(
+        key=lambda bucket: (-bucket['sales_amount'], bucket['name'])
+    )
+
+    return {
+        'period': {
+            'days': days,
+            'start_date': start_date,
+            'end_date': end_date,
+        },
+        'total_sales': total_sales,
+        'categories': categories,
+    }

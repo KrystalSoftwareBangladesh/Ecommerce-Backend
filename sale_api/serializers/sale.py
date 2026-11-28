@@ -376,3 +376,40 @@ class SalePerformanceReportDataSerializer(serializers.Serializer):
 class SalePerformanceReportSerializer(serializers.Serializer):
     success = serializers.BooleanField(default=True)
     data = SalePerformanceReportDataSerializer()
+
+
+class SalesByCategoryQuerySerializer(serializers.Serializer):
+    days = serializers.IntegerField(
+        required=False, default=90, min_value=1, max_value=365
+    )
+
+
+class SalesByCategoryPeriodSerializer(serializers.Serializer):
+    days = serializers.IntegerField()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+
+
+class SalesByCategoryRowSerializer(serializers.Serializer):
+    id = serializers.IntegerField(allow_null=True)
+    name = serializers.CharField()
+    slug = serializers.CharField(allow_null=True)
+    sales_amount = serializers.DecimalField(
+        max_digits=20, decimal_places=2
+    )
+    percentage = serializers.DecimalField(
+        max_digits=5, decimal_places=2
+    )
+
+
+class SalesByCategoryDataSerializer(serializers.Serializer):
+    period = SalesByCategoryPeriodSerializer()
+    total_sales = serializers.DecimalField(
+        max_digits=20, decimal_places=2
+    )
+    categories = SalesByCategoryRowSerializer(many=True)
+
+
+class SalesByCategoryReportSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=True)
+    data = SalesByCategoryDataSerializer()

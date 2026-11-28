@@ -30,10 +30,12 @@ from sale_api.serializers import (
     SaleTrackingSerializer,
     SalePerformanceReportQuerySerializer,
     SalePerformanceReportSerializer,
+    SalesByCategoryQuerySerializer,
+    SalesByCategoryReportSerializer,
 )
 from sale_api.services import (
     create_sale, update_sale, update_sale_status,
-    mark_cod_payment_collected,
+    get_sales_by_category, mark_cod_payment_collected,
 )
 from EcommerceBackend.core.permission import CustomPermissionAccessMixin
 
@@ -513,6 +515,53 @@ class SaleViewSet(CustomPermissionAccessMixin, viewsets.ModelViewSet):
                 'today_orders': today_orders,
                 'last_order': last_order,
             },
+        })
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["Sales"],
+        summary="Sales by product category",
+        description=(
+            "Sales amount grouped by top-level product category "
+            "for a reporting period ending today. CANCELLED and "
+            "RETURNED sales are excluded. A product in several "
+            "categories is counted in each of them; products "
+            "without a category are reported as \"Uncategorized\". "
+            "Percentages are the share of each row in the "
+            "reported total."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="days",
+                type=int,
+                required=False,
+                description=(
+                    "Reporting period length in days. "
+                    "Default 90, maximum 365."
+                ),
+            ),
+        ],
+        request=None,
+        responses={200: SalesByCategoryReportSerializer},
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='reports/by-category',
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def sales_by_category(self, request):
+        query_serializer = SalesByCategoryQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+        data = get_sales_by_category(
+            **query_serializer.validated_data
+        )
+        serializer = SalesByCategoryReportSerializer({
+            'success': True,
+            'data': data,
         })
         return Response(serializer.data)
 

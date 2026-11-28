@@ -9,6 +9,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from account_api.models import AccountType, ChartOfAccount
+from category_api.models import Category
 from customer_api.models import CustomerProfile
 from product_api.models import Product, ProductVariant
 from inventory_api.models import InventoryMovement, MovementType, ReferenceType
@@ -2042,3 +2043,221 @@ class SaleDetailProductSlugTests(APITestCase):
         for item in response.data['items']:
             self.assertTrue(item['product_slug'])
         self.assertEqual(len(small_queries), len(large_queries))
+class SaleSalesByCategoryApiTests(APITestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username='staff-by-category',
+            email='staff-by-category@example.com',
+            password='test-pass-123',
+            role='STAFF'
+        )
+        self.customer_user = User.objects.create_user(
+            username='customer-by-category',
+            email='customer-by-category@example.com',
+            password='test-pass-123',
+            role='CUSTOMER'
+        )
+        self.customer = CustomerProfile.objects.create(
+            user=self.customer_user
+        )
+        self.today = timezone.now().date()
+        self.client.force_authenticate(user=self.staff_user)
+
+    def _create_category(self, name, parent=None):
+        return Category.objects.create(
+            name=name,
+            parent=parent,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+        )
+
+    def _create_variant(self, sku, name, *categories):
+        product = Product.objects.create(
+            name=name,
+            slug=sku.lower(),
+            current_selling_price=Decimal('100.00'),
+        )
+        if categories:
+            product.categories.set(categories)
+        return ProductVariant.objects.create(
+            product=product,
+            sku=sku,
+        )
+
+    def _create_sale(
+        self, variant, line_total,
+        sale_status=SaleStatus.DELIVERED, sale_date=None,
+        is_active=True,
+    ):
+        sale = Sale.objects.create(
+            customer=self.customer,
+            sale_date=sale_date or self.today,
+            status=sale_status,
+            subtotal_amount=line_total,
+            total_amount=line_total,
+            created_by=self.staff_user,
+            updated_by=self.staff_user,
+            is_active=is_active,
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product_variant=variant,
+            quantity=1,
+            unit_price=line_total,
+            line_total=line_total,
+        )
+        return sale
+
+    def test_groups_by_top_level_category_with_shares(self):
+        electronics = self._create_category('Electronics')
+        phones = self._create_category('Phones', parent=electronics)
+        apparel = self._create_category('Apparel')
+        self._create_sale(
+            self._create_variant('SKU-EL-1', 'Phone X', phones),
+            Decimal('300.00'),
+        )
+        self._create_sale(
+            self._create_variant('SKU-AP-1', 'Shirt', apparel),
+            Decimal('100.00'),
+        )
+
+        response = self.client.get(
+            '/api/v1/sales/reports/by-category/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.data['data']
+        self.assertEqual(data['total_sales'], '400.00')
+        self.assertEqual(data['period']['days'], 90)
+        self.assertEqual(
+            data['period']['start_date'],
+            str(self.today - timedelta(days=89)),
+        )
+        self.assertEqual(
+            data['period']['end_date'], str(self.today)
+        )
+        self.assertEqual(
+            [
+                (
+                    row['id'], row['name'], row['slug'],
+                    row['sales_amount'], row['percentage'],
+                )
+                for row in data['categories']
+            ],
+            [
+                (electronics.id, 'Electronics', 'electronics',
+                 '300.00', '75.00'),
+                (apparel.id, 'Apparel', 'apparel',
+                 '100.00', '25.00'),
+            ],
+        )
+
+    def test_excludes_cancelled_returned_and_inactive(self):
+        category = self._create_category('Apparel')
+        variant = self._create_variant('SKU-EX-1', 'Shoes', category)
+        for sale_status in (
+            SaleStatus.CANCELLED,
+            SaleStatus.RETURNED,
+        ):
+            self._create_sale(
+                variant, Decimal('500.00'),
+                sale_status=sale_status,
+            )
+        self._create_sale(
+            variant, Decimal('200.00'), is_active=False,
+        )
+
+        response = self.client.get(
+            '/api/v1/sales/reports/by-category/'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.data['data']
+        self.assertEqual(data['total_sales'], '0.00')
+        self.assertEqual(data['categories'], [])
+
+    def test_uncategorized_products_bucket(self):
+        variant = self._create_variant('SKU-NC-1', 'Loose Item')
+
+        self._create_sale(variant, Decimal('120.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/by-category/'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['total_sales'], '120.00')
+        self.assertEqual(
+            [
+                (row['id'], row['name'], row['slug'],
+                 row['sales_amount'], row['percentage'])
+                for row in data['categories']
+            ],
+            [
+                (None, 'Uncategorized', None,
+                 '120.00', '100.00'),
+            ],
+        )
+
+    def test_multi_category_product_counted_in_each(self):
+        audio = self._create_category('Audio')
+        gadgets = self._create_category('Gadgets')
+        variant = self._create_variant(
+            'SKU-MC-1', 'Speaker', audio, gadgets
+        )
+
+        self._create_sale(variant, Decimal('100.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/by-category/'
+        )
+
+        data = response.data['data']
+        self.assertEqual(data['total_sales'], '200.00')
+        self.assertEqual(
+            [
+                (row['name'], row['sales_amount'], row['percentage'])
+                for row in data['categories']
+            ],
+            [
+                ('Audio', '100.00', '50.00'),
+                ('Gadgets', '100.00', '50.00'),
+            ],
+        )
+
+    def test_respects_days_window(self):
+        category = self._create_category('Apparel')
+        variant = self._create_variant('SKU-DW-1', 'Pants', category)
+        self._create_sale(
+            variant, Decimal('50.00'),
+            sale_date=self.today - timedelta(days=10),
+        )
+        self._create_sale(variant, Decimal('150.00'))
+
+        response = self.client.get(
+            '/api/v1/sales/reports/by-category/?days=5'
+        )
+        self.assertEqual(
+            response.data['data']['total_sales'], '150.00'
+        )
+
+        response = self.client.get(
+            '/api/v1/sales/reports/by-category/?days=30'
+        )
+        self.assertEqual(
+            response.data['data']['total_sales'], '200.00'
+        )
+
+    def test_days_validation(self):
+        self.assertEqual(
+            self.client.get(
+                '/api/v1/sales/reports/by-category/?days=0'
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.get(
+                '/api/v1/sales/reports/by-category/?days=366'
+            ).status_code,
+            400,
+        )
