@@ -847,7 +847,9 @@ endpoint that lets anyone look up an order by its invoice number.
   and transactions), `idempotency_key`, `request_fingerprint`.
 - Unknown, soft-deleted or missing invoice numbers return **404**; no
   distinction is leaked between "never existed" and "inactive".
-- Invoice numbers are guessable (`SALE-YYYYMMDD-NNNNNN`) and that risk
+- Invoice numbers are guessable (`{prefix}-YYYYMMDD-NNNNNN`, where
+  the prefix is deployment-configured via
+  `INVOICE_NUMBER_PREFIX_SETTINGS`, default `SALE`) and that risk
   is accepted deliberately; no throttling is applied to this endpoint.
 - The customer order-confirmation email carries a **Track your order**
   button linking to the frontend route
