@@ -191,3 +191,15 @@ class BlogCategoryCountSerializer(serializers.Serializer):
     name = serializers.CharField(read_only=True)
     slug = serializers.SlugField(read_only=True)
     blog_post_count = serializers.IntegerField(read_only=True)
+
+
+class BlogPostMostViewedSerializer(serializers.Serializer):
+    """A blog post in the most-viewed listing.
+
+    `name` is the post title.
+    """
+
+    id = serializers.IntegerField(read_only=True)
+    slug = serializers.SlugField(read_only=True)
+    name = serializers.CharField(source='title', read_only=True)
+    view_count = serializers.IntegerField(read_only=True)

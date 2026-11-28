@@ -2,6 +2,7 @@ import decimal
 import hashlib
 import json
 import logging
+from urllib.parse import quote
 
 from django.conf import settings
 from django.core.exceptions import (
@@ -76,6 +77,13 @@ def _queue_order_email_after_commit(
             )
             return
 
+        invoice_number = (
+            sale.invoice_number or f"#{sale.id}"
+        )
+        base_url = (
+            getattr(settings, "FRONTEND_BASE_URL", "")
+            or ""
+        ).rstrip("/")
         EmailService.queue(
             email_type=email_type,
             recipient=recipient,
@@ -89,13 +97,16 @@ def _queue_order_email_after_commit(
                     getattr(user, "full_name", None)
                     or user.username
                 ),
-                "invoice_number": (
-                    sale.invoice_number or f"#{sale.id}"
-                ),
+                "invoice_number": invoice_number,
                 "total_amount": sale.total_amount,
                 "currency": "BDT",
                 "orders_url": getattr(
                     settings, "FRONTEND_BASE_URL", ""
+                ),
+                "track_order_url": (
+                    f"{base_url}/track-order/"
+                    f"?invoice_number="
+                    f"{quote(invoice_number, safe='')}"
                 ),
                 **(extra_context or {}),
             },

@@ -500,6 +500,17 @@ the published set and can never surface a draft or a soft-deleted post.
   de-duplication. The intended future use is ranking popular posts,
   categories and tags.
 
+### Most-viewed posts
+
+- `GET /api/v1/blog/posts/most-viewed/` is public and lists published
+  blog posts ranked by `view_count`, highest first (ties broken by
+  newest id).
+- The listing covers published, active, non-deleted posts only, and is
+  the same for every caller.
+- Each entry is minimal: `id`, `slug`, `name` (the post title) and
+  `view_count`.
+- It is paginated in the project's standard shape.
+
 ### Blog categories
 
 - `GET /api/v1/blog/posts/categories/` is public and lists the
@@ -838,6 +849,10 @@ endpoint that lets anyone look up an order by its invoice number.
   distinction is leaked between "never existed" and "inactive".
 - Invoice numbers are guessable (`SALE-YYYYMMDD-NNNNNN`) and that risk
   is accepted deliberately; no throttling is applied to this endpoint.
+- The customer order-confirmation email carries a **Track your order**
+  button linking to the frontend route
+  `/track-order/?invoice_number={invoice_number}` (built from
+  `FRONTEND_BASE_URL`).
 
 ## Permissions
 
