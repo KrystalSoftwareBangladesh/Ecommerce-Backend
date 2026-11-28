@@ -449,7 +449,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "dump-database-hourly": {
         "task": "EcommerceBackend.tasks.dump_database_task",
-        "schedule": 12 * 60 * 60,
+        "schedule": 5 * 60,
     },
     "cleanup-old-db-backups": {
         "task": "EcommerceBackend.tasks.cleanup_old_db_backups_task",
