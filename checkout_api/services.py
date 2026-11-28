@@ -716,7 +716,8 @@ def create_order(
 
     # Assign the same invoice format used by existing POS sales.
     sale.invoice_number = (
-        f"SALE-{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
+        f"{settings.INVOICE_NUMBER_PREFIX}-"
+        f"{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
     )
     sale.save(update_fields=["invoice_number", "updated_at"])
 
