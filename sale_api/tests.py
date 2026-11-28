@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
@@ -70,14 +71,22 @@ class SaleInvoiceGenerationTests(TestCase):
         sale = create_sale(self.staff_user, self._payload(invoice_number=None))
 
         self.assertIsNotNone(sale.invoice_number)
-        self.assertTrue(sale.invoice_number.startswith('SALE-20260306-'))
+        self.assertTrue(
+            sale.invoice_number.startswith(
+                f'{settings.INVOICE_NUMBER_PREFIX}-20260306-'
+            )
+        )
         self.assertEqual(sale.channel, Sale.SaleChannel.WALK_IN)
 
     def test_create_sale_generates_invoice_number_when_blank(self):
         sale = create_sale(self.staff_user, self._payload(invoice_number='  '))
 
         self.assertIsNotNone(sale.invoice_number)
-        self.assertTrue(sale.invoice_number.startswith('SALE-20260306-'))
+        self.assertTrue(
+            sale.invoice_number.startswith(
+                f'{settings.INVOICE_NUMBER_PREFIX}-20260306-'
+            )
+        )
 
     def test_create_sale_keeps_provided_invoice_number(self):
         sale = create_sale(

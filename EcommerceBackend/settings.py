@@ -32,6 +32,13 @@ from . import env
 
 
 PROJECT_NAME = getattr(env, "PROJECT_NAME_SETTINGS", "E-commerce")
+
+# Prefix for generated sale invoice numbers
+# (e.g. SALE-20261129-000001). Configured per deployment in
+# env.py via INVOICE_NUMBER_PREFIX_SETTINGS.
+INVOICE_NUMBER_PREFIX = getattr(
+    env, "INVOICE_NUMBER_PREFIX_SETTINGS", "SALE"
+)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

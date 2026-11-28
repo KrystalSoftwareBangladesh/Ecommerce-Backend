@@ -2,6 +2,7 @@
 from decimal import Decimal
 
 from account_api.models import AccountType, ChartOfAccount
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
@@ -216,7 +217,10 @@ def _is_blank_invoice_number(value):
 
 
 def _generate_sale_invoice_number(sale):
-    return f"SALE-{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
+    prefix = settings.INVOICE_NUMBER_PREFIX
+    return (
+        f"{prefix}-{sale.sale_date.strftime('%Y%m%d')}-{sale.id:06d}"
+    )
 
 
 def _validate_sale_totals(sale):
@@ -297,7 +301,10 @@ def _validate_sale_account(account):
 
 
 def _build_sale_reference(sale, suffix=None):
-    base_reference = sale.invoice_number or f'SALE-{sale.id}'
+    base_reference = (
+        sale.invoice_number
+        or f'{settings.INVOICE_NUMBER_PREFIX}-{sale.id}'
+    )
     if suffix:
         return f'{base_reference}-{suffix}'[:100]
     return base_reference[:100]
